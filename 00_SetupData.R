@@ -6,11 +6,19 @@
 # Load libraries and data -------------------------------------------------
 
 # INSTALL LIBRARIES
-pacman::p_load("tidyverse", "lubridate", "sf", "extrafont", "readxl", "measurements")
+pacman::p_load("tidyverse", "lubridate", "sf", "extrafont", "readxl", "measurements", "pdftools")
 
 dir.create("Data")
 datapath <- "Data"
 gispath <- "Data/gadm36_KEN_shp"
 
 # Read in constituency data
-gis_admin2 <- read_sf()
+gis_admin2 <- read_sf(file.path(gispath, "gadm36_KEN_2.shp"))
+
+# Download election results from Kenya Election Comission
+download.file("https://www.iebc.or.ke/uploads/resources/m3f8arLNjp.pdf", 
+              file.path(datapath, "KEN_Election_2017.pdf"))
+
+elec <- pdf_text(file.path(datapath, "KEN_Election_2017.pdf"))
+
+
