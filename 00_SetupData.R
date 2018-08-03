@@ -13,6 +13,7 @@ datapath <- "Data"
 gispath <- "Data/gadm36_KEN_shp"
 
 # Read in constituency data
+# https://biogeo.ucdavis.edu/data/gadm3.6/shp/gadm36_KEN_shp.zip
 gis_admin2 <- read_sf(file.path(gispath, "gadm36_KEN_2.shp"))
 
 # Download election results from Kenya Election Comission
