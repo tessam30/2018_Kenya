@@ -1,9 +1,7 @@
-# History files
+.Rproj.user
 .Rhistory
-.Rapp.history
-
-# Session Data files
 .RData
+.Ruserdata
 
-# RStudio files
-.Rproj.user/
+Data
+.DS_Store
