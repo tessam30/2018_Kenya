@@ -20,6 +20,16 @@ gis_admin2 <- read_sf(file.path(gispath, "gadm36_KEN_2.shp"))
 download.file("https://www.iebc.or.ke/uploads/resources/m3f8arLNjp.pdf", 
               file.path(datapath, "KEN_Election_2017.pdf"))
 
-elec <- pdf_text(file.path(datapath, "KEN_Election_2017.pdf"))
+# Below doesn't work, so we convert the tablues with Tabula.
+# elec <- pdf_text(file.path(datapath, "KEN_Election_2017.pdf"))
+# First 394 rows are data from the constituencies
+elec <- read_csv(file.path(datapath, "tabula-KEN_Election_2017.csv"), n_max = 394)
+elec_cand <- read_csv(file.path(datapath, "tabula-KEN_Election_2017.csv"), skip = 410, n_max = 9)
 
+
+# Clean up election results -----------------------------------------------
+
+# First the candidate totals
+elec_cand <- 
+  elec_cand[2:9, ]
 
