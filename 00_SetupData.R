@@ -77,9 +77,7 @@ gispath <- "Data/gadm36_KEN_shp"
     filter(is.na(county_code)) %>% 
     filter(!(county_name %in% c("PERCENTAGE (%)", "NATIONAL %AGE"))) %>% 
     # record 13 needs to be dropped, these are values for the constituency of "CHUKA/IGAMBANG'OMBE"
-    filter(!is.na(county_name)) 
-  
-  %>% 
+    filter(!is.na(county_name)) %>% 
     # Need to coerce all the voter value columns to be numbers, they are strings as is
    mutate_at(vars(reg_voters:rej_votes), funs(as.numeric(.)))
 
