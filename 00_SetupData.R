@@ -70,7 +70,10 @@ gispath <- "Data/gadm36_KEN_shp"
            Nyagah       = "X12",
            Odinga       = "X13",
            votes        = "TOTAL VALID",
-           rej_votes    = "REJECTED")
+           rej_votes    = "REJECTED") %>% 
+    
+    # Set ID's so you can use these for the slicing and subsetting below
+    mutate(id = seq_len(n()))
 
 # Extract totals for later
   elec_tot <- elec_const %>% 
@@ -86,4 +89,16 @@ gispath <- "Data/gadm36_KEN_shp"
     filter(county_name != "NATIONAL TOTAL") %>% 
     summarise(tot = sum(reg_voters))
 
-# Record 86 of the elec_const did not read in correctly "CHUKA/IGAMBANG'OMBE". Values from Line 87 need to be moved up one line
+# Record 86 of the elec_const did not read in correctly "CHUKA/IGAMBANG'OMBE". Values from Line 87 need to be moved up one line; Pry not the best way to do this as sort order could change, but works for now.
+  y <- as.data.frame(filter(elec_const, id == 86))
+  z <- as.data.frame(filter(elec_const, id == 87))
+  yz <- coalesce(y, z)
+  
+  # Rebind to elec_tot after removing rows 86, 87
+  elec_const <- 
+    elec_const %>% 
+    filter(!(id %in% c(86, 87))) %>% 
+    rbind(., yz) %>% 
+    arrange(id)
+
+    
