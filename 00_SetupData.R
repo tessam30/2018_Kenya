@@ -80,9 +80,9 @@ gispath <- "Data/gadm36_KEN_shp"
     filter(is.na(county_code)) %>% 
     filter(!(county_name %in% c("PERCENTAGE (%)", "NATIONAL %AGE"))) %>% 
     # record 13 needs to be dropped, these are values for the constituency of "CHUKA/IGAMBANG'OMBE"
-    filter(!is.na(county_name)) %>% 
+    filter(!is.na(county_name)) #%>% 
     # Need to coerce all the voter value columns to be numbers, they are strings as is
-   mutate_at(vars(reg_voters:rej_votes), funs(as.numeric(.)))
+  # mutate_at(vars(reg_voters:rej_votes), funs(as.numeric(.)))
 
 # Check numbers
   elec_tot %>% 
@@ -94,11 +94,18 @@ gispath <- "Data/gadm36_KEN_shp"
   z <- as.data.frame(filter(elec_const, id == 87))
   yz <- coalesce(y, z)
   
-  # Rebind to elec_tot after removing rows 86, 87
+  # Rebind to elec_tot after removing rows 86, 87; 
   elec_const <- 
     elec_const %>% 
     filter(!(id %in% c(86, 87))) %>% 
     rbind(., yz) %>% 
-    arrange(id)
+    arrange(id) %>% 
+    filter(!is.na(county_code), county_name != "COUNTY_NAME") %>% 
+    
+    # Need to strip out commas b/c when you coerce as a number, it converts many to NA
+    mutate_at(vars(reg_voters:rej_votes), str_replace, pattern = ",", replacement = "") %>% 
+    mutate_at(vars(reg_voters:rej_votes), funs(as.numeric(.)))
+  
+  
 
     
