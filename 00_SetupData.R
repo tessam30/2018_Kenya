@@ -53,7 +53,7 @@ gispath <- "Data/gadm36_KEN_shp"
            )
            
 
-# Second, clean up the constituency level results
+# Second, clean up the constituency level results check the info on candidates
   elec_const <- 
     elec %>% 
     select(county_code  = "COUNTY",
