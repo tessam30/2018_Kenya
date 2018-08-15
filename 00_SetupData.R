@@ -19,7 +19,7 @@ gispath <- "Data/gadm36_KEN_shp"
 # Download election results from Kenya Election Comission
 # Per wikipedia -- results may not be up to date 
 # https://en.wikipedia.org/wiki/Kenyan_general_election,_2017
-  download.file("https://www.iebc.or.ke/uploads/resources/m3f8arLNjp.pdf", 
+# download.file("https://www.iebc.or.ke/uploads/resources/m3f8arLNjp.pdf", 
                 file.path(datapath, "KEN_Election_2017.pdf"))
 
 # Below doesn't work, so we convert the tablues with Tabula.
@@ -76,17 +76,40 @@ gispath <- "Data/gadm36_KEN_shp"
     mutate(id = seq_len(n()))
 
 # Extract totals for later
-  elec_tot <- elec_const %>% 
-    filter(is.na(county_code)) %>% 
-    filter(!(county_name %in% c("PERCENTAGE (%)", "NATIONAL %AGE"))) %>% 
+  # Set aside the codes for now
+  elec_codes <- 
+    elec_const %>% 
+    select(county_code:constituency) %>% 
+    filter(!is.na(county_code))
+  
+  
+  elec_tot <- 
+    elec_const %>% 
+    filter(!is.na(county_code), county_name != "COUNTY_NAME")%>% 
+    #filter(!(county_name %in% c("PERCENTAGE (%)", "NATIONAL %AGE"))) %>% 
     # record 13 needs to be dropped, these are values for the constituency of "CHUKA/IGAMBANG'OMBE"
-    filter(!is.na(county_name)) #%>% 
     # Need to coerce all the voter value columns to be numbers, they are strings as is
+    mutate_at(vars(reg_voters:rej_votes), funs((gsub(',', '', .)))) %>% 
+    mutate_at(vars(reg_voters:rej_votes), funs((gsub("-", '', . )))) %>% 
+    mutate_at(vars(reg_voters:rej_votes), funs(as.numeric(.)))
+  
+  # ORiginally had this chunk below, not sure why
+  # Extract totals for later
+  # elec_tot <- elec_const %>% 
+  #   filter(is.na(county_code)) %>% 
+  #   filter(!(county_name %in% c("PERCENTAGE (%)", "NATIONAL %AGE"))) %>% 
+  #   # record 13 needs to be dropped, these are values for the constituency of "CHUKA/IGAMBANG'OMBE"
+  #   filter(!is.na(county_name)) #%>% 
+  # Need to coerce all the voter value columns to be numbers, they are strings as is
   # mutate_at(vars(reg_voters:rej_votes), funs(as.numeric(.)))
+  
+  
+
+  str(elec_tot)
 
 # Check numbers
   elec_tot %>% 
-    filter(county_name != "NATIONAL TOTAL") %>% 
+    group_by(county_name) %>% 
     summarise(tot = sum(reg_voters))
 
 # Record 86 of the elec_const did not read in correctly "CHUKA/IGAMBANG'OMBE". Values from Line 87 need to be moved up one line; Pry not the best way to do this as sort order could change, but works for now.
@@ -95,7 +118,7 @@ gispath <- "Data/gadm36_KEN_shp"
   yz <- coalesce(y, z)
   
   # Rebind to elec_tot after removing rows 86, 87; 
-  elec_const <- 
+  elec_results <- 
     elec_const %>% 
     filter(!(id %in% c(86, 87))) %>% 
     rbind(., yz) %>% 
@@ -103,7 +126,7 @@ gispath <- "Data/gadm36_KEN_shp"
     filter(!is.na(county_code), county_name != "COUNTY_NAME") %>% 
     
     # Need to strip out commas b/c when you coerce as a number, it converts many to NA
-    mutate_at(vars(reg_voters:rej_votes), str_replace, pattern = ",", replacement = "") %>% 
+    mutate_at(vars(reg_voters:rej_votes), funs((gsub(',', '', .)))) %>% 
     mutate_at(vars(reg_voters:rej_votes), funs(as.numeric(.)))
   
   
