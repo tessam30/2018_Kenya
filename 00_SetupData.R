@@ -12,6 +12,9 @@ dir.create("Data")
 datapath <- "Data"
 gispath <- "Data/gadm36_KEN_shp"
 
+#Source helper functions
+source("strip_geom.R")
+
 # Read in constituency data
 # https://biogeo.ucdavis.edu/data/gadm3.6/shp/gadm36_KEN_shp.zip
   gis_admin2 <- read_sf(file.path(gispath, "gadm36_KEN_2.shp"))
@@ -129,6 +132,24 @@ gispath <- "Data/gadm36_KEN_shp"
     mutate_at(vars(reg_voters:rej_votes), funs((gsub(',', '', .)))) %>% 
     mutate_at(vars(reg_voters:rej_votes), funs(as.numeric(.)))
   
+  # Next step is to attemp to join to to the shapefile 
+  admin2_df <- strip_geom(gis_admin2, -geometry)
+  
+  # Things to note: 
+  # in geom_sf --> lwd controls stroke on polygons, 
+  # "col" is polygon color
+  
+ p <-  ggplot(gis_admin2) +
+    geom_sf(lwd = 0.3, col = "white", aes(fill = NAME_2, colour = "grey"),
+            alpha = 0.5) +
+   scale_fill_viridis_d(option = "A")+
+    theme(legend.position="none")+
+   labs(title = "Kenya constituencies ugly map")
+  ggsave("Kenya_constituencies.pdf", 
+         plot = p)
+  # To be done: Convert constituency information to numeric for merging
+  # Convert constituency names to proper for merging/match too
+  # Merge data, check if constituency values even make sense
   
 
     
