@@ -19,6 +19,8 @@ source("strip_geom.R")
 # https://biogeo.ucdavis.edu/data/gadm3.6/shp/gadm36_KEN_shp.zip
   gis_admin2 <- read_sf(file.path(gispath, "gadm36_KEN_2.shp"))
 
+# SEE here for older data --> https://github.com/mikelmaron/kenya-election-data  
+  
 # Download election results from Kenya Election Comission
 # Per wikipedia -- results may not be up to date 
 # https://en.wikipedia.org/wiki/Kenyan_general_election,_2017
@@ -130,14 +132,28 @@ source("strip_geom.R")
     
     # Need to strip out commas b/c when you coerce as a number, it converts many to NA
     mutate_at(vars(reg_voters:rej_votes), funs((gsub(',', '', .)))) %>% 
-    mutate_at(vars(reg_voters:rej_votes), funs(as.numeric(.)))
+    mutate_at(vars(reg_voters:rej_votes), funs(as.numeric(.))) %>% 
+    mutate(NAME_1 = str_to_title(constituency),
+           CC_2 = as.character(as.numeric(consit_code)))
   
   # Next step is to attemp to join to to the shapefile 
+  # In the elce results, need to fix 100 obs that start with zero
   admin2_df <- strip_geom(gis_admin2, -geometry)
   
+  
+  map(list(elec_results, gis_admin2), ~ str(.))
   # Things to note: 
   # in geom_sf --> lwd controls stroke on polygons, 
   # "col" is polygon color
+gis_admin2 %>% 
+    left_join(., elec_results, by = c("CC_2")) %>% 
+    ggplot(.) +
+    geom_sf(lwd = 0.1, col = "white",
+            aes(fill = reg_voters)) +
+  scale_fill_viridis_c(option = "A")
+  
+
+fixme <- anti_join(gis_admin2, elec_results, by = c("CC_2"))
   
  p <-  ggplot(gis_admin2) +
     geom_sf(lwd = 0.3, col = "white", aes(fill = NAME_2, colour = "grey"),
@@ -146,7 +162,8 @@ source("strip_geom.R")
     theme(legend.position="none")+
    labs(title = "Kenya constituencies ugly map")
   ggsave("Kenya_constituencies.pdf", 
-         plot = p)
+         plot = p2)
+  
   # To be done: Convert constituency information to numeric for merging
   # Convert constituency names to proper for merging/match too
   # Merge data, check if constituency values even make sense
