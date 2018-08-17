@@ -136,6 +136,20 @@ source("strip_geom.R")
     mutate(NAME_1 = str_to_title(constituency),
            CC_2 = as.character(as.numeric(consit_code)))
   
+  # Reshape the candidates so we can small multiple the results on a series of maps
+  elec_results_long <- 
+    elec_results %>% 
+    gather(., 
+           key = "Candidate", 
+           value = "votes",
+           Aukot:Odinga) %>% 
+    group_by(Candidate) %>% 
+    mutate(tot_votes = sum(votes, na.rm = TRUE)) %>% 
+    ungroup() %>% 
+    mutate(map_sort = fct_reorder(Candidate, -tot_votes))
+  
+  
+  
   # Next step is to attemp to join to to the shapefile 
   # In the elce results, need to fix 100 obs that start with zero
   admin2_df <- strip_geom(gis_admin2, -geometry)
@@ -145,15 +159,22 @@ source("strip_geom.R")
   # Things to note: 
   # in geom_sf --> lwd controls stroke on polygons, 
   # "col" is polygon color
-gis_admin2 %>% 
-    left_join(., elec_results, by = c("CC_2")) %>% 
+p2 <- gis_admin2 %>% 
+    left_join(., elec_results_long, by = c("CC_2")) %>% 
     ggplot(.) +
     geom_sf(lwd = 0.1, col = "white",
-            aes(fill = reg_voters)) +
+            aes(fill = votes), alpha = 0.75) +
+  facet_wrap(~map_sort, nrow = 2)+
   scale_fill_viridis_c(option = "A")
-  
+ggsave("Kenya_results.pdf", 
+       plot = p2)
 
-fixme <- anti_join(gis_admin2, elec_results, by = c("CC_2"))
+
+
+
+  
+  # Highlighting the administrative boundaries that do not have constituency codes
+  fixme <- anti_join(elec_results, gis_admin2, by = c("CC_2"))
   
  p <-  ggplot(gis_admin2) +
     geom_sf(lwd = 0.3, col = "white", aes(fill = NAME_2, colour = "grey"),
