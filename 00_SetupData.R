@@ -146,7 +146,11 @@ source("strip_geom.R")
     group_by(Candidate) %>% 
     mutate(tot_votes = sum(votes, na.rm = TRUE)) %>% 
     ungroup() %>% 
-    mutate(map_sort = fct_reorder(Candidate, -tot_votes))
+    mutate(map_sort = fct_reorder(Candidate, -tot_votes)) %>% 
+    group_by(constituency) %>% 
+    mutate(tot_votes_const = sum(votes, na.rm = TRUE)) %>% 
+    ungroup() %>% 
+    mutate(const_share = votes / tot_votes_const)
   
   
   
@@ -159,32 +163,47 @@ source("strip_geom.R")
   # Things to note: 
   # in geom_sf --> lwd controls stroke on polygons, 
   # "col" is polygon color
-p2 <- gis_admin2 %>% 
-    left_join(., elec_results_long, by = c("CC_2")) %>% 
+  p2 <- 
+    gis_admin2 %>%
+    left_join(., elec_results_long, by = c("CC_2")) %>%
+    filter(Candidate %in% c("Kenyatta", "Odinga")) %>%
     ggplot(.) +
-    geom_sf(lwd = 0.1, col = "white",
-            aes(fill = votes), alpha = 0.75) +
-  facet_wrap(~map_sort, nrow = 2)+
-  scale_fill_viridis_c(option = "A")
-ggsave("Kenya_results.pdf", 
-       plot = p2)
+    geom_sf(
+      lwd = 0.1, col = "white",
+      aes(fill = Candidate, alpha = const_share)
+    ) +
+    facet_wrap(~map_sort, nrow = 1) +
+    scale_fill_brewer(palette = "Set2") +
+    theme(legend.position = "none")
+  ggsave("Kenya_results.pdf",
+    plot = p2
+  )
 
 
-
-
+  write_csv(
+    elec_results_long,
+    file.path(
+      datapath,
+      "KEN_election_results.csv"
+    )
+  )
   
   # Highlighting the administrative boundaries that do not have constituency codes
   fixme <- anti_join(elec_results, gis_admin2, by = c("CC_2"))
   
- p <-  ggplot(gis_admin2) +
-    geom_sf(lwd = 0.3, col = "white", aes(fill = NAME_2, colour = "grey"),
-            alpha = 0.5) +
-   scale_fill_viridis_d(option = "A")+
-    theme(legend.position="none")+
-   labs(title = "Kenya constituencies ugly map")
-  ggsave("Kenya_constituencies.pdf", 
-         plot = p2)
-  
+  p <- 
+    ggplot(gis_admin2) +
+    geom_sf(
+      lwd = 0.3, col = "white", aes(fill = NAME_2, colour = "grey"),
+      alpha = 0.5
+    ) +
+    scale_fill_viridis_d(option = "A") +
+    theme(legend.position = "none") +
+    labs(title = "Kenya constituencies ugly map")
+  ggsave("Kenya_constituencies.pdf",
+    plot = p2
+  )
+    
   # To be done: Convert constituency information to numeric for merging
   # Convert constituency names to proper for merging/match too
   # Merge data, check if constituency values even make sense
