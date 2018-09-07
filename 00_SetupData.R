@@ -25,7 +25,7 @@ source("strip_geom.R")
 # Per wikipedia -- results may not be up to date 
 # https://en.wikipedia.org/wiki/Kenyan_general_election,_2017
 # download.file("https://www.iebc.or.ke/uploads/resources/m3f8arLNjp.pdf", 
-                file.path(datapath, "KEN_Election_2017.pdf"))
+                #file.path(datapath, "KEN_Election_2017.pdf"))
 
 # Below doesn't work, so we convert the tablues with Tabula.
 # elec <- pdf_text(file.path(datapath, "KEN_Election_2017.pdf"))
@@ -134,7 +134,9 @@ source("strip_geom.R")
     mutate_at(vars(reg_voters:rej_votes), funs((gsub(',', '', .)))) %>% 
     mutate_at(vars(reg_voters:rej_votes), funs(as.numeric(.))) %>% 
     mutate(NAME_1 = str_to_title(constituency),
-           CC_2 = as.character(as.numeric(consit_code)))
+           CC_2 = as.character(as.numeric(consit_code)),
+           pct_voted = (votes / reg_voters),
+           pct_rejected = (rej_votes / (votes + rej_votes)))
   
   # Reshape the candidates so we can small multiple the results on a series of maps
   elec_results_long <- 
@@ -143,16 +145,49 @@ source("strip_geom.R")
            key = "Candidate", 
            value = "votes",
            Aukot:Odinga) %>% 
+    
+    # Create overall totals by Candidates
     group_by(Candidate) %>% 
     mutate(tot_votes = sum(votes, na.rm = TRUE)) %>% 
     ungroup() %>% 
-    mutate(map_sort = fct_reorder(Candidate, -tot_votes)) %>% 
-    group_by(constituency) %>% 
-    mutate(tot_votes_const = sum(votes, na.rm = TRUE)) %>% 
+    
+    # Create overall totals by County
+    group_by(county_code) %>% 
+    mutate(county_total = sum(votes, na.rm = TRUE)) %>% 
     ungroup() %>% 
-    mutate(const_share = votes / tot_votes_const)
+    
+    # Create overall totals by Constituency
+    group_by(consit_code) %>% 
+    mutate(constituency_totals = sum(votes, na.rm = TRUE)) %>% 
+    ungroup() %>% 
+    
+    # Sort the data by candidates with the most votes
+    mutate(map_sort = fct_reorder(Candidate, -tot_votes)) %>% 
+    
+    # Finally, create totals for each county by Candidate
+    group_by(Candidate, county_code) %>% 
+    mutate(tot_votes_county = sum(votes, na.rm = TRUE)) %>%
+    
+    # Create vote share variables
+    ungroup() %>% 
+    mutate(const_share = votes / constituency_totals,
+           county_share = tot_votes_county / county_total)
   
   
+  # Create a summary table to check totals. Arrange in same format as the PDF table.
+  elec_results_long %>% 
+    filter(Candidate %in% c("Kenyatta", "Odinga")) %>% 
+    group_by(Candidate, county_name, county_code) %>% 
+    summarise(tot = sum(votes, na.rm = TRUE)) %>% 
+    spread(Candidate, tot) %>% 
+    arrange(county_code) %>% 
+    print(n = Inf)
+  
+  # Now by the CandidatE
+  elec_results_long %>% 
+    group_by(Candidate) %>% 
+    summarise(tot = sum(votes, na.rm = TRUE)) %>% 
+    spread(Candidate, tot)
   
   # Next step is to attemp to join to to the shapefile 
   # In the elce results, need to fix 100 obs that start with zero
@@ -198,8 +233,10 @@ source("strip_geom.R")
       alpha = 0.5
     ) +
     scale_fill_viridis_d(option = "A") +
-    theme(legend.position = "none") +
+    theme(legend.position = "top") +
     labs(title = "Kenya constituencies ugly map")
+  
+  # Save graphic for 
   ggsave("Kenya_constituencies.pdf",
     plot = p2
   )
