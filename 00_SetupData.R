@@ -181,6 +181,8 @@ source("strip_geom.R")
     summarise(tot = sum(votes, na.rm = TRUE)) %>% 
     spread(Candidate, tot) %>% 
     arrange(county_code) %>% 
+    
+    # Print the table all the way to the end
     print(n = Inf)
   
   # Now by the CandidatE
