@@ -6,7 +6,15 @@
 # Load libraries and data -------------------------------------------------
 pacman::p_load("tidyverse", "lubridate", "sf", "extrafont", "readxl", "measurements", "pdftools", "purrr")
 
+
+# Set path and folders where data live ------------------------------------
+
 read_path <- "KEN_IHBS_2016.xlsx"
+datapath <- "Data"
+gispath <- "Data/gadm36_KEN_shp"
+
+
+# Start the load routine --------------------------------------------------
 
 # List of the names of the excel sheets
 read_path %>%
@@ -56,11 +64,19 @@ poverty <-
 
 child_pov_pop <- 
   Proportion_poor_children %>% 
-  select(contains("population"), geo_id, population) %>%
+  select(contains("population"), geo_id) %>%
   gather(., 
-         population_0_5:population_0_17,
+         population:population_0_17,
          value = "poopulation",
-         key = "age_range")
+         key = "age_range") %>% 
+  # Use case_when to get at unique combo of age_range + geography for merge
+  mutate(age = case_when(
+    age_range == "population"      ~ "All",
+    age_range == "population_0_17" ~ "0_17",
+    age_range == "population_0_5"  ~ "0_5",
+    age_range == "population_6_13" ~ "6_13",
+    TRUE ~ "14_17"
+  ))
 
 child_pov_pct <- 
   Proportion_poor_children %>% 
@@ -68,5 +84,40 @@ child_pov_pct <-
   gather(., 
          Poverty_hc_rate:Poverty_hc_rate_0_17, 
          value = "poverty",
-         key = "poverty age range")
+         key = "age_range") %>% 
+  mutate(age = case_when(
+    age_range == "Poverty_hc_rate"      ~ "All",
+    age_range == "Poverty_hc_rate_0_17" ~ "0_17",
+    age_range == "Poverty_hc_rate_0_5"  ~ "0_5",
+    age_range == "Poverty_hc_rate_6_13" ~ "6_13",
+    TRUE ~ "14_17"
+  ))
+
+# Now combine the two to get a useable population + rate data frame
+# TODO: FIX the merge fields to get all the districts (should match with GADM names)
+pov_child <- 
+  child_pov_pct %>% 
+  left_join(child_pov_pop, by = c("geo_id", "age")) %>% 
+  select(-age_range.y) %>% 
+  rename(pov_hc_range = age_range.x) %>% 
+  left_join(., geo_cw, by = c("geo_id" = "County"))
+
+
+
+# Mapping magic -----------------------------------------------------------
+
+# Might as well go ahead and join it with a shapefile and create couple sample maps
+  gis_admin1 <- read_sf(file.path(gispath, "gadm36_KEN_1.shp"))
+
+ 
+  gis_admin1 %>%
+  left_join(., pov_child, by = c("GID_1")) %>%
+  ggplot(.) +
+  geom_sf(
+    lwd = 0.1, col = "white",
+    aes(fill = poverty)
+  ) +
+  facet_wrap(~ age, nrow = 1) +
+  scale_fill_viridis_c() +
+  theme(legend.position = "none")
 
