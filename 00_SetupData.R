@@ -14,9 +14,3 @@ gispath <- "Data/gadm36_KEN_shp"
 #Source helper functions
 source("strip_geom.R")
 source("KEN_helper_functions.R")
-
-
-
-
-
-
