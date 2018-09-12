@@ -106,7 +106,7 @@ geo_df_admin2 %>%
 
 
 
-geo_df_admin1 %>%
+map <- geo_df_admin1 %>%
   left_join(., dhs_combined_admin1, by = c("DHSREGEN" = "characteristic_label")) %>%
   mutate(
     lon = map_dbl(geometry, ~st_centroid(.x)[[1]]),
@@ -130,7 +130,7 @@ geo_df_admin1 %>%
   )
 
 # Plot slope graphs across the two DHS
-ggplot(dhs_combined_admin1,
+p1 <- ggplot(dhs_combined_admin1,
        aes(x = stunting,
            y = sortvar,
            fill = stunting)) + 
