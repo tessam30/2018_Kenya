@@ -70,11 +70,8 @@ dhs_combined_admin1 <-
   mutate(stunting_lag = lag(stunting),
          stunt_diff = stunting_lag - stunting) %>% 
   ungroup()
+# TODO: fill in missing values within groups
 
-%>% 
-  fill(stunt_diff, 
-       stunting_lag) %>% 
-  # Create a plot sort order based on stunting
 
   
 
