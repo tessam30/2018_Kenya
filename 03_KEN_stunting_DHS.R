@@ -63,6 +63,8 @@ dhs_combined_admin1 <-
   arrange(characteristic_label, survey_year) %>% 
   mutate(
     sortvar = fct_reorder(characteristic_label, value),
+    
+    # Move Nyanza down 1 notch in the factor listing
     sortvar = fct_relevel(sortvar, "Nyanza", after = 1),
     stunting = value / 100
   ) %>% 
