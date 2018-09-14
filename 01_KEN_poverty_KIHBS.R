@@ -60,7 +60,7 @@ pov_food <-
   dplyr::select(food_poverty_type, 
                 nat_ave = percent) %>% 
     right_join(., food_pov_tmp, by = c("food_poverty_type")) %>% 
-    mutate(deviation = (nat_ave - percent))
+    mutate(deviation = (nat_ave - percent)) 
 
 
 # ---- Overall poverty
@@ -78,11 +78,12 @@ pov <-
   dplyr::select(poverty_type, 
                 nat_ave = percent) %>% 
   right_join(., poverty_tmp, by = c("poverty_type")) %>% 
-  mutate(deviation = (nat_ave - percent))
+  mutate(deviation = (nat_ave - percent)) 
 
 
 
-# ---- Child poverty by age groups
+
+`# ---- Child poverty by age groups
 
 child_pov_pop <- 
   Proportion_poor_children %>% 
