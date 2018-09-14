@@ -15,6 +15,7 @@ library(llamar)
 library(purrr)
 library(sf)
 library(styler)
+library(fuzzyjoin)
 
 
 # Better yet, return all indicators with stunting in the definition
@@ -75,7 +76,7 @@ dhs_combined_admin1 <-
 # TODO: fill in missing values within groups
 
 
-  
+
 
 
 
@@ -92,6 +93,22 @@ geo_df_admin1 <- read_sf(file.path(dhs_path_2014, shp1))
 
 list(geo_df_admin2, dhs_2014) %>%
   map(., names)
+
+# Create a crosswalk to pull in poverty data
+
+  admin2_geo <-  
+    strip_geom(geo_df_admin2, DHSREGEN, REG_ID, REGNAME, OTHREGNA) %>% 
+  mutate(Region = str_to_title(OTHREGNA)) 
+  
+  write_csv(admin2_geo, file.path(datapath, "KEN_County_CW_DHS.csv"))
+
+  
+# This will allow the different data sets to talk  
+dhs_geo_cw <- geo_cw %>% 
+  filter(!(is.na(NAME_1))) %>% 
+  left_join(., admin2_geo, by = c("DHSREGEN" = "DHSREGEN" ))
+
+
 
 # Should be able to join on REG_ID from shapefile and region_id from API data
 geo_df_admin2 %>%
@@ -131,17 +148,18 @@ map <- geo_df_admin1 %>%
 
 # Plot slope graphs across the two DHS
 p1 <- ggplot(dhs_combined_admin1,
-       aes(x = stunting,
-           y = sortvar,
-           fill = stunting)) + 
+             aes(x = stunting,
+                 y = sortvar,
+                 fill = stunting)) + 
   geom_point(size = 6, shape = 21, colour = grey90K) +
   scale_fill_gradientn(colours = llamar::RdPu[2:9]) +
   scale_x_continuous(labels = scales::percent, limits = c(0, .5)) +
-  llamar::theme_xygrid()
-  
-  
-  
-  
+  llamar::theme_xygrid() +
+  labs(title = "Central Kenya had the largest decline in stunting rates")
+
+
+
+
 
 
 
