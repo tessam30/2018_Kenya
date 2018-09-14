@@ -6,7 +6,6 @@
 # Load libraries and data -------------------------------------------------
 pacman::p_load("tidyverse", "lubridate", "sf", "extrafont", "readxl", "measurements", "pdftools", "purrr", "styler", "llamar")
 
-
 dir.create("Data")
 datapath <- "Data"
 gispath <- "Data/gadm36_KEN_shp"
