@@ -130,7 +130,23 @@ elec_results <-
   mutate(NAME_1 = str_to_title(constituency),
          CC_2 = as.character(as.numeric(consit_code)),
          pct_voted = (votes / reg_voters),
-         pct_rejected = (rej_votes / (votes + rej_votes)))
+         pct_rejected = (rej_votes / (votes + rej_votes))) %>% 
+  mutate(County = str_to_title(county_name))
+
+  # Depends on 01_KEN_Poverty_KIHBS being run
+elect_results_cw <- 
+  elec_results %>% 
+  group_by(county_code) %>% 
+  mutate(tot_votes_county = sum(votes, na.rm = TRUE),
+         tot_regvoters_county = sum(reg_voters, na.rm = TRUE)) %>% 
+  ungroup() %>% 
+  mutate(county_pct_voted = tot_votes_county / tot_regvoters_county) %>% 
+  left_join(., geo_cw, by = c("County" = "Election_County")) %>% 
+  left_join(., Overall_poverty, by = c("CC_1"))
+
+write_csv(elect_results_cw, file.path(datapath, "KEN_Election_results_wide.csv"))
+
+
 
 # Reshape the candidates so we can small multiple the results on a series of maps
 elec_results_long <- 
@@ -165,16 +181,17 @@ elec_results_long <-
   # Create vote share variables
   ungroup() %>% 
   mutate(const_share = votes / constituency_totals,
-         county_share = tot_votes_county / county_total)
+         county_share = tot_votes_county / county_total,
+         County = str_to_title(county_name))
 
 
 # Create a summary table to check totals. Arrange in same format as the PDF table.
 elec_results_long %>% 
   filter(Candidate %in% c("Kenyatta", "Odinga")) %>% 
-  group_by(Candidate, county_name, county_code) %>% 
+  group_by(Candidate, County, county_code) %>% 
   summarise(tot = sum(votes, na.rm = TRUE)) %>% 
   spread(Candidate, tot) %>% 
-  arrange(county_code) %>% 
+  arrange(County) %>% 
   
   # Print the table all the way to the end
   print(n = Inf)
@@ -184,6 +201,15 @@ elec_results_long %>%
   group_by(Candidate) %>% 
   summarise(tot = sum(votes, na.rm = TRUE)) %>% 
   spread(Candidate, tot)
+
+
+# For Tableau, we can to compare voting rates, who won + percent share by county as poverty data are at this level
+tmp <- 
+  elec_results_long %>% 
+  spread(Candidate, votes)
+
+
+
 
 # Next step is to attemp to join to to the shapefile 
 # In the elce results, need to fix 100 obs that start with zero
