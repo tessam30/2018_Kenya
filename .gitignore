@@ -5,6 +5,6 @@
 
 Data
 .DS_Store
-.twbr
-.twb
-.twbx
+*.twbr
+*.twb
+*.twbx
