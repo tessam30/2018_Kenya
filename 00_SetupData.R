@@ -4,7 +4,7 @@
 # Audience: Kenya Mission
 
 # Load libraries and data -------------------------------------------------
-pacman::p_load("tidyverse", "lubridate", "sf", "extrafont", "readxl", "measurements", "pdftools", "purrr", "styler", "llamar")
+pacman::p_load("tidyverse", "lubridate", "sf", "extrafont", "readxl", "measurements", "pdftools", "purrr", "styler", "llamar", "haven")
 
 dir.create("Data")
 datapath <- "Data"
