@@ -8,6 +8,7 @@ pacman::p_load("tidyverse", "lubridate", "sf", "extrafont", "readxl", "measureme
 
 dir.create("Data")
 datapath <- "Data"
+kihbspath <- "Data/KIHBS"
 gispath <- "Data/gadm36_KEN_shp"
 
 #Source helper functions
