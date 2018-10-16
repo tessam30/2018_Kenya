@@ -81,8 +81,6 @@ pov <-
   mutate(deviation = (nat_ave - percent)) 
 
 
-
-
 `# ---- Child poverty by age groups
 
 child_pov_pop <- 
