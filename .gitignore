@@ -8,3 +8,7 @@ Data
 *.twbr
 *.twb
 *.twbx
+*.xlsx
+*.csv
+*.xls
+*.dta
