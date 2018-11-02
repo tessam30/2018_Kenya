@@ -8,14 +8,17 @@
 # Load shock data ---------------------------------------------------------
 
 shk_df <- read_dta(file.path(kihbspath, "Recent_Shocks.dta"))
+hh_inf <- read_dta(file.path(kihbspath, "HH_Information.dta"))
 
 # Provide a crosswalk of shocks with code to lump into categories we have established here:
 # link to github categorization of shocks
-shk_df %>% group_by(q02, q01) %>% tally() %>% arrange(q01) %>% print(n = Inf)
+shk_df %>% filter(q04 %in% c(1, 2)) %>% group_by(q02, q01) %>% tally() %>% arrange(-n) %>% print(n = Inf)
+
+shk_df %>% group_by(q02, q01, q08_ye) %>% tally()
 
 # Shock crosswalk
 #---------------------------------------------------------------------
-# Disaster  = 101 = drought or floods
+# hazard  = 101 = drought or floods
 # Ag        = 102 = crop disease or crop pests
 # livestock = 103 = livestock died
 # livestock = 104 = livestock were stolen
@@ -31,8 +34,8 @@ shk_df %>% group_by(q02, q01) %>% tally() %>% arrange(q01) %>% print(n = Inf)
 # demographic = 114 = death of working member of household
 # demographic = 115 = death of other family member
 # demographic = 116 = break-up of the household
-# economic = 117 = bread winner jailed
-# disaster = 118 = fire
+# financial = 117 = bread winner jailed
+# hazard = 118 = fire
 # crime    = 119 - robery/bulgary/assault
 # crime    = 120 carjacking
 # other    = 121 dwelling destroyed
@@ -52,8 +55,11 @@ shk_df %>% group_by(q02, q01) %>% tally() %>% arrange(q01) %>% print(n = Inf)
 # crop = 102 (crop disease or crop pests), 108 - large fall in sale price, 109 - input price
 # livestock = 103 (died), 104 (stolen)
 # ag = 102, 103, 104 -- crop + livestock 
-# financial = 
-#
+# financial = 105, 106, 107, 117 
+# crop_price = 108, 109
+# input_price = 110
+# demographic = 112, 113, 114, 115, 116, 125 
+# water_shortage = 111
 
 
 # Water_shortage = 111 (sever water shortage)
