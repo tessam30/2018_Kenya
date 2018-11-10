@@ -4,7 +4,7 @@
 # Audience: Kenya Mission
 
 # Load libraries and data -------------------------------------------------
-pacman::p_load("tidyverse", "lubridate", "sf", "extrafont", "readxl", "measurements", "pdftools", "purrr", "styler", "scales", "llamar", "haven", "sjlabelled", "vtable")
+pacman::p_load("tidyverse", "lubridate", "sf", "extrafont", "readxl", "measurements", "pdftools", "purrr", "styler", "scales", "llamar", "haven", "sjlabelled", "vtable", "sjmisc")
 
 # Create folders for project (if they do not exist)
 dir.create("Data")
@@ -30,7 +30,11 @@ hh_base <- hh_info %>% select(county, strat, resid, eatype, clid, hhid, hhsize, 
 sjlabelled::get_labels(hh_base)
 Hmisc::describe(hh_base)
 sample_size = dim(hh_base)[1]
-remove(hh_base)
+remove(hh_info)
+
+# Create a county crosswalk with county id and name
+county_labels <- as_data_frame(get_labels(hh_base$county)) %>% 
+  mutate(county_id = row_number()) %>% rename(county_name = value)
 
 
 
