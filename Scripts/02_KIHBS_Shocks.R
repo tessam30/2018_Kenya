@@ -48,6 +48,9 @@ shk_df_cw %>% group_by(s_severity) %>% count()
 
 shk_df_cw %>% group_by(s_rank) %>% count() # 8133 shocks are not ranked, but reported.
 
+
+# Plots of shocks ---------------------------------------------------------
+
 # Food Prices are the most prominent shock that is reported but not ranked
 shk_df_cw %>% filter(is.na(s_rank)) %>% group_by(item_desc) %>% count() %>% arrange(desc(n)) %>% print(n = Inf)
 
@@ -74,34 +77,6 @@ shk_df_cw %>% group_by(shock) %>%
   geom_col() +
   coord_flip()
 
-
-# Question: How to group the shocks? For now, we will pluck out all shocks regardless of rank
-
-
-
-
-
-# Provide a crosswalk of shocks with code to lump into categories we have established here:
-# link to github categorization of shocks
-shk_df %>% filter(q04 %in% c(1, 2)) %>% group_by(q02, q01) %>% tally() %>% arrange(-n) %>% print(n = Inf)
-
-shk_df %>% group_by(q02, q01, q08_ye) %>% tally()
-
-
-
-
-
-
-
-
-
-
-# Shock crosswalk mergeed in
-# Located here https://github.com/tessam30/2018_Kenya/wiki/Shocks-&-Coping
-shk_df_cw <- left_join(shk_df, shock_cw, by = c("q01" = "code")) 
-
-shk_df_cw %>% group_by(shock, shock_alt) %>% tally() %>% arrange(shock) %>% print(n = Inf)
-
 # Plot the results w/ a basic graph
 shk_df_cw %>% 
   count(shock_alt,  sort = TRUE) %>% 
@@ -110,115 +85,212 @@ shk_df_cw %>%
   geom_col()+
   coord_flip()
 
+# Coping mechanisms employed?
+shk_df_cw %>% group_by(cope1) %>% 
+  summarise(count = n()) %>% 
+  mutate(cope1 = fct_reorder(as_factor(cope1), count)) %>% 
+  ggplot(aes(cope1, count)) +
+  geom_col() +
+  coord_flip()
 
 
-# Checking if any shocks are repeated within a HH -- only "Other shocks are"
-shk_df_cw %>% filter(q02 != "OTHER 1") %>% 
-  group_by(clid, hhid, q02) %>% tally() %>% arrange(-n) %>% print(n = 100)
 
-# Create series of shocks types based on severity & costliness
+# Cost and logical processing ---------------------------------------------
+# Variables needed:
+#   1. losses reported are in range
+#   2. total shocks reported by households
+#   3. total shocks reportes by shocks_alt
+#   4. Coping strategies employed (good, bad, neutral)
 
-shocks <-
+# Question: How to group the shocks? For now, we will pluck out all shocks regardless of rank
+
+# Question: How to calculate the total cost associated with each shock?
+# For now, adding across all shock shock_alt categories to get totals. 
+
+shocks_alt <- 
   shk_df_cw %>%
-  mutate(
-    # Binaries flagging invalid values
-    year_valid = ifelse(q08_ye <= 5, 1, 0),
-    month_valid = ifelse(q08_mo <= 12, 1, 0),
-    time_valid = ifelse(year_valid == 1 & month_valid == 1, 1, 0), 
-    shock_time = ifelse(year_valid == 1 & month_valid == 1, ((q08_ye * 12) + q08_mo), NA),
-    loss_valid = ifelse(q05 < 9999999999, 1, 0)
-    loss = (),
+  
+  # Flag out of range observations for calculating totals
+  mutate(valid_loss = ifelse(s_loss < 9999999999, 1, 0)) %>% 
 
-    # Shocks by severity
-    most = (q04 == 1)
-  ) %>%
-  group_by(clid, hhid) %>%
-  mutate(total = n()) %>%
-  ungroup() %>%
-  group_by(clid, hhid, shock) %>%
-  mutate(shk_cat_total = n()) %>% 
+  # total shocks across all categories to see depth of vulnerability
+  group_by(clid, hhid) %>% 
+  mutate(total = n()) %>% 
   ungroup() %>% 
-  group_by(clid, hhid, shock) %>% 
-  mutate(count = ifelse(!is.na(shock), 1, 0),
-         severe = (q04 == 1),
-         cost = sum(loss_valid, na.rm = TRUE)) %>% 
-  ungroup() %>% 
-  group_by(clid, hhid)
-
-
+  
+  # Total shocks within alternate classification to see breadth of vulnerability
+  group_by(clid, hhid, shock_alt) %>% 
+  mutate(total_alt = n(),
+         cost_alt = ifelse(valid_loss == 1, sum(s_loss, na.rm = TRUE), 0)) 
+  
+  
 # Plot alternative shocks with total economic loss associated with each one
-shocks %>% 
-  filter(q05 <9999999999) %>% 
+# Key takeaway - Other, Violence, and Financial and Livestock shocks are the most expensive for a household. 
+shocks_alt %>% 
+  filter(valid_loss == 1) %>% 
   group_by(shock_alt) %>% 
-  summarise(loss = sum(q05, na.rm = TRUE)/n(), 
+  summarise(loss = sum((s_loss * 0.0098), na.rm = TRUE)/n(), 
             count = n()) %>% 
   mutate(shock_alt = fct_reorder(shock_alt, loss)) %>% 
   arrange(desc(loss, count)) %>% 
   ggplot(aes(shock_alt, loss)) +
   geom_col() +
   coord_flip() +
-  geom_point(aes(shock_alt, count))
+  geom_point(aes(shock_alt, count)) +
+  geom_text(aes(label = round(loss, 0), hjust = -0.5)) +
+  ggtitle(label = "Average loss (in $USD) of different shocks")
 
+  
 
+# Reshape from long to wide for merging with hh_base ----------------------
 
+# Need to filter on shock variables that result in valid shocks (last five years, )
 
-
-
-
-# How to reshape? First, try it with just the shocks -- 13,709 is the magic number I need
-# The key is to use the distinct command to get duplicates removed
-shocks %>% select(clid, hhid, shock, count) %>% 
+ shocks <-  shocks_alt %>% 
+   
+   # Collapse down by shock_alt to get rid of households with multiple shocks
+   # of the same type and that have NA values for the shocks costs
+   group_by(clid, hhid, shock_alt, shock) %>% 
+  
+  # In the collapse, you are essentially taking the mean of the group b/c it should be constant
+   summarise(total = mean(total, na.rm = TRUE), 
+             total_alt = mean(total_alt, na.rm = TRUE),
+             cost_alt = mean(cost_alt, na.rm = TRUE)) %>% 
+   ungroup %>% 
+  # Isolate only the variables we need as our shock module data
+  select(clid, hhid, shock_alt, cost_alt, total_alt) %>% 
+  
+  # Gather everything into a single variable/value pair so we can then respread it
+  gather(category, value, -(clid:shock_alt)) %>% 
   distinct %>% 
-  spread(shock, count, fill = 0)
+  
+  # Combines shock_alt + cateogry into a new variable called shock_var which is then reshaped wide
+  unite(shock_var, shock_alt, category) %>% 
+  spread(shock_var, value, fill = 0) %>% 
+  
+  # Cleaning up variable names
+  rename_at(vars(contains("_total_alt")), ~ gsub("_total_alt", "", .)) %>% 
+  rename_at(vars(contains("_alt")), ~ gsub("_alt", "", .))%>% 
+  
+  # Ordering data for ease of reading
+  select(clid, hhid, ag, conflict, crop_price, demographic, hazard, health, financial, food_price, 
+         livestock, input_price, other, violence, water_short, everything()) %>% 
+  arrange(clid, hhid) %>% 
+  ungroup() %>% 
+  
+  # Create a total_cost and total_shocks variable
+  mutate(total_cost = rowSums(select(., ag_cost:water_short_cost)),
+         total_shocks = rowSums(select(., ag:water_short))) %>% 
+  
+  # Creating binary shock variables for the various categories
+  mutate_at(vars(ag:water_short), .funs = funs(bin = ifelse(. > 0, 1, 0))) %>% 
+  right_join(hh_base, by = c("clid" = "clid", "hhid" = "hhid")) %>% 
+  mutate_at(vars(ag:water_short_bin), funs(replace(., is.na(.), 0))) %>% 
+  #mutate_at(vars(county), .funs = funs(county_lab = as.character(as_factor(.))))
+  # create major shock categories
+  mutate(ag_shock = ifelse(ag_bin == 1 | livestock_bin == 1, 1, 0),
+         conflict_shock = ifelse(conflict_bin == 1, 1, 0), 
+         financial_shock = ifelse(financial_bin ==1, 1, 0), 
+         hazard_shock = ifelse(hazard_bin == 1 | water_short_bin, 1, 0), 
+         health_shock = ifelse(demographic_bin ==1 | health_bin == 1, 1, 0), 
+         price_shock = ifelse(crop_price_bin ==1 | food_price_bin ==1 | input_price_bin == 1, 1, 0),
+         other_shock = ifelse(other_bin == 1, 1, 0)) %>% 
+  mutate(anyshock = ifelse(rowSums(select(., ag_shock:other_shock)) > 0, 1, 0))
+            
+# Now we can calculate statistics based on county or shock type
+shocks %>% 
+  select(county, ag_bin:water_short_bin) %>% 
+  gather(shock, value, -county) %>% 
+  group_by(shock, county) %>% 
+  summarise(ave = mean(value)) %>% 
+  mutate(county_sort = fct_reorder(as.factor(county), ave), 
+         county_id = as_numeric(county)) %>% 
+  left_join(county_labels) %>% 
+  mutate(county_name = fct_reorder(county_name, ave, .desc = TRUE)) %>% 
+  ggplot(aes(shock, ave, fill = shock)) +
+  geom_col() +
+  coord_flip() +
+  #geom_text(aes(label = round(ave, 2), hjust = -0.1)) +
+  facet_wrap(~county_name) +
+  scale_fill_brewer(palette = "Paired")
+
+shocks %>% 
+  select(county, ag_shock:anyshock) %>% 
+  gather(shock, value, -county) %>%
+  group_by(shock, county) %>% 
+  summarise(ave = mean(value, na.rm = TRUE)) %>% 
+  mutate(county_sort = fct_reorder(as.factor(county), ave), 
+         county_id = as_numeric(county))%>% 
+  left_join(county_labels) %>% 
+  mutate(county_name = fct_reorder(county_name, ave, .desc = TRUE)) %>% 
+  ggplot(aes(shock, ave, fill = shock)) +
+  geom_col() +
+  coord_flip() +
+  #geom_text(aes(label = round(ave, 2), hjust = -0.1)) +
+  facet_wrap(~county_name) +
+  scale_fill_brewer(palette = "Paired")
+                 
+# Next steps, figure ou the sampling weights and the appropriate use
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 
   
-  # group by household level, summarizing info needed
-  # BAsically need to count the max occurences of categories to get shock
 
-tmp <- shocks %>%   
-  
-  # Need to filter on shock variables that result in valid shocks (last five years, )
-  filter(year_valid == 1, month_valid == 1, )
-  select(-matches('q0'), -shock_alt, -contains("valid") , -(shock_time:most), -severe) %>% 
-  gather(variable, value, -(clid:shock)) %>% 
-  distinct %>% 
-  unite(shock_var, shock, variable) %>% 
-    spread(shock_var, value)
 
 
 
 
          
          
-shocks_dta <- 
-  shk_df_cw %>%
-  mutate(
-    # Binaries flagging invalid values
-    year_valid = ifelse(q08_ye <= 5, 1, 0),
-    month_valid = ifelse(q08_mo <= 12, 1, 0),
-    shock_time = ifelse(year_valid == 1 & month_valid == 1, ((q08_ye * 12) + q08_mo), NA),
-    loss_valid = ifelse(q05 < 9999999999, q05, NA),
-    most = ifelse(q04 == 1, 1, 0),
-    
-    # shocks
-    ag =       ifelse(q01 %in% c(102, 103, 104), 1, 0),
-    conflict = ifelse(q01 %in% c(119, 120, 123, 124), 1, 0),
-    fin =      ifelse(q01 %in% c(105, 106, 107, 117), 1, 0),
-    hazard =   ifelse(q01 %in% c(101, 111, 118), 1, 0),
-    health =   ifelse(q01 %in% c(112, 113, 114, 115, 125), 1, 0),
-    other =    ifelse(q01 %in% c(116, 121, 122, 126, 127), 1, 0),
-    price =    ifelse(q01 %in% c(108, 109, 110), 1, 0),
-    
-    # loss value
-    agloss = ifelse)
-
-
-shocks_dta %>% select(clid, hhid, ag:price) %>% 
-  group_by(clid, hhid) %>% 
-  summarise_at(vars(ag:price), max, na.rm = TRUE)
+# shocks_dta <- 
+#   shk_df_cw %>%
+#   mutate(
+#     # Binaries flagging invalid values
+#     year_valid = ifelse(q08_ye <= 5, 1, 0),
+#     month_valid = ifelse(q08_mo <= 12, 1, 0),
+#     shock_time = ifelse(year_valid == 1 & month_valid == 1, ((q08_ye * 12) + q08_mo), NA),
+#     loss_valid = ifelse(q05 < 9999999999, q05, NA),
+#     most = ifelse(q04 == 1, 1, 0),
+#     
+#     # shocks
+#     ag =       ifelse(q01 %in% c(102, 103, 104), 1, 0),
+#     conflict = ifelse(q01 %in% c(119, 120, 123, 124), 1, 0),
+#     fin =      ifelse(q01 %in% c(105, 106, 107, 117), 1, 0),
+#     hazard =   ifelse(q01 %in% c(101, 111, 118), 1, 0),
+#     health =   ifelse(q01 %in% c(112, 113, 114, 115, 125), 1, 0),
+#     other =    ifelse(q01 %in% c(116, 121, 122, 126, 127), 1, 0),
+#     price =    ifelse(q01 %in% c(108, 109, 110), 1, 0),
+#     
+#     # loss value
+#     agloss = ifelse)
+# 
+# 
+# shocks_dta %>% select(clid, hhid, ag:price) %>% 
+#   group_by(clid, hhid) %>% 
+#   summarise_at(vars(ag:price), max, na.rm = TRUE)
 
     
     
