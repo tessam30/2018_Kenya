@@ -52,15 +52,21 @@ shk_df_cw %>% group_by(s_rank) %>% count() # 8133 shocks are not ranked, but rep
 # Plots of shocks ---------------------------------------------------------
 
 # Food Prices are the most prominent shock that is reported but not ranked
-shk_df_cw %>% filter(is.na(s_rank)) %>% group_by(item_desc) %>% count() %>% arrange(desc(n)) %>% print(n = Inf)
+shk_df_cw %>% filter(is.na(s_rank)) %>% 
+  group_by(item_desc) %>% 
+  count() %>% 
+  rename(unranked_shocks = n) %>% 
+  arrange(desc(unranked_shocks)) %>% 
+  print(n = Inf)
 
-shk_df_cw %>% group_by(shock_alt) %>% 
+shk_df_cw %>% group_by(shock_alt, shock) %>% 
   mutate(total_shocks = n()) %>% 
   ungroup() %>% 
-  group_by(shock_alt, s_rank, total_shocks) %>% 
+  group_by(shock_alt, s_rank, total_shocks, shock) %>% 
   summarise(count = n()) %>% 
   spread(s_rank, count) %>% 
-  arrange(desc(`<NA>`)) %>% 
+  arrange(desc(total_shocks)) %>%
+  select(shock, shock_alt, everything()) %>% 
   knitr::kable()
 
 shk_df_cw %>% group_by(shock, s_rank) %>% 
@@ -75,7 +81,8 @@ shk_df_cw %>% group_by(shock) %>%
   mutate(shock = fct_reorder(shock, count)) %>% 
   ggplot(aes(shock, count)) +
   geom_col() +
-  coord_flip()
+  coord_flip() +
+  geom_text(aes(label = count, hjust = -0.01)) 
 
 # Plot the results w/ a basic graph
 shk_df_cw %>% 
@@ -83,9 +90,10 @@ shk_df_cw %>%
   mutate(shock_alt = fct_reorder(shock_alt, n)) %>% 
   ggplot(aes(shock_alt, n)) +
   geom_col()+
-  coord_flip()
+  coord_flip() +
+  geom_text(aes(label = n, hjust = -0.1)) 
 
-# Coping mechanisms employed?
+# Coping mechanisms employedd
 shk_df_cw %>% group_by(cope1) %>% 
   summarise(count = n()) %>% 
   mutate(cope1 = fct_reorder(as_factor(cope1), count)) %>% 
@@ -138,7 +146,7 @@ shocks_alt %>%
   coord_flip() +
   geom_point(aes(shock_alt, count)) +
   geom_text(aes(label = round(loss, 0), hjust = -0.5)) +
-  ggtitle(label = "Average loss (in $USD) of different shocks")
+  ggtitle(label = "Average loss (in $USD) of different shocks + frequency of shock")
 
   
 
@@ -204,15 +212,17 @@ shocks %>%
   group_by(shock, county) %>% 
   summarise(ave = mean(value)) %>% 
   mutate(county_sort = fct_reorder(as.factor(county), ave), 
-         county_id = as_numeric(county)) %>% 
-  left_join(county_labels) %>% 
-  mutate(county_name = fct_reorder(county_name, ave, .desc = TRUE)) 
+         county_id = as_numeric(county))%>% 
+  left_join(county_labels) %>%
+  mutate(county_name = fct_reorder(county_name, ave, .desc = TRUE)) %>% 
+  filter(shock != "health_bin") %>% 
   ggplot(aes(shock, ave, fill = shock)) +
   geom_col() +
   coord_flip() +
   #geom_text(aes(label = round(ave, 2), hjust = -0.1)) +
   facet_wrap(~county_name) +
-  scale_fill_brewer(palette = "Paired")
+  scale_fill_brewer(palette = "Set3") +
+  ggtitle(label = "Kitui appears to be the most vulnerable county (unweighted shocks)")
 
 shocks %>% 
   select(county, ag_shock:anyshock) %>% 
@@ -228,69 +238,32 @@ shocks %>%
   coord_flip() +
   #geom_text(aes(label = round(ave, 2), hjust = -0.1)) +
   facet_wrap(~county_name) +
-  scale_fill_brewer(palette = "Paired")
+  scale_fill_brewer(palette = "Set3")
                  
 
 # Add in shapefile to see what shocks look like on a map ------------------
 
-ken_geo <- st_read(file.path(gispath, "gadm36_KEN_1.shp"), stringsAsFactors = FALSE) %>% 
-  mutate(county_id = as_numeric(CC_1))
-plot(ken_geo)
-
-  shocks %>% 
-    select(county, ag_shock:anyshock) %>% 
-    gather(shock, value, -county) %>%
-    group_by(shock, county) %>% 
-    summarise(ave = mean(value, na.rm = TRUE)) %>% 
-    mutate(county_sort = fct_reorder(as.factor(county), ave), 
-           county_id = as_numeric(county))%>% 
-    left_join(county_labels) %>%
-    left_join(ken_geo, by= c("county_id" = "county_id")) %>% 
-  mutate(county_name = fct_reorder(county_name, ave, .desc = TRUE)) %>% 
-    ggplot(.) +
-    geom_sf(aes(fill = ave))+
-    facet_wrap(~shock)
-
-    
-  
-  geom_col() +
-    coord_flip() +
-    #geom_text(aes(label = round(ave, 2), hjust = -0.1)) +
-    facet_wrap(~county_name) +
-    scale_fill_brewer(palette = "Paired")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# ken_geo <- st_read(file.path(gispath, "gadm36_KEN_1.shp"), stringsAsFactors = FALSE) %>% 
+#   mutate(county_id = as_numeric(CC_1))
+# 
+#   shocks %>% 
+#     select(county, ag_shock:anyshock) %>% 
+#     gather(shock, value, -county) %>%
+#     group_by(shock, county) %>% 
+#     summarise(ave = mean(value, na.rm = TRUE)) %>% 
+#     mutate(county_sort = fct_reorder(as.factor(county), ave), 
+#            county_id = as_numeric(county))%>% 
+#     left_join(county_labels) %>%
+#     left_join(ken_geo, by= c("county_id" = "county_id")) %>% 
+#   mutate(county_name = fct_reorder(county_name, ave, .desc = TRUE)) %>% 
+#     ggplot(.) +
+#     geom_sf(aes(fill = ave))+
+#     facet_wrap(~shock)
+# 
+#     
   
 
 
-
-
-
-         
          
 # shocks_dta <- 
 #   shk_df_cw %>%
