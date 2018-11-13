@@ -13,6 +13,7 @@ dir.create("Data/Wash")
 
 datapath <- "Data"
 kihbspath <- "Data/KIHBS"
+dataout <- "Data/KIHBS/Dataout"
 gispath <- "Data/gadm36_KEN_shp"
 washpath <- "Data/Wash"
 rpath <- "Scripts"
