@@ -132,7 +132,7 @@ shocks_alt %>%
   summarise(loss = sum((s_loss * 0.0098), na.rm = TRUE)/n(), 
             count = n()) %>% 
   mutate(shock_alt = fct_reorder(shock_alt, loss)) %>% 
-  arrange(desc(loss, count)) %>% 
+  arrange(desc(loss)) %>% 
   ggplot(aes(shock_alt, loss)) +
   geom_col() +
   coord_flip() +
@@ -230,9 +230,6 @@ shocks %>%
   facet_wrap(~county_name) +
   scale_fill_brewer(palette = "Paired")
                  
-# Next steps, figure ou the sampling weights and the appropriate use
-
-
 
 # Add in shapefile to see what shocks look like on a map ------------------
 
