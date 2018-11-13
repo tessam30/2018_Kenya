@@ -206,7 +206,7 @@ shocks %>%
   mutate(county_sort = fct_reorder(as.factor(county), ave), 
          county_id = as_numeric(county)) %>% 
   left_join(county_labels) %>% 
-  mutate(county_name = fct_reorder(county_name, ave, .desc = TRUE)) %>% 
+  mutate(county_name = fct_reorder(county_name, ave, .desc = TRUE)) 
   ggplot(aes(shock, ave, fill = shock)) +
   geom_col() +
   coord_flip() +
@@ -221,7 +221,7 @@ shocks %>%
   summarise(ave = mean(value, na.rm = TRUE)) %>% 
   mutate(county_sort = fct_reorder(as.factor(county), ave), 
          county_id = as_numeric(county))%>% 
-  left_join(county_labels) %>% 
+  left_join(county_labels) %>%
   mutate(county_name = fct_reorder(county_name, ave, .desc = TRUE)) %>% 
   ggplot(aes(shock, ave, fill = shock)) +
   geom_col() +
@@ -231,6 +231,36 @@ shocks %>%
   scale_fill_brewer(palette = "Paired")
                  
 # Next steps, figure ou the sampling weights and the appropriate use
+
+
+
+# Add in shapefile to see what shocks look like on a map ------------------
+
+ken_geo <- st_read(file.path(gispath, "gadm36_KEN_1.shp"), stringsAsFactors = FALSE) %>% 
+  mutate(county_id = as_numeric(CC_1))
+plot(ken_geo)
+
+  shocks %>% 
+    select(county, ag_shock:anyshock) %>% 
+    gather(shock, value, -county) %>%
+    group_by(shock, county) %>% 
+    summarise(ave = mean(value, na.rm = TRUE)) %>% 
+    mutate(county_sort = fct_reorder(as.factor(county), ave), 
+           county_id = as_numeric(county))%>% 
+    left_join(county_labels) %>%
+    left_join(ken_geo, by= c("county_id" = "county_id")) %>% 
+  mutate(county_name = fct_reorder(county_name, ave, .desc = TRUE)) %>% 
+    ggplot(.) +
+    geom_sf(aes(fill = ave))+
+    facet_wrap(~shock)
+
+    
+  
+  geom_col() +
+    coord_flip() +
+    #geom_text(aes(label = round(ave, 2), hjust = -0.1)) +
+    facet_wrap(~county_name) +
+    scale_fill_brewer(palette = "Paired")
 
 
 
