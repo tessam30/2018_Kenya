@@ -1,0 +1,622 @@
+County	Budget_Category	year
+Baringo	County Assembly	2016
+Baringo	Governor/County Executive services	2016
+Baringo	County Treasury Services	2016
+Baringo	Transport and Infrastructure	2016
+Baringo	Industrialization, Commerce and Tourism	2016
+Baringo	Education, Sports, Culture & Art	2016
+Baringo	Health	2016
+Baringo	Housing & Urban Development	2016
+Baringo	Agriculture, Livestock, Fisheries & Marketing	2016
+Baringo	Youth, Gender & Social Security Services	2016
+Baringo	Water & Irrigation	2016
+Baringo	Environment & Natural Resources	2016
+Bomet	County Executives	2016
+Bomet	Public Service Board	2016
+Bomet	Administration	2016
+Bomet	Finance	2016
+Bomet	Land,Public & Environment	2016
+Bomet	Agri-Business, Coopertives & Marketing	2016
+Bomet	Social Services	2016
+Bomet	Medical Services	2016
+Bomet	Economic Planning & Development	2016
+Bomet	Water Services	2016
+Bomet	Education & Vocational Trainings	2016
+Bomet	Roads And Public Works	2016
+Bomet	Ict,Training And Industry	2016
+Bomet	County Assembly	2016
+Bungoma	Administration	2016
+Bungoma	Finance and Economic Planning	2016
+Bungoma	Lands, Urban and Physical Planning	2016
+Bungoma	Agriculture	2016
+Bungoma	Trade, Energy and Industrialization	2016
+Bungoma	Roads and Public Works	2016
+Bungoma	Tourism and Natural resources	2016
+Bungoma	Water	2016
+Bungoma	Education	2016
+Bungoma	Governors’ office	2016
+Bungoma	Deputy Governor’s Office	2016
+Bungoma	County Secretary	2016
+Bungoma	Sub County Administration	2016
+Bungoma	Health	2016
+Bungoma	CPSB	2016
+Bungoma	Assembly	2016
+BUSIA	Agriculture and Animal Resources	2016
+BUSIA	Economic Planning, Trade, Co-operative and Industrialization	2016
+BUSIA	Education and Vocational Training	2016
+BUSIA	Finance and ICT	2016
+BUSIA	Community, Culture, Sports & Social Services	2016
+BUSIA	Public Works, Roads, Transport and Energy	2016
+BUSIA	Public Service Management	2016
+BUSIA	Lands, Housing & Urban development	2016
+BUSIA	Water, Environment & natural resources	2016
+BUSIA	Health and Sanitation	2016
+BUSIA	County Public Service Board	2016
+BUSIA	Office of the County Secretary	2016
+BUSIA	Office of the Governor	2016
+BUSIA	Office of the Deputy Governor	2016
+BUSIA	County Assembly	2016
+Elgeyo Marakwet	Office of the Governor	2016
+Elgeyo Marakwet	Administration	2016
+Elgeyo Marakwet	County Assembly	2016
+Elgeyo Marakwet	Finance and Economic Planning	2016
+Elgeyo Marakwet	Roads, Public Works and Transport	2016
+Elgeyo Marakwet	Education and Technical Training	2016
+Elgeyo Marakwet	Youth Affairs, Culture, Children and Gender	2016
+Elgeyo Marakwet	Health Services	2016
+Elgeyo Marakwet	Water, Lands, Housing and Physical Planning	2016
+Elgeyo Marakwet	Trade, Tourism, Cooperatives and Wildlife	2016
+Elgeyo Marakwet	Agriculture, Livestock and Fisheries	2016
+Elgeyo Marakwet	County Public Service Board (CPSB)	2016
+Elgeyo Marakwet	ICT and Public Service	2016
+Embu	Office of the Governor	2016
+Embu	Public Service & Administration	2016
+Embu	County Public service Board	2016
+Embu	Finance and Economic Planning	2016
+Embu	Health Services	2016
+Embu	Embu Level 5 Hospital	2016
+Embu	Trade, Investment & Industrialization	2016
+Embu	Education, Science & Technology	2016
+Embu	Youth Empowerment & Sports	2016
+Embu	Infrastructure & Public Works	2016
+Embu	Gender Empowerment & Culture	2016
+Embu	Lands, Water & Natural Resources	2016
+Embu	Agriculture, Livestock & Fisheries	2016
+Embu	County Assembly	2016
+Garissa	Transport ,Infrastructure and Lands	2016
+Garissa	Water Services	2016
+Garissa	Finance and Economic Planning	2016
+Garissa	Health and Sanitation	2016
+Garissa	Education	2016
+Garissa	Trade, cooperative and Youth	2016
+Garissa	Environment, Energy and Natural Resources	2016
+Garissa	Urban Services	2016
+Garissa	Agriculture	2016
+Garissa	Livestock and Pastoral Economy	2016
+Garissa	Women Affairs and Culture	2016
+Garissa	Executive Services	2016
+Garissa	County Assembly	2016
+Homa Bay	Agriculture, Livestock and Fisheries	2016
+Homa Bay	Tourism and culture	2016
+Homa Bay	Transport and Infrastructure	2016
+Homa Bay	Energy and Natural Resources	2016
+Homa Bay	Education and ICT	2016
+Homa Bay	Health	2016
+Homa Bay	Lands, Housing and Physical Planning	2016
+Homa Bay	Trade, Industry and Investment	2016
+Homa Bay	Water and Environment	2016
+Homa Bay	Finance and Economic Planning	2016
+Homa Bay	Off ice of the Governor	2016
+Homa Bay	County Public Service Board	2016
+Homa Bay	County Assembly Service Board	2016
+Isiolo	County Assembly	2016
+Isiolo	Office of the Governor	2016
+Isiolo	County Public Service Board	2016
+Isiolo	Office of the County Secretary	2016
+Isiolo	County treasury and Planning	2016
+Isiolo	Roads, Housing and Works	2016
+Isiolo	Lands Development	2016
+Isiolo	Agriculture	2016
+Isiolo	Livestock and Fisheries	2016
+Isiolo	Cohesion and Intergovernmental relations	2016
+Isiolo	Education and Vocational training	2016
+Isiolo	Sports, Youth and Culture	2016
+Isiolo	Tourism, Culture and Social Services	2016
+Isiolo	Public Service Management and ICT	2016
+Isiolo	Water and Irrigation	2016
+Isiolo	Environment and Natural Resources	2016
+Kajiado	Office of the Governor and the Deputy Governor	2016
+Kajiado	Finance and Economic Planning	2016
+Kajiado	Lands, Physical Planning, Environment, Wildlife and Natural Resources	2016
+Kajiado	County Public Service Board	2016
+Kajiado	Agriculture, Livestock and Fisheries	2016
+Kajiado	Industrialization and Enterprise Development	2016
+Kajiado	Public Works, Roads, Transport, and Housing	2016
+Kajiado	Water and Irrigation	2016
+Kajiado	Education, Youth, Sports, and Social Services	2016
+Kajiado	Ict and Gender	2016
+Kajiado	Health Services	2016
+Kajiado	County Public Service	2016
+Kajiado	County Assembly	2016
+Kakamega	Office of the Governor	2016
+Kakamega	Public Service and Administration	2016
+Kakamega	County Treasury	2016
+Kakamega	Environment, Natural Resource, Water and Forestry	2016
+Kakamega	Labour, Social Services, Youth & Sports	2016
+Kakamega	Transport, Infrastructure & Public Works	2016
+Kakamega	Lands, Housing, Urban Areas & Physical planning	2016
+Kakamega	Health Services	2016
+Kakamega	Agriculture, Livestock, Fisheries & Co-operatives	2016
+Kakamega	Industrialization, Trade & Tourism	2016
+Kakamega	Education, Science & Technology	2016
+Kakamega	County Public Service Board	2016
+Kakamega	County Assembly	2016
+Kericho	County Assembly Services	2016
+Kericho	Public Service and Administration	2016
+Kericho	Office of the Governor & Deputy Governor	2016
+Kericho	County Public Service Board	2016
+Kericho	Finance & Economic Planning	2016
+Kericho	Agriculture, Livestock &Fisheries	2016
+Kericho	Environment,Water,Energy & Natural Resources	2016
+Kericho	Education ,Youth, Culture & Social services	2016
+Kericho	Health Services	2016
+Kericho	Land, Housing & Physical Planning	2016
+Kericho	Public Works, Roads & Transport	2016
+Kericho	ICT & E-Government	2016
+Kericho	Trade, Industrialization, Tourism, Wildlife & Cooperative Development	2016
+Kiambu	County Assembly	2016
+Kiambu	County Executive	2016
+Kiambu	County Public Service Board	2016
+Kiambu	Finance and Economic Planning	2016
+Kiambu	Administrative & Public Service	2016
+Kiambu	Agriculture, Livestock & Fisheries	2016
+Kiambu	Water, Environment & Natural Resources	2016
+Kiambu	Health Services	2016
+Kiambu	Education, Culture, ICT & Social Services	2016
+Kiambu	Youth, Sports & Communications	2016
+Kiambu	Lands, Physical Planning & Housing	2016
+Kiambu	Trade, Tourism, Industry & Cooperative	2016
+Kiambu	Roads, Transport & Public Works	2016
+Kilifi	County Assembly	2016
+Kilifi	County Executive	2016
+Kilifi	Finance & Economic Planning	2016
+Kilifi	Agriculture	2016
+Kilifi	Environment and Natural Resources	2016
+Kilifi	Education & Youth Affairs	2016
+Kilifi	County Health Services	2016
+Kilifi	Physical Planning and Development	2016
+Kilifi	Public works and services	2016
+Kilifi	ICT & E-government	2016
+Kilifi	Trade development and regulation	2016
+Kilifi	County public service board	2016
+Kilifi	Public service management	2016
+Kirinyaga	County Assembly	2016
+Kirinyaga	County Executive Services	2016
+Kirinyaga	Finance and Economic planning	2016
+Kirinyaga	Medical Services	2016
+Kirinyaga	Education	2016
+Kirinyaga	Agriculture	2016
+Kirinyaga	Gender/Culture &Social Services	2016
+Kirinyaga	Trade & Co-operative Development	2016
+Kirinyaga	Environment and natural resources	2016
+Kirinyaga	Physical Planning and Housing	2016
+Kirinyaga	Transport and Infrastructure	2016
+Kisii	County Assembly	2016
+Kisii	County Executive	2016
+Kisii	Finance and Economic Planning	2016
+Kisii	Agriculture	2016
+Kisii	Environment & Natural Resources	2016
+Kisii	Education, Youth Affairs & Social Development	2016
+Kisii	County Health Services	2016
+Kisii	Physical planning & urban development	2016
+Kisii	Roads, Public works and transport	2016
+Kisii	Trade development & regulations	2016
+Kisii	Culture and Social services regulations	2016
+Kisii	Kisii Town Urban Area	2016
+Kisii	County Administration	2016
+Kisumu	Office of the Governor and County Administration	2016
+Kisumu	Finance and Economic Planning	2016
+Kisumu	Agriculture, Livestock and Fisheries	2016
+Kisumu	Education, Youth, Culture and Social Services	2016
+Kisumu	Tourism, Trade and Heritage	2016
+Kisumu	Lands, Housing and Physical Planning	2016
+Kisumu	Roads, Transport and Public Works	2016
+Kisumu	Health Services	2016
+Kisumu	Water, Environment & Natural Resources	2016
+Kisumu	Industrialization, Enterprise Development, Energy and Mining	2016
+Kisumu	Communication, Information and Technology	2016
+Kisumu	County Assembly	2016
+Kisumu	City of Kisumu	2016
+Kisumu	County Public Service Board	2016
+Kitui	Office of the Governor	2016
+Kitui	Administration & Coordination of County Affairs	2016
+Kitui	Agriculture, Water & Irrigation	2016
+Kitui	Basic Education, Training, & Skills Development	2016
+Kitui	Lands, Infrastructure & Urban Development	2016
+Kitui	Health & Sanitation	2016
+Kitui	Trade, Industry, ICT & Cooperatives	2016
+Kitui	Culture, Youth, Sports & Social Services	2016
+Kitui	Environment, Energy & Minerals Investment Development	2016
+Kitui	Tourism and Natural Resources	2016
+Kitui	Finance & Economic Planning	2016
+Kitui	County Public Service Board	2016
+Kitui	County Assembly	2016
+Kitui	Kitui Town Administration	2016
+Kitui	Mwingi Town Administration	2016
+Kwale	County Executive Services	2016
+Kwale	Public Service and Administration	2016
+Kwale	Finance and Economic Planning	2016
+Kwale	Agriculture, Livestock and Fisheries	2016
+Kwale	Education, Research & Human Resource Development	2016
+Kwale	Medical and Health Services	2016
+Kwale	Trade and Cooperative Development	2016
+Kwale	Community Development, Culture & Talent Management	2016
+Kwale	Infrastructure and Public Works	2016
+Kwale	Tourism, Investment and ICT	2016
+Kwale	Land, Physical Planning and Natural Resources	2016
+Kwale	Water Services	2016
+Kwale	County Assembly	2016
+Laikipia	County Admin.	2016
+Laikipia	Finance and Planning	2016
+Laikipia	Health	2016
+Laikipia	Agriculture	2016
+Laikipia	Infrastructure	2016
+Laikipia	Education	2016
+Laikipia	Trade & Industrialization	2016
+Laikipia	Water	2016
+Laikipia	County Assembly	2016
+Lamu	County Assembly	2016
+Lamu	Office of the Governor	2016
+Lamu	County Public Service Board	2016
+Lamu	Public Service Management	2016
+Lamu	Finance, Strategy & Economic Planning	2016
+Lamu	Agriculture & Irrigation	2016
+Lamu	Land, Physical Planning, Infrastructure, Water & Natural Resources	2016
+Lamu	Education, Gender, Sports, Youth & Social Services	2016
+Lamu	Health, Sanitation & Environment	2016
+Lamu	Trade, Culture, Tourism & Investment Development	2016
+Lamu	Information, Communication & Public Participation	2016
+Lamu	Fisheries, Livestock, Veterinary & Cooperative Development	2016
+Machakos	Office of the Governor	2016
+Machakos	Public Services, ICT & Labour	2016
+Machakos	Trade, Economic Planning & Energy	2016
+Machakos	Finance and Revenue Management	2016
+Machakos	Decentralized Units, Water & Irrigation.	2016
+Machakos	Agriculture, Lands & Urban Development	2016
+Machakos	Health Services and Emergency Services	2016
+Machakos	Transport, Roads and Housing	2016
+Machakos	Education, Youth and Social Welfare	2016
+Machakos	Environment, Sanitation and solid Waste Mgt.	2016
+Machakos	Tourism, Culture and Co-operative Development	2016
+Machakos	County Public Service Board	2016
+Machakos	County Assembly	2016
+Makueni	County Attorney’s Office	2016
+Makueni	County Public Service Board	2016
+Makueni	Lands, Physical Planning & Mining	2016
+Makueni	Office of Governor	2016
+Makueni	Trade, Tourism & Cooperatives	2016
+Makueni	Youth, Gender, Sports & Social Services	2016
+Makueni	County Secretary	2016
+Makueni	Finance & Socio Economic Planning	2016
+Makueni	Education & ICT	2016
+Makueni	Transport & Infrastructure	2016
+Makueni	Agriculture, Livestock & Fisheries Development	2016
+Makueni	Water, Irrigation & Environment	2016
+Makueni	Health	2016
+Makueni	Devolution & Public Service	2016
+Makueni	Sand Authority	2016
+Makueni	County Assembly	2016
+Mandera	County Assembly	2016
+Mandera	Ministry of Agriculture, Livestock and Fisheries	2016
+Mandera	Ministry of Education, Culture and Sports	2016
+Mandera	Ministry of Gender, Youth and Social Services	2016
+Mandera	Ministry of Finance & Economic Planning and ICT	2016
+Mandera	Health Services	2016
+Mandera	Ministry of Trade, Investments, Industrialization, and Cooperative Development	2016
+Mandera	Lands, Housing Developments and Physical Planning	2016
+Mandera	Office of the Governor and Deputy Governor	2016
+Mandera	County Public Service Board	2016
+Mandera	Ministry of Public Service Management and Devolved Units	2016
+Mandera	Public Works Roads and Transport	2016
+Mandera	Ministry of Water, Energy, Environment, Natural Resources Tourism and Wildlife	2016
+Marsabit	County assembly	2016
+Marsabit	Office of the Governor	2016
+Marsabit	Finance & Economic planning	2016
+Marsabit	Agriculture, Livestock, Veterinary & Fisheries	2016
+Marsabit	Water, Environment & Natural Resources	2016
+Marsabit	Education, Youth Affairs & Sports	2016
+Marsabit	County Health Services	2016
+Marsabit	Lands, Physical Planning and Urban Development	2016
+Marsabit	County Transport, Public Works and Roads	2016
+Marsabit	Trade, Tourism, Cooperatives and Enterprise Development	2016
+Marsabit	Culture, Social Services and Gender	2016
+Marsabit	County Public Service Board	2016
+Marsabit	Administration, Coordination & ICT	2016
+Meru	County Assembly	2016
+Meru	Office of the Governor	2016
+Meru	County Treasury	2016
+Meru	Agriculture, Fishery and Livestock	2016
+Meru	Water, Environment and Natural Resources	2016
+Meru	Education	2016
+Meru	Health	2016
+Meru	Lands, Housing, Physical and Economic Planning	2016
+Meru	Public Service and Administration	2016
+Meru	Transport and Infrastructure	2016
+Meru	Co-operative, Tourism and Enterprise Development	2016
+Meru	Culture, Gender and Sports	2016
+Meru	County Public Service Board	2016
+Meru	Town Administration	2016
+Migori	Office of the Governor	2016
+Migori	Finance and Economic Planning	2016
+Migori	Roads, Public Works and Transport	2016
+Migori	Health and Sanitation	2016
+Migori	Education, Communication and ICT	2016
+Migori	Agriculture and Irrigation	2016
+Migori	Trade, Industry and Cooperatives	2016
+Migori	Land, Physical Planning and Urban Development	2016
+Migori	Water Development, Environment & Natural Resources	2016
+Migori	County Public Service Management	2016
+Migori	County Assembly	2016
+Mombasa	"Office of the Governor 
+"	2016
+Mombasa	County Assembly	2016
+Mombasa	Public Service Board	2016
+Mombasa	Finance and Economic Planning	2016
+Mombasa	Tourism and Betting control	2016
+Mombasa	Education	2016
+Mombasa	Health Services	2016
+Mombasa	Environment, Energy and natural resources	2016
+Mombasa	Youth, Gender and Sports	2016
+Mombasa	Trade and Cooperative development	2016
+Mombasa	Lands, Housing and Public Works	2016
+Mombasa	Transport and Infrastructure	2016
+Mombasa	Agriculture	2016
+Murang’a	Office of the Governor and Deputy Governor	2016
+Murang’a	County Assembly	2016
+Murang’a	Finance, Economic Planning and IT	2016
+Murang’a	Agriculture, Livestock and Fisheries	2016
+Murang’a	Energy, Transport and Infrastructure	2016
+Murang’a	Commerce, Trade ,Industry, Tourism	2016
+Murang’a	Health and Sanitation	2016
+Murang’a	Lands, Housing and Physical Planning	2016
+Murang’a	Public Service and Administration	2016
+Murang’a	Education and Technical Training	2016
+Murang’a	Youth, Culture, Social Services & Coop Devt	2016
+Murang’a	Environment and Natural Resources	2016
+Murang’a	County Public Service Board	2016
+Nairobi City	County Public Service Board	2016
+Nairobi City	Office of Governor & Deputy Governor	2016
+Nairobi City	ICT, E-Government & Public Communications	2016
+Nairobi City	Finance & Economic Planning	2016
+Nairobi City	Health	2016
+Nairobi City	Urban Planning & Lands	2016
+Nairobi City	Public Works, Transport & Infrastructure	2016
+Nairobi City	Education, Youth Affairs, Sports, Culture & Social Services	2016
+Nairobi City	Trade, Commerce, Tourism & Cooperatives	2016
+Nairobi City	Public Service Management	2016
+Nairobi City	Agriculture, Livestock Development, Fisheries and Forestry	2016
+Nairobi City	Environment, Water, Energy & Natural Resources	2016
+Nairobi City	Urban Renewal and Housing	2016
+Nairobi City	County Assembly	2016
+Nairobi City	Ward Development Fund	2016
+Nakuru	Office of the Governor and Deputy Governor	2016
+Nakuru	Finance and Economic Planning	2016
+Nakuru	County Public Service Board	2016
+Nakuru	Public Service Management	2016
+Nakuru	Health Services	2016
+Nakuru	Trade, Industrialization and tourism	2016
+Nakuru	Roads, Public Works and Transport	2016
+Nakuru	Information, Communication and E- Government	2016
+Nakuru	Agriculture, Livestock Development and Fisheries	2016
+Nakuru	Land, Housing and Urban Development	2016
+Nakuru	Education, Culture Youth Affairs and Social Services	2016
+Nakuru	Environment, Energy, Natural Resources and Water	2016
+Nakuru	County Assembly	2016
+Nandi	Office of the Governor & Deputy Governor	2016
+Nandi	Finance and Economic Planning	2016
+Nandi	Health and Sanitation	2016
+Nandi	Roads Transport and Public Works	2016
+Nandi	Agriculture, Livestock and Fisheries	2016
+Nandi	Education Research and Vocational Training	2016
+Nandi	Lands, Environment and Natural Resources	2016
+Nandi	Trade and Industrial Development	2016
+Nandi	Public Service and Labour	2016
+Nandi	Tourism, Culture and Co-operative Development	2016
+Nandi	Devolved Units and Special Programmes	2016
+Nandi	Youth, Gender and Social Services	2016
+Nandi	County Assembly	2016
+Narok	County Assembly	2016
+Narok	Governor’s Office	2016
+Narok	Finance & ICT	2016
+Narok	Transport	2016
+Narok	Education & Social Services	2016
+Narok	Environment & Water	2016
+Narok	Public Service Board	2016
+Narok	Agriculture & Livestock	2016
+Narok	Health & Sanitation	2016
+Narok	Lands & Physical Plan	2016
+Narok	Tourism, Trade, Cooperatives	2016
+Narok	Administration & Public Service Management	2016
+Nyamira	Nyamira County Assembly	2016
+Nyamira	County Executive Office	2016
+Nyamira	Finance and Economic Planning	2016
+Nyamira	Agriculture, Livestock & Fisheries	2016
+Nyamira	Environment, Water, Natural Resources, Mining & Energy	2016
+Nyamira	Education & ICT	2016
+Nyamira	Health Services	2016
+Nyamira	Lands, Housing & Physical Planning	2016
+Nyamira	Roads, Transport, & Public Works	2016
+Nyamira	Trade, Tourism, Industrialisation & Co-operative Development	2016
+Nyamira	Youth, Sports, Gender, Culture & Social Services	2016
+Nyamira	County Public Service Board	2016
+Nyamira	Public Administration & Co-ordination of the Decentralised units	2016
+Nyandarua	Agriculture, Livestock, Fisheries & Irrigation	2016
+Nyandarua	County Assembly	2016
+Nyandarua	County Attorney , E-Government & Intergovernmental Relations	2016
+Nyandarua	Education, Youth, Children Affairs, Culture & Social Services	2016
+Nyandarua	Finance & Economic Planning	2016
+Nyandarua	Gubernatorial Office	2016
+Nyandarua	Health Services	2016
+Nyandarua	Industrialization, Cooperatives, Trade, Enterprise, Weights & Measures	2016
+Nyandarua	Lands, Housing & Physical Planning	2016
+Nyandarua	Roads, Transport & Public Works	2016
+Nyandarua	Tourism, Wildlife & Sports	2016
+Nyandarua	Water, Environment & Natural Resources	2016
+Nyeri	Office of the Governor and Deputy Governor	2016
+Nyeri	Office of the County Secretary	2016
+Nyeri	Finance and Economic Planning	2016
+Nyeri	Lands, Housing and Physical Planning	2016
+Nyeri	Health and Sanitation	2016
+Nyeri	Special Programmes	2016
+Nyeri	Public Administration, Information and Communication	2016
+Nyeri	Agriculture, Livestock, Fisheries and Cooperative Development	2016
+Nyeri	Tourism and Culture	2016
+Nyeri	Education, ICT, Trade and Industrialization	2016
+Nyeri	Water, Irrigation and Natural Resources	2016
+Nyeri	County Assembly	2016
+Nyeri	County Public Service Board	2016
+Nyeri	Roads and Infrastructure Development	2016
+Nyeri	Energy	2016
+Samburu	County Assembly	2016
+Samburu	County Executive	2016
+Samburu	Finance & Economic planning	2016
+Samburu	Agriculture, Livestock, Veterinary & Fisheries	2016
+Samburu	Environment & Natural Resources	2016
+Samburu	Education, Youth Affairs & Social Development	2016
+Samburu	Health Services	2016
+Samburu	Lands, Physical Planning and Urban Development	2016
+Samburu	Transport, Public Works and Water Services	2016
+Samburu	Trade, Tourism, Cooperatives and Enterprise Development	2016
+Samburu	Culture, Social Services and Gender	2016
+Siaya	County Assembly	2016
+Siaya	County Executive	2016
+Siaya	Finance, Economic Planning and Vision 2030	2016
+Siaya	Agriculture, Livestock and Fisheries	2016
+Siaya	Water, Environment and Natural Resources	2016
+Siaya	Education, Youth, Sports, Culture and Social Services	2016
+Siaya	County Health Services	2016
+Siaya	Physical Planning, Survey and Housing	2016
+Siaya	Roads and Transport	2016
+Siaya	Trade and Cooperative Services	2016
+Siaya	Tourism and ICT	2016
+Taita Taveta	County Assembly	2016
+Taita Taveta	Administration and Devolution	2016
+Taita Taveta	The Governor’s and Deputy Governor’s Office	2016
+Taita Taveta	Finance and Planning	2016
+Taita Taveta	Agriculture, Livestock and Fisheries	2016
+Taita Taveta	Industrialization, Energy, Research and ICT	2016
+Taita Taveta	Water and Irrigation	2016
+Taita Taveta	Education and Libraries	2016
+Taita Taveta	Health	2016
+Taita Taveta	Trade and Community Affairs	2016
+Taita Taveta	County Public Service Board	2016
+Taita Taveta	Infrastructure and Public Works	2016
+Taita Taveta	Lands and Mining	2016
+Taita Taveta	Tourism and	2016
+Tana River	Office of the Governor	2016
+Tana River	Finance and Economic Planning	2016
+Tana River	Roads, Public Works and Transport	2016
+Tana River	Water Health and Sanitation	2016
+Tana River	CPSB	2016
+Tana River	Education, Vocational Training & Sports	2016
+Tana River	Agriculture and Rural Dev.	2016
+Tana River	Gender, Culture & Social Services	2016
+Tana River	Trade, Industry and Cooperatives	2016
+Tana River	Environment & Natural Resources	2016
+Tana River	Cohesion and Special Programmes	2016
+Tana River	County Assembly	2016
+Tharaka Nithi	County Assembly	2016
+Tharaka Nithi	Office of the Governor	2016
+Tharaka Nithi	Finance and Economic Planning	2016
+Tharaka Nithi	Agriculture, Livestock and Fisheries Development	2016
+Tharaka Nithi	Tourism, Environment and Natural Resources	2016
+Tharaka Nithi	Education, Youth, Gender, Cultural and Social Services	2016
+Tharaka Nithi	Health Services	2016
+Tharaka Nithi	Physical Planning, Land ,Energy and ICT	2016
+Tharaka Nithi	Road, Transport, Housing, Public Works and Legal Affairs	2016
+Tharaka Nithi	Public Services and Urban Development	2016
+Tharaka Nithi	Trade, Industry and Cooperative Development	2016
+Tharaka Nithi	Water Services and Irrigation	2016
+Tharaka Nithi	County Public Services Board	2016
+Trans Nzoia	Agriculture, Livestock, Fisheries & Cooperative Development	2016
+Trans Nzoia	Econ. Planning, Commerce & Industry	2016
+Trans Nzoia	Environ, Water & Natural Resources	2016
+Trans Nzoia	Public Works, Transport and Infrastructure	2016
+Trans Nzoia	Health Services	2016
+Trans Nzoia	Lands, Housing and Urban Development	2016
+Trans Nzoia	Gender, Youth, Sports, Culture, Children & Tourism	2016
+Trans Nzoia	Education , ICT & Vocational Training	2016
+Trans Nzoia	Governance & Public Service Management	2016
+Trans Nzoia	Finance	2016
+Trans Nzoia	County Assembly	2016
+Turkana	Governance (Office of the Governor and Liaison)	2016
+Turkana	Office of the Deputy Governor	2016
+Turkana	Finance and Planning	2016
+Turkana	Water services, Irrigation & Agriculture	2016
+Turkana	Health & Sanitation Services	2016
+Turkana	Tourism, Trade & Industrialization	2016
+Turkana	Education and Social Services	2016
+Turkana	Public Services, Decentralized Admin. & Disaster Management	2016
+Turkana	Transport, Roads & Public Works	2016
+Turkana	Pastoral Economy & Fisheries	2016
+Turkana	Energy, Environment & Natural Resources	2016
+Turkana	Lands, Physical Planning, Housing & Urban Areas Mgt.	2016
+Turkana	County Public Service Board	2016
+Turkana	County Assembly	2016
+Uasin Gishu	Office of the Governor	2016
+Uasin Gishu	Public Service Management	2016
+Uasin Gishu	Finance	2016
+Uasin Gishu	Budget and Economic Planning	2016
+Uasin Gishu	Education, Social, and Culture Services	2016
+Uasin Gishu	Youth and Sports	2016
+Uasin Gishu	Health Services	2016
+Uasin Gishu	ICT and E-Government	2016
+Uasin Gishu	Lands, Housing and Physical Planning	2016
+Uasin Gishu	Roads and Public Works	2016
+Uasin Gishu	Trade, Industrialization and Tourism	2016
+Uasin Gishu	Agriculture, Livestock & Fisheries	2016
+Uasin Gishu	Water, Environment and Natural resources	2016
+Uasin Gishu	County Public Service Board	2016
+Uasin Gishu	Public Administration and Coordination	2016
+Uasin Gishu	County Assembly	2016
+Vihiga	Agriculture, Livestock, Fisheries	2016
+Vihiga	Lands, Housing & Physical planning	2016
+Vihiga	Transport & Infrastructure	2016
+Vihiga	Trade & Tourism	2016
+Vihiga	Health Services	2016
+Vihiga	Education, Science & Technology	2016
+Vihiga	County Executive	2016
+Vihiga	County Assembly	2016
+Vihiga	Finance & Economic planning	2016
+Vihiga	County Public Service Board	2016
+Vihiga	Public Service & Administration.	2016
+Vihiga	Gender, Culture, Youth & Sports.	2016
+Vihiga	Environment, Water & Forestry	2016
+Wajir	County Executive	2016
+Wajir	Finance	2016
+Wajir	County Assembly	2016
+Wajir	Roads and Transport	2016
+Wajir	Water Resources	2016
+Wajir	Energy and Environment	2016
+Wajir	Public Health	2016
+Wajir	Education and Social services	2016
+Wajir	Agriculture, livestock and Fisheries	2016
+Wajir	Trade and cooperative	2016
+Wajir	Lands and Housing	2016
+Wajir	Public Services	2016
+Wajir	WAJWASCO	2016
+Wajir	County Public Service Board	2016
+West Pokot	Office of the Governor	2016
+West Pokot	Finance and Economic Planning	2016
+West Pokot	Roads, Public Works and Transport	2016
+West Pokot	Health and Sanitation	2016
+West Pokot	Education, Communication and ICT	2016
+West Pokot	Agriculture and Irrigation	2016
+West Pokot	Livestock, Fisheries and Veterinary Services	2016
+West Pokot	Trade, Industry and Cooperatives	2016
+West Pokot	Land, Physical Planning and Urban Development	2016
+West Pokot	Water development, Environment & Natural Resources	2016
+West Pokot	Tourism, Culture, Sports, Youth and Gender Development	2016
+West Pokot	County Public Service Management	2016
+West Pokot	Intergovernmental and Special Initiatives	2016
+West Pokot	County Assembly	2016
