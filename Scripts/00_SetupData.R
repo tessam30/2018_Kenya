@@ -4,7 +4,7 @@
 # Audience: Kenya Mission
 
 # Load libraries and data -------------------------------------------------
-pacman::p_load("tidyverse", "lubridate", "sf", "extrafont", "readxl", "measurements", "pdftools", "purrr", "styler", "scales", "llamar", "haven", "sjlabelled", "vtable", "sjmisc")
+pacman::p_load("tidyverse", "lubridate", "sf", "extrafont", "readxl", "measurements", "pdftools", "purrr", "styler", "scales", "llamar", "haven", "sjlabelled", "vtable", "sjmisc", "survey")
 
 # Create folders for project (if they do not exist)
 dir.create("Data")
@@ -35,7 +35,17 @@ remove(hh_info)
 
 # Create a county crosswalk with county id and name
 county_labels <- as_data_frame(get_labels(hh_base$county)) %>% 
-  mutate(county_id = row_number()) %>% rename(county_name = value)
+  mutate(county_id = row_number()) %>% 
+  rename(county_name = value)
 
+# Read in ASAL county identifiers
+asal_geo <- st_read(file.path(datapath, "GIS/ASAL_Counties_2018/ASAL_Counties_2018.shp"))
+asal <- strip_geom(asal_geo, Counties, CID, Category)
+asal %>% group_by(Category) %>% 
+  summarise(counties = paste(Counties, collapse = ", "),
+            sorder = length(Counties)) %>% 
+  arrange(desc(sorder)) 
 
-
+# Read in proper shapefile
+counties_geo <- st_read(file.path(datapath, "GIS/CountyBoundary2013/CountyBoundary2013.shp"))
+str(counties_geo)
