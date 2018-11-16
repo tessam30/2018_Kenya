@@ -136,7 +136,8 @@ shocks_stats_natl <-
   gather(., key = shock, value = value) %>% 
   mutate(shock_natl = as_factor(gsub("_shock", "", shock))) %>% 
   arrange(desc(value)) %>% 
-  select(-shock)
+  select(-shock) 
+  
 
 shock_stats_county <- 
   shocks_geo_asal_svy %>% 
@@ -148,10 +149,18 @@ shock_stats_county <-
   mutate(shock = as_factor(gsub("_shock", "", shock))) %>% 
   left_join(shocks_stats_natl, by = c("shock" = "shock_natl")) %>%
   rename(value_county = value.x, value_natl = value.y) %>% 
-  mutate(shock_dev = value_county - value_natl)
-
+  mutate(shock_dev = value_county - value_natl) %>% 
+  group_by(county_name) %>% 
+  mutate(maxsort = max(value_county)) %>% 
+  ungroup()
 
 # Plot the deviations and levels ------------------------------------------
+# Set the theme elements for all graphs
+p_stuff <- theme(legend.position = "top") +
+  labs(caption = "Source: Kenya Integrated Household Budget Survey 2016") +
+  fill = guide_colourbar(tital = "Percent of households with sohck", 
+                         barwidth = 0.5, barheight = 10)
+
 
 
 # Map the deviations
@@ -164,20 +173,42 @@ counties_geo %>%
   scale_fill_distiller(type = "div", palette = "PiYG",
                        limits = c(-0.65, 0.65)) +
   facet_wrap(~shock, nrow = 2) +
-  ggtitle("Deviations from national average, by shock")
+  ggtitle("Deviations from national average, by shock") +
+  theme(legend.position = "top") +
+  labs(caption = "Source: Kenya Integrated Household Budget Survey 2016") 
 
 
+# Show just the composition of shocks and how they add up
 counties_geo %>% 
   right_join(shock_stats_county, by = c("CID" = "county_id")) %>% 
   mutate(max = abs(max(shock_dev)),
          shock = fct_reorder(shock, value_natl, .desc = TRUE), 
-         county_name = fct_reorder(county_name, value_county)) %>% 
-  ggplot(aes(x = county_name, y = shock_dev, fill = shock_dev)) +
+         county_name = fct_reorder(county_name, maxsort)) %>% 
+  filter(shock != "anyshock") %>% 
+  ggplot(aes(x = county_name, y = shock_dev, fill = shock)) +
   geom_col() +
-  coord_flip()+
+  coord_flip() +
+  scale_fill_viridis_d(option = "D", direction = -1) 
+  
+
+# Now show shocks broken out, sorted by deviations for anyshock
+counties_geo %>% 
+  right_join(shock_stats_county, by = c("CID" = "county_id")) %>% 
+  mutate(max = abs(max(shock_dev)),
+         shock = fct_reorder(shock, value_natl, .desc = TRUE), 
+         county_name = fct_reorder(county_name, maxsort)) %>% 
+  ggplot(aes(x = county_name, y = shock_dev, fill = shock_dev, label)) +
+  geom_col() +
+  coord_flip()  +
   scale_fill_distiller(type = "div", palette = "PiYG",
-                     limits = c(-0.65, 0.65))+
-  facet_wrap(~shock, nrow = 2)
+                     limits = c(-0.65, 0.65)) +
+  facet_wrap(~shock, nrow = 2) +
+  theme(legend.position = "top") +
+  ggtitle("Deviations from national average, by shock") +
+  scale_y_continuous(labels = scales::percent) +
+  theme(legend.position = "none") +
+  labs(caption = "Source: Kenya Integrated Household Budget Survey 2016") +
+  xlab("") + ylab("")
 
 # Now the levels
 counties_geo %>% 
@@ -187,19 +218,27 @@ counties_geo %>%
   geom_sf(aes(fill = value_county), colour = "white", size = 0.5) +
   scale_fill_viridis_c(alpha = 0.66, direction = -1, option = "A") +
   facet_wrap(~shock, nrow = 2) +
-  ggtitle("Shock averages by county")
+  ggtitle("Shock averages by county") +
+  theme(legend.position = "top") +
+  labs(caption = "Source: Kenya Integrated Household Budget Survey 2016") +
+  guides(fill = guide_colorbar(title = "Percent of houseohlds with shock"))
 
 counties_geo %>% 
   right_join(shock_stats_county, by = c("CID" = "county_id")) %>% 
   mutate(max = abs(max(shock_dev)),
          shock = fct_reorder(shock, value_natl, .desc = TRUE), 
-         county_name = fct_reorder(county_name, value_county)) %>% 
+         county_name = fct_reorder(county_name, maxsort)) %>% 
   ggplot(aes(x = county_name, y = value_county, fill = value_county)) +
   geom_col() +
   geom_hline(aes(yintercept = value_natl), colour = "#D3D3D3") +
   coord_flip() +
   scale_fill_viridis_c(alpha = 0.66, direction = -1, option = "A") +
-  facet_wrap(~shock, nrow = 2)
+  facet_wrap(~shock, nrow = 2) +
+  theme(legend.position = "none") +
+  ggtitle("Percent of households with shock by county (gray line equal to national average)") +
+  scale_y_continuous(labels = scales::percent) +
+  xlab("") + ylab("") +
+  labs(caption = "Source: Kenya Integrated Household Budget Survey 2016")
 
 
 
