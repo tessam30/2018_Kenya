@@ -100,6 +100,7 @@ svyset clid [pw = weight], strata(strat) singleunit(centered)
 svy: mean livestock, over(county)
 pesort anyshock county
 
+svy:mean anyshock, over(county)
 
 
 *g byte goodcope = inlist(hh_s8q04_a, 1, 2, 3, 4, 6, 7, 8, 10, 12, 16) & rptShock == 1 

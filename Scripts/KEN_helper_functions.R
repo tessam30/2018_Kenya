@@ -42,3 +42,9 @@ pov_plot <- function(df, x, title, ...) {
 }
 
 # pov_plot(pov_child, poverty, "Kenya Child poverty (%) by county", age)
+
+add_metadata <- function(df) {
+  meta_df <- Hmisc::contents(hh_inf)$contents %>% 
+    rownames_to_column()
+  return(meta_df)
+}

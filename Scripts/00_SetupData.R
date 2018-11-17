@@ -27,7 +27,8 @@ source(file.path(rpath, "KEN_helper_functions.R"))
 hh_info <- read_dta(file.path(kihbspath, "HH_information.dta"))
 vtable(hh_info)
 
-hh_base <- hh_info %>% select(county, strat, resid, eatype, clid, hhid, hhsize, iday, weight)
+hh_base <- hh_info %>% select(county, strat, resid, eatype, clid, hhid, hhsize, iday, weight) %>% 
+  mutate(county_id = parse_integer(labelled::to_factor(county, levels = "values")))
 sjlabelled::get_labels(hh_base)
 Hmisc::describe(hh_base)
 sample_size = dim(hh_base)[1]
@@ -37,6 +38,7 @@ remove(hh_info)
 county_labels <- as_data_frame(get_labels(hh_base$county)) %>% 
   mutate(county_id = row_number()) %>% 
   rename(county_name = value)
+county_labels %>% print(n = 47)
 
 # Read in ASAL county identifiers
 asal_geo <- st_read(file.path(datapath, "GIS/ASAL_Counties_2018/ASAL_Counties_2018.shp"))
@@ -49,3 +51,5 @@ asal %>% group_by(Category) %>%
 # Read in proper shapefile
 counties_geo <- st_read(file.path(datapath, "GIS/CountyBoundary2013/CountyBoundary2013.shp"))
 str(counties_geo)
+
+
