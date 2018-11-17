@@ -10,7 +10,7 @@ pacman::p_load("tidyverse", "lubridate", "sf", "extrafont", "readxl", "measureme
 dir.create("Data")
 dir.create("Data/Wash")
 dir.create("Data/gadm36_KEN_shp")
-dir.create("Data/FewsNet")
+
 
 
 datapath <- "Data"
@@ -18,7 +18,6 @@ kihbspath <- "Data/KIHBS"
 dataout <- "Data/KIHBS/Dataout"
 gispath <- "Data/gadm36_KEN_shp"
 washpath <- "Data/Wash"
-marketspath <- "Data/FewsNet"
 rpath <- "Scripts"
 
 #Source helper functions

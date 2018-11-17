@@ -14,6 +14,9 @@ library(readxl)
 gispath <- "Data/gadm36_KEN_shp"
 marketspath <- "Data/FewsNet"
 
+dir.create(gispath)
+dir.create(marketspath)
+
 adm0 <- "gadm36_KEN_0.shp"
 adm1 <- "gadm36_KEN_1.shp"
 
