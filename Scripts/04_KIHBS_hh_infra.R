@@ -184,8 +184,57 @@ max_dev = unlist(impr_water_county %>% summarise(max_dev = max(abs(impr_water_de
   # impr_sanit_natl <- 
   hh_wash_svy %>% select(improved_sanit_unsh, improved_toilet) %>% summarise_all(survey_mean, na.rm = TRUE)
     
-
   
+  impr_sanit_natl <- 
+    hh_wash_svy %>% 
+    select(improved_toilet, improved_sanit_unsh) %>% 
+    summarise_all(survey_mean, na.rm = TRUE) %>% 
+    select(-contains("_se")) %>% 
+    gather(., key = improved_sanit_natl, value = value)
+  
+  
+  impr_sanit_county <- 
+    hh_wash_svy %>% 
+    select(county_id, county_name, improved_toilet, improved_sanit_unsh) %>% 
+    group_by(county_name, county_id) %>% 
+    summarise_all(survey_mean, na.rm = TRUE) %>% 
+    select(-contains("_se")) %>% 
+    gather(., key = improved_sanit, value = value, -(county_id:county_name)) %>% 
+    left_join(impr_sanit_natl, by = c("improved_sanit" = "improved_sanit_natl")) %>% 
+    rename(impr_sanit = value.x, impr_sanit_natl = value.y) %>% 
+    mutate(impr_sanit_dev = impr_sanit - impr_sanit_natl) %>% 
+    group_by(county_name) %>% 
+    mutate(maxsort = max(impr_sanit_dev)) %>% 
+    ungroup()
+    
+  max_dev_sanit = unlist(impr_sanit_county %>% summarise(max_dev = max(abs(impr_sanit_dev))))
+
+  impr_sanit_county %>% 
+    left_join(counties_geo, by = c("county_id" = "CID")) %>% 
+    ggplot() +
+    geom_sf(aes(fill = impr_sanit_dev), colour = "white", size = 0.5) +
+    scale_fill_gradientn(colours = RColorBrewer::brewer.pal(11, 'BrBG'),
+                         limits = c(-1 * max_dev_sanit, max_dev_sanit),
+                         labels = scales::percent) +
+    facet_wrap(~improved_sanit, nrow = 1) +
+    ggtitle("Deviations from national average, by improved sanitation type (shared toilet or not") +
+    theme(legend.position = "top") +
+    labs(caption = "Source: Kenya Integrated Household Budget Survey 2016") 
+  
+  
+  
+  
+  
+  impr_sanit_county %>% 
+    left_join(counties_geo, by = c("county_id" = "CID")) %>% 
+    ggplot() +
+    geom_sf(aes(fill = impr_sanit), colour = "white", size = 0.5) +
+    scale_fill_gradientn(colours = RColorBrewer::brewer.pal(9, 'OrRd'),
+                         labels = scales::percent) +
+    facet_wrap(~improved_sanit, nrow = 1) +
+    ggtitle("Improved sanitation type (shared toilet or not") +
+    theme(legend.position = "top") +
+    labs(caption = "Source: Kenya Integrated Household Budget Survey 2016") 
   
   
   # TODO - Call DHS API to grab past values of Improved Sanitation & H20
