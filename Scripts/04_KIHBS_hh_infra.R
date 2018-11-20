@@ -89,7 +89,9 @@ hh_wash <- hh_inf %>%
                               toilet_type == 'open defecation' ~ 'open defecation', # open defecation
                               TRUE ~ NA_character_),
 
-    improved_sanit_shared = ifelse(toilet_type == 'improved', 1, 0))
+    improved_sanit_shared = ifelse(toilet_type == 'improved', 1, 0),
+    unimproved_sanit = ifelse(toilet_type == "unimproved", 1, 0),
+    open_defecation = ifelse(toilet_type == 'open defecation', 1, 0))
 
   hh_wash_base <- left_join(hh_wash, hh_base) %>% 
     left_join(county_labels, by = c("county_id" = "county_id"))
@@ -183,22 +185,27 @@ max_dev = unlist(impr_water_county %>% summarise(max_dev = max(abs(impr_water_de
 
 # Improved sanitation statistics ------------------------------------------
   # impr_sanit_natl <- 
-  hh_wash_svy %>% select(improved_sanit_unsh, improved_toilet) %>% summarise_all(survey_mean, na.rm = TRUE)
+  hh_wash_svy %>% select(improved_sanit_shared, improved_toilet, open_defecation) %>% summarise_all(survey_mean, na.rm = TRUE)
     
+  # Given the large difference between shared/unshared facilities, calculate a new variable
+  # for how much the different is between the two
   
   impr_sanit_natl <- 
     hh_wash_svy %>% 
-    select(improved_toilet, improved_sanit_unsh) %>% 
+    select(improved_toilet, improved_sanit_shared, unimproved_sanit, open_defecation) %>% 
     summarise_all(survey_mean, na.rm = TRUE) %>% 
+    mutate(impr_shared_diff = improved_sanit_shared - improved_toilet) %>% 
     select(-contains("_se")) %>% 
     gather(., key = improved_sanit_natl, value = value)
   
   
   impr_sanit_county <- 
     hh_wash_svy %>% 
-    select(county_id, county_name, improved_toilet, improved_sanit_unsh) %>% 
+    select(county_id, county_name, improved_toilet, improved_sanit_shared, 
+           unimproved_sanit, open_defecation) %>% 
     group_by(county_name, county_id) %>% 
     summarise_all(survey_mean, na.rm = TRUE) %>% 
+    mutate(impr_shared_diff = improved_sanit_shared - improved_toilet)%>% 
     select(-contains("_se")) %>% 
     gather(., key = improved_sanit, value = value, -(county_id:county_name)) %>% 
     left_join(impr_sanit_natl, by = c("improved_sanit" = "improved_sanit_natl")) %>% 
@@ -233,12 +240,64 @@ max_dev = unlist(impr_water_county %>% summarise(max_dev = max(abs(impr_water_de
     theme(legend.position = "top") +
     labs(caption = "Source: Kenya Integrated Household Budget Survey 2016") 
   
-  # TODO - Call DHS API to grab past values of Improved Sanitation & H20
+  # Export the data as wide
+  impr_sanit_natl_export <- 
+    hh_wash_svy %>% 
+    select(improved_toilet, improved_sanit_shared, unimproved_sanit, open_defecation) %>% 
+    summarise_all(survey_mean, na.rm = TRUE) %>% 
+    mutate(impr_shared_diff = improved_sanit_shared - improved_toilet)
+  
+  impr_sanit_county_export <-  hh_wash_svy %>% 
+    select(county_id, county_name, improved_toilet, improved_sanit_shared, 
+           unimproved_sanit, open_defecation) %>% 
+    group_by(county_name, county_id) %>% 
+    summarise_all(survey_mean, na.rm = TRUE) %>% 
+    cbind(., impr_sanit_natl_export)
+  
+  
+  # -- Call DHS API to grab past values of Improved Sanitation & H20
+  # -- DHS only has limited indicators available down to the county level
+  library(fetchdhs)
 
+  
+  # Return all indicators with sanitation and water in the definition
+  fetch_indicators() %>%
+    filter(str_detect(definition, c("water", "sanitation"))) %>%
+    select(tag_ids, indicator_id, label) %>% print(n = Inf)
+  
+  # WS_SRCE_H_IMP = improved water source
+  # WS_TLET_H_IMP - improved, non-shared toilet facilities
+  # CH_DIAR_C_DIA - 	% children born in the five (or three) years preceding the survey who had diarrhea in the two weeks preceding the survey
+  
+  fetch_data(countries = c("KE"), tag = 14, years = 2008:2017)
+  dhs_api <-
+    fetch_data(
+      countries = c("KE"),
+      indicators = c("WS_SRCE_H_IMP", "WS_TLET_H_IMP", "CH_DIAR_C_DIA"),
+      years = 2008:2014,
+      breakdown_level = "subnational"
+    )
+  
+  wash_dhs <-
+    map_dfr(dhs_api, ~as.data.frame(.)) %>%
+    filter(!is.na(data_id))
+  
+  # Clean up county names from api call
+  wash_dhs_df <- wash_dhs %>% 
+    mutate(county = str_to_title(str_remove(characteristic_label, "\\..")),
+           pct = value / 100)
+  
 
 # Export all the data for Tableau Products --------------------------------
 
-export_list <- list(impr_sanit_county, impr_water_county)
+export_list <- list(KEN_KIHBS_impr_sanit_county = impr_sanit_county_export, 
+                    KEN_KIHBS_impr_water_county = impr_water_county)
+  
+  export_list %>%  
+    names() %>% 
+    map(., ~ write_csv(export_list[[.]], file.path(washpath, str_c(., ".csv"))))  
   
 
+  impr_sanit_county %>% 
+    select(county_name, county_id) %>% group_by(county_name, county_id) %>% tally() %>% print(n=Inf)
 
