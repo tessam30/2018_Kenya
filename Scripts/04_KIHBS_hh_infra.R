@@ -55,6 +55,7 @@ hh_wash <- hh_inf %>%
       water_drink %in% uninpr_water_bottle ~ 0, 
       TRUE ~ NA_real_),
     
+    # For other sources of water (not drinking -- j01_do)
     improved_water_other = case_when(
       water_other %in% impr_water_codes ~ 1,
       water_other %in% unimpr_water_codes ~0,
@@ -68,7 +69,7 @@ hh_wash <- hh_inf %>%
 # -- straight classification of whether the source is improved --
 # From KIHBS: Human waste disposal facilities that are considered improved/adequate include;
 # connection to main sewer, septic tanks, ventilated improved pit latrine, pit latrine with slab and composting toilets.
-# -- Key Sentence: The analysis did not factor the issue of sharing of sanitation facilities as a measure of adequacy
+# -- Key Sentence: The analysis did not factor the issue of sharing of sanitation facilities as a measure of adequacy. This appears to make a big difference when we account for this in the county averages.
  
     toilet_type = case_when(sanit_type %in% impr_toilet_codes ~ 'improved',
                             sanit_type %in% unimpr_toilet_codes ~ 'unimproved',
@@ -88,7 +89,7 @@ hh_wash <- hh_inf %>%
                               toilet_type == 'open defecation' ~ 'open defecation', # open defecation
                               TRUE ~ NA_character_),
 
-    improved_sanit_unsh = ifelse(toilet_type == 'improved', 1, 0))
+    improved_sanit_shared = ifelse(toilet_type == 'improved', 1, 0))
 
   hh_wash_base <- left_join(hh_wash, hh_base) %>% 
     left_join(county_labels, by = c("county_id" = "county_id"))
@@ -219,26 +220,25 @@ max_dev = unlist(impr_water_county %>% summarise(max_dev = max(abs(impr_water_de
     facet_wrap(~improved_sanit, nrow = 1) +
     ggtitle("Deviations from national average, by improved sanitation type (shared toilet or not") +
     theme(legend.position = "top") +
-    labs(caption = "Source: Kenya Integrated Household Budget Survey 2016") 
-  
-  
-  
-  
+    labs(caption = "Source: Kenya Integrated Household Budget Survey 2016")
   
   impr_sanit_county %>% 
     left_join(counties_geo, by = c("county_id" = "CID")) %>% 
     ggplot() +
     geom_sf(aes(fill = impr_sanit), colour = "white", size = 0.5) +
-    scale_fill_gradientn(colours = RColorBrewer::brewer.pal(9, 'OrRd'),
+    scale_fill_gradientn(colours = RColorBrewer::brewer.pal(9, 'YlOrRd'),
                          labels = scales::percent) +
     facet_wrap(~improved_sanit, nrow = 1) +
     ggtitle("Improved sanitation type (shared toilet or not") +
     theme(legend.position = "top") +
     labs(caption = "Source: Kenya Integrated Household Budget Survey 2016") 
   
-  
   # TODO - Call DHS API to grab past values of Improved Sanitation & H20
 
+
+# Export all the data for Tableau Products --------------------------------
+
+export_list <- list(impr_sanit_county, impr_water_county)
   
 
 
