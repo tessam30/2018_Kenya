@@ -245,7 +245,9 @@ max_dev = unlist(impr_water_county %>% summarise(max_dev = max(abs(impr_water_de
     hh_wash_svy %>% 
     select(improved_toilet, improved_sanit_shared, unimproved_sanit, open_defecation) %>% 
     summarise_all(survey_mean, na.rm = TRUE) %>% 
-    mutate(impr_shared_diff = improved_sanit_shared - improved_toilet)
+    mutate(impr_shared_diff = improved_sanit_shared - improved_toilet) %>% 
+    setNames(paste0("natl_", names(.)))
+    
   
   impr_sanit_county_export <-  hh_wash_svy %>% 
     select(county_id, county_name, improved_toilet, improved_sanit_shared, 
@@ -253,6 +255,8 @@ max_dev = unlist(impr_water_county %>% summarise(max_dev = max(abs(impr_water_de
     group_by(county_name, county_id) %>% 
     summarise_all(survey_mean, na.rm = TRUE) %>% 
     cbind(., impr_sanit_natl_export)
+   
+    
   
   
   # -- Call DHS API to grab past values of Improved Sanitation & H20
@@ -290,7 +294,8 @@ max_dev = unlist(impr_water_county %>% summarise(max_dev = max(abs(impr_water_de
 
 # Export all the data for Tableau Products --------------------------------
 
-export_list <- list(KEN_KIHBS_impr_sanit_county = impr_sanit_county_export, 
+export_list <- list(KEN_KIHBS_impr_sanit_county_wide = impr_sanit_county_export,
+                    KEN_KIHBS_impr_sanit_county_long = impr_sanit_county,
                     KEN_KIHBS_impr_water_county = impr_water_county)
   
   export_list %>%  
@@ -301,3 +306,22 @@ export_list <- list(KEN_KIHBS_impr_sanit_county = impr_sanit_county_export,
   impr_sanit_county %>% 
     select(county_name, county_id) %>% group_by(county_name, county_id) %>% tally() %>% print(n=Inf)
 
+    
+
+# Reshape CLTS data -------------------------------------------------------
+dir()
+  
+clts <- read_excel(file.path(washpath, "CLTS_ODF_J2ODF.xlsx"))  
+  
+  clts_long <- clts %>% 
+    select(CID, County, Vijiji, Remaining, Triggered, Claimed, Verified = Verifed, Certified) %>% 
+    gather(key = clts_type, value = count, Triggered:Certified) %>% 
+    mutate(pct = ifelse(clts_type == "Triggered", count / Vijiji, NA_real_)) %>% 
+    group_by(CID) %>% mutate(seq_order = seq(n()),
+                             count_lag = lag(count)) %>% 
+    arrange(CID, seq_order) %>% 
+    mutate(pct = ifelse(is.na(pct), count/count_lag, pct))
+
+  write_csv(clts_long, file.path(washpath, "KEN_CLTS_long.csv"))
+  write_csv(clts, file.path(washpath, "KEN_CLTS.csv"))
+    
