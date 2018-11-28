@@ -70,8 +70,8 @@ budget_raw <-
   # Need to recreate the following variables that are based on two variables
   # Exp_exq_rec = Exp Rec / Exq Rec 
   # Exp_exq_dev = Exp Dev / Exq Dev 
-  # Absorbtion_recurring =  Exp Rec / ASBA Rec 
-  # Absorbtion_development = Exp Dev / ASBADev 
+  # Absorption_recurring =  Exp Rec / ASBA Rec 
+  # Absorption_development = Exp Dev / ASBADev 
   
   budget <- 
     budget_raw %>% 
