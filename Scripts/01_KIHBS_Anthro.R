@@ -8,10 +8,11 @@ library(llamar)
 
 # Grab the data needed ----------------------------------------------------
 
-hh_ind <- haven::read_dta(file.path(datapath, "KIHBS/HH_Members_Information.dta"))
-Hmisc::describe(hh_ind)
+hh_ind <- read_dta(file.path(kihbspath, "HH_Members_Information.dta"))
+dhs <- read_dta(file.path(datapath, "2014_DHS", "KEKR71DT", "KEKR71FL.DTA"))
 
-dhs <- haven::read_dta(file.path(datapath, "2014_DHS", "KEKR71DT", "KEKR71FL.DTA"))
+vtable(hh_ind)
+
 
 # Generate an age variable converting everything to months
 hh_und5 <- 
@@ -29,8 +30,27 @@ hh_und5 <-
          recum_recode = ifelse(f23 == 1, 2, 1))
 
 # Check the recode numbers for missing 
+# Age bandings seem to be a major issue with the data; Compare this to the DHS
 hh_und5 %>% group_by(recum_recode) %>% tally() 
-hh_und5 %>% group_by(ageMonths) %>% tally() %>% print(n = Inf)
+hh_und5 %>% filter(age_flag == 0) %>%   
+  mutate(rounding = ifelse(ageMonths %in% c(12, 24, 36, 48), TRUE, FALSE)) %>% 
+  group_by(ageMonths, rounding) %>% 
+  summarise(count = n()) %>%
+  ggplot(aes(x = ageMonths, y = count)) + 
+  geom_point() +
+  geom_point(data = dhs_count, aes(colour = "red"))
+  
+  
+  
+  scale_fill_brewer(direction = -1, palette = "Accent")
+
+vtable(dhs)
+dhs_count <- dhs %>% 
+  select(ageMonths = v012) %>% 
+  group_by(ageMonths) %>% 
+  summarise(count = n())
+
+
 
 hh_und5 %>% select(clid:hhid, ageMonths:recum_recode)
 
@@ -134,5 +154,34 @@ zscore06, a(ageMonths) s(csex) h(cheight) w(cweight) measure(recumb_recode)
 # gen age = (mdate-bdate)/30.4375
 # * Compute Z-scores
 # zscore06, a(age) s(b4) h(hw3_2) w(hw2_2)
+
+
+
+# Plotting DHS modeled surfaces for stunting ------------------------------
+library(rgdal)
+library(rasterVis)
+library(RColorBrewer)
+
+
+list.files(file.path(gispath, "DHS_Stunting"), 
+           pattern = "MS_MEAN_v01.tif", full.names = TRUE) %>% 
+  
+  # Chain together a gsub command to incrementally remove parts of the name string
+  set_names(gsub("Data/GIS/DHS_Stunting/", "", .) %>% 
+              gsub("_CNNUTSCHA2_MS_MEAN_v01.tif", "", .))%>% 
+  map(raster) %>% 
+  list2env(., envir = .GlobalEnv)
+
+# Merge the rasters together into a single raster
+east_afr <- list(ET2016DHS, KE2014DHS, TZ2015DHS, UG2016DHS)
+east_afr$filename = "East_Africa_Stunting.tif"
+e_afr <- do.call(merge, east_afr)
+
+# One option for plotting
+levelplot(e_afr)
+
+test_spdf <- as(e_afr, "SpatialPixelsDataFrame")
+test_df <- as.data.frame(test_spdf)
+
 
 
