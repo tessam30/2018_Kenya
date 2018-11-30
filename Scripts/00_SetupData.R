@@ -15,7 +15,9 @@ datapath <- "Data"
 kihbspath <- "Data/KIHBS"
 dataout <- "Data/KIHBS/Dataout"
 gispath <- "Data/gadm36_KEN_shp"
+budgetpath <- "Data/Budget"
 washpath <- "Data/Wash"
+imagepath <- "Images"
 rpath <- "Scripts"
 
 #Source helper functions

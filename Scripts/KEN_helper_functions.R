@@ -48,3 +48,18 @@ add_metadata <- function(df) {
     rownames_to_column()
   return(meta_df)
 }
+
+
+# Calculate relative shares based on above equations -- filter for denominators equal to 0
+# Should be called in a mutate command within a pipe (no data frame defined)
+bs_calc <- function(x, y) {
+  ifelse(y > 0.000, x / y, NA)
+}
+
+# Look for variable names
+lkf <- function(d,p) {
+  names(d)[grep(p, names(d))]
+}
+# example -- lkf(df, "stub")
+
+
