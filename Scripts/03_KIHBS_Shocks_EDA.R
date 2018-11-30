@@ -69,14 +69,16 @@ library(srvyr)
    
 # -- Plot the results to see how intercorrelated the shocks are at the County level
   corr_geo %>% 
+    mutate_at(vars(shock_categ1, shock_categ2), funs(gsub("_bin", "", .))) %>% 
     ggplot(., aes(x = shock_categ1, y = shock_categ2, fill = correlation)) +
     geom_tile(color = "#ffffff") +
     scale_fill_viridis_c(direction = -1, option = "A") +
-    theme(legend.position =  "none") +
+    theme(legend.position =  "top") +
     ggtitle("Shock correlations within counties")+
     ylab("") +
     xlab("") +
-    facet_wrap(~county_name)
+    facet_wrap(~county_name) + 
+    ggsave(file.path(imagepath, "KEN_shockalt_correlations.pdf"), width = 11.5, height = 8, units = "in", dpi = "retina")
            
 
 # Check just the core shocks now
@@ -237,6 +239,13 @@ shock_dev_max = unlist(shock_stats_county %>% summarise(max_dev = max(abs(shock_
 
 
 
+# Export data for Tableau visualizations ----------------------------------
+
+shock_stats_county %>% 
+    rename(CID = county_id) %>% 
+    left_join(., asal, by = c("CID" = "CID")) %>% 
+    write_csv(., file.path(dataout, "KEN_shocks_county.csv"))
+    
 
 
 

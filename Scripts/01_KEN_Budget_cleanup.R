@@ -96,8 +96,12 @@ budget_raw <-
     mutate(Expend_excheq_rec_tot = bs_calc(`Exp Rec`, `Exq Rec`),
            Expend_excheq_dev_tot = bs_calc(`Exp Dev`, `Exq Dev`),
            Absorption_recur_tot = bs_calc(`Exp Rec`, `ASBA Rec`),
-           Absorption_dev_tot = bs_calc(`Exp Dev`, ASBADev))
-    
+           Absorption_dev_tot = bs_calc(`Exp Dev`, ASBADev)) %>% 
+    ungroup() %>% 
+    group_by(CID) %>% 
+           mutate(absorb_dev_lag = lag(Absorption_dev_tot, n = 1, order_by = budget_year), 
+           absorb_dev_delta = Absorption_dev_tot - absorb_dev_lag) %>% 
+  ungroup()
 
   
   

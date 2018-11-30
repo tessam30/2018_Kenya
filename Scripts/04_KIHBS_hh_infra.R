@@ -64,7 +64,7 @@ hh_wash <- hh_inf %>%
     # -- improved source + <= 30 min. to acquire --
     # water_time = 0== "on premises"; assumed to be < 30 min.
     improved_water_under30min = ifelse(is.na(water_time) | is.na(improved_water_drink), NA,
-                                   ifelse(water_time <= 30  & improved_water_drink == 1, 1, 0)), 
+                                   ifelse(water_time <= 30 & improved_water_drink == 1, 1, 0)), 
   
 # -- straight classification of whether the source is improved --
 # From KIHBS: Human waste disposal facilities that are considered improved/adequate include;
