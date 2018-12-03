@@ -161,6 +161,7 @@ zscore06, a(ageMonths) s(csex) h(cheight) w(cweight) measure(recumb_recode)
 library(rgdal)
 library(rasterVis)
 library(RColorBrewer)
+library(ggpubr)
 
 
 list.files(file.path(gispath, "DHS_Stunting"), 
@@ -183,5 +184,25 @@ levelplot(e_afr)
 test_spdf <- as(e_afr, "SpatialPixelsDataFrame")
 test_df <- as.data.frame(test_spdf)
 
+p1 <- test_df %>% filter(East_Africa_Stunting > 0.01) %>% 
+ ggplot(., aes(x = x, y = y, fill = East_Africa_Stunting)) +  
+  geom_tile(alpha=0.8, show.legend = FALSE) + 
+  scale_fill_viridis_c(option = "A", direction = -1) +
+  theme_minimal()
+  #scale_fill_gradientn(colours = RColorBrewer::brewer.pal(9, 'RdPu'))
+
+p2 <- ggplot(test_df, aes(East_Africa_Stunting, fill = cut(East_Africa_Stunting, 100))) +
+  stat_bin(bins = 100, show.legend = FALSE) +
+  scale_fill_viridis_d(option = "A", direction = -1) +
+  theme_minimal()
+
+# Arrange to show histogram below map
+ggarrange(p1, p2, heights = c(2.1, 0.4),
+          nrow = 2, align = "h")
 
 
+# Create a smoothed palette
+RdPu<- brewer.pal(9, 'RdPu')
+
+newPal <- colorRampPalette(RdPu)
+RdPu_new <- newPal(100)
