@@ -8,8 +8,11 @@
 source(file.path(rpath, "budget_cw.R"))
 
 excel_sheets(file.path(budgetpath, "County Budget Database_TE_Edits.xlsx"))
-budget_2015_in <- read_excel(file.path(budgetpath, "County Budget Database_TE_Edits.xlsx"), sheet = "Budget Nos 15-16")
-budget_2016_in  <- read_excel(file.path(budgetpath, "County Budget Database_TE_Edits.xlsx"), sheet = "Budget Nos 16-17")
+budget_2015_in <- read_excel(file.path(budgetpath, 
+                                       "County Budget Database_TE_Edits.xlsx"), 
+                             sheet = "Budget Nos 15-16")
+budget_2016_in  <- read_excel(file.path(budgetpath, "County Budget Database_TE_Edits.xlsx"), 
+                              sheet = "Budget Nos 16-17")
 
 map(list(budget_2015_in, budget_2016_in), ~str(.))
 
@@ -125,8 +128,19 @@ county_BA %>%
   left_join(asal_geo, by = c("CID" = "CID")) %>% 
   ggplot(.) +
   geom_sf(aes(fill = `Overall Absorption Rate`), colour = "white", size = 0.5) +
-  facet_wrap(~ as.factor(FYear))
+  facet_wrap(~ year) +
+  scale_fill_viridis_c(option = "A", direction = -1)
 
+absorp_max = unlist(county_BA %>% ungroup() %>% summarise(max_dev = max(abs(absorb_delta), na.rm = TRUE)))
+
+county_BA %>% 
+  left_join(asal_geo, by = c("CID" = "CID")) %>% 
+  ggplot(.) +
+  geom_sf(aes(fill = absorb_delta), colour = "white", size = 0.05) +
+  scale_fill_gradientn(colours = RColorBrewer::brewer.pal(11, 'PiYG'),
+                       limits = c(-1 * absorp_max, absorp_max), 
+                       labels = scales::percent) 
+  
 # Variable creation for analysis and visualization ------------------------
 
 
