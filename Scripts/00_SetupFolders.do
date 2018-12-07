@@ -1,9 +1,9 @@
 /*-------------------------------------------------------------------------------
-# Name:		 00_SetupGlobals
+# Name:		00_SetupGlobals
 # Purpose:	Setup the Kenya folders for project
-# Author:	 Tim Essam, Ph.D.
+# Author:	Tim Essam, Ph.D.
 # Created:	2018/11/12
-# Owner:	 USAID GeoCenter 
+# Owner:	USAID GeoCenter 
 # License:	MIT License
 # Ado(s):	see below
 #-------------------------------------------------------------------------------

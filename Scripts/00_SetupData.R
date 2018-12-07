@@ -56,4 +56,19 @@ asal %>% group_by(Category) %>%
 counties_geo <- st_read(file.path(datapath, "GIS/CountyBoundary2013/CountyBoundary2013.shp"))
 str(counties_geo)
 
+# Merge in poverty data for use with derived datasets
+pov <- read_csv(file.path(povpath, "Overall_poverty.csv")) %>% 
+  mutate(national_tag = ifelse(CC_1 == 0, 1, 0)) %>% 
+  mutate(CID = CC_1) %>% 
+  mutate_at(vars(Headcount_rate:Severity_of_poverity), funs(./100)) %>% 
+  mutate_at(vars(Population, Number_poor), funs(. * 1000)) 
+
+pov_natl <- 
+  pov %>% 
+  filter(national_tag == 1) %>% 
+  rename_all(~stringr::str_c(., "_nat")) 
+
+# Combining national average (constants with poverty data for merging w/ budget etc).
+pov_all <- 
+  cbind(pov, pov_natl) 
 

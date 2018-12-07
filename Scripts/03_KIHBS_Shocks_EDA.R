@@ -247,7 +247,11 @@ shock_stats_county %>%
     write_csv(., file.path(dataout, "KEN_shocks_county.csv"))
     
 
-
+shock_stats_county %>% 
+  rename(CID = county_id) %>% 
+  left_join(., asal, by = c("CID" = "CID")) %>% 
+  left_join(., pov_all, by = c("CID")) %>% 
+  write_csv(., file.path(dataout, "KEN_shocks_poverty_county.csv"))
 
 
 

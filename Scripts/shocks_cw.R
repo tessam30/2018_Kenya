@@ -28,3 +28,6 @@ shock_cw <- tibble::tribble(
    "food_price",     "price",  109,
   "input_price",     "price",  110
   )
+
+write_csv(shock_cw, file.path(kihbspath, "shocks_cw.csv"))
+haven::write_dta(shock_cw, file.path(kihbspath, "shocks_cw.dta"))

@@ -89,7 +89,19 @@ budget_raw <-
     group_by(CID, budget_year) %>% 
     mutate(category_count = n()) %>% 
     ungroup() %>% 
-    select(CID, category_count, `Category Code`, budget_year, Budget_title, everything())
+    select(CID, category_count, `Category Code`, budget_year, Budget_title, everything()) %>% 
+    
+    # Created lagged budget share categories for arrows in tableau and to look at changes
+    group_by(CID, `Category Code`) %>% 
+    mutate_at(vars(`Exp Dev`, Absorption_dev), .funs = funs(lag = lag(. , n = 1, by = budget_year))) %>% 
+    mutate(exp_higher_2016 = `Exp Dev` > `Exp Dev_lag`,
+           exp_compare = case_when(
+             `Exp Dev` > `Exp Dev_lag` & budget_year == 2016 ~ "higher in 2016",
+             `Exp Dev` <= `Exp Dev_lag` & budget_year == 2016 ~ "lower or same in 2015",
+             TRUE ~ NA_character_
+           )) %>% 
+    ungroup() 
+
 
  # Now create GeoCenter totals to compare with PDFs
   budget_totals_GC <- 
@@ -166,9 +178,17 @@ budget %>%
   facet_wrap(~Budget_title)
 
 # Export data for Plotting in Tableau
-  export_list <- list(budget = budget,
-                      budget_totals = budget_totals_GC,
-                      county_BA = county_BA)
+  budget <- 
+    budget %>% 
+    left_join(., pov_all, by = c("CID")) %>% 
+    left_join(., asal, by = c("CID")) %>% 
+    select(-County.y) %>% 
+    rename(County = County.x)
+
+  export_list <- list(KEN_budget_2015_16 = budget,
+                      KEN_budget_totals_2015_16 = budget_totals_GC,
+                      county_BA = county_BA, 
+                      KEN_budget_raw_2015_16 = budget_raw)
 
   export_list %>%  
     names() %>% 
