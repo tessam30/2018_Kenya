@@ -38,7 +38,7 @@ hh_base <- hh_info %>% select(county, strat, resid, eatype, clid, hhid, hhsize, 
 sjlabelled::get_labels(hh_base)
 Hmisc::describe(hh_base)
 sample_size = dim(hh_base)[1]
-remove(hh_info)
+
 
 # Create a county crosswalk with county id and name
 county_labels <- as_data_frame(get_labels(hh_base$county)) %>% 

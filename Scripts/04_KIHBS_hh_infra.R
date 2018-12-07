@@ -12,11 +12,11 @@ source(file.path(rpath, "impr_water_cw.R"))
 source(file.path(rpath, "impr_sanit_cw.R"))
 
 # Store variable information in a new dataframe for viewing
-hh_inf_meta <- add_metadata(hh_inf)
+hh_inf_meta <- add_metadata(hh_info)
 
 # First calculate improved water
-hh_inf %>% select(j01_dr) %>% group_by(j01_dr) %>% tally()
-get_labels(hh_inf$j01_dr)
+hh_info %>% select(j01_dr) %>% group_by(j01_dr) %>% tally()
+get_labels(hh_info$j01_dr)
 
 # Improved codes for sanitation and water
 # -- For water, there may be a 30 min threshold needed as well
@@ -31,7 +31,7 @@ get_labels(hh_inf$j01_dr)
   od_codes =  unlist(impr_sanit_cw %>% filter(improved == 'open defecation') %>% select(code))
 
 # Select and mutate key variables for the WASH Analysis requested
-hh_wash <- hh_inf %>% 
+hh_wash <- hh_info %>% 
   select(clid,
          hhid,
          water_drink = j01_dr,
@@ -304,7 +304,7 @@ export_list <- list(KEN_KIHBS_impr_sanit_county_wide = impr_sanit_county_export,
   
 
   impr_sanit_county %>% 
-    select(county_name, county_id) %>% group_by(county_name, county_id) %>% tally() %>% print(n=Inf)
+    select(county_name, county_id) %>% group_by(county_name, county_id) %>% count() %>% print(n=Inf)
 
     
 

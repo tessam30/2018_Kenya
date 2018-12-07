@@ -44,7 +44,7 @@ pov_plot <- function(df, x, title, ...) {
 # pov_plot(pov_child, poverty, "Kenya Child poverty (%) by county", age)
 
 add_metadata <- function(df) {
-  meta_df <- Hmisc::contents(hh_inf)$contents %>% 
+  meta_df <- Hmisc::contents(df)$contents %>% 
     rownames_to_column()
   return(meta_df)
 }
@@ -62,4 +62,14 @@ lkf <- function(d,p) {
 }
 # example -- lkf(df, "stub")
 
+
+# Function for writing captions on graphs
+caption_graph <- function(x, y, padding = 20) {
+  # x = GeoCenter Date
+  # y = Source: DHS 200X
+  
+  padding <-  str_pad('', padding, 'right')
+  caption <-  str_c(x, padding, y, sep = " ")
+  return(caption)
+}
 
