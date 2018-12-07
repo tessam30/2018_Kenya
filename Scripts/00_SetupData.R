@@ -32,7 +32,9 @@ hh_info <- read_dta(file.path(kihbspath, "HH_information.dta"))
 vtable(hh_info)
 
 hh_base <- hh_info %>% select(county, strat, resid, eatype, clid, hhid, hhsize, iday, weight) %>% 
-  mutate(county_id = parse_integer(labelled::to_factor(county, levels = "values")))
+  mutate(county_id = labelled::to_factor(county, levels = "values")) %>% 
+  mutate(county_id = as.numeric(as.character(county_id)))
+
 sjlabelled::get_labels(hh_base)
 Hmisc::describe(hh_base)
 sample_size = dim(hh_base)[1]
