@@ -183,7 +183,7 @@ shock_dev_max = unlist(shock_stats_county %>% summarise(max_dev = max(abs(shock_
     filter(shock != "anyshock") %>% 
     ggplot(aes(x = county_name, y = shock_dev, fill = shock)) +
     geom_col() +
-    coord_flip() 
+    coord_flip() +
     scale_fill_brewer(palette = "Pastel1")
     #scale_fill_viridis_d(option = "D", direction = -1) 
   
