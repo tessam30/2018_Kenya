@@ -6,7 +6,15 @@
 # load data ---------------------------------------------------------------
 
 elec <- read_csv(file.path(elecpath, "20181127_2013_2017_Elections_by_const.csv")) %>% 
-  mutate(County_name = str_to_title(COUNTY)) %>% 
+  mutate(County_name = str_to_title(COUNTY),
+         turnout_flag = ifelse(CONST_CODE %in% c(242, 124) & YEAR == 2017, 1, 0),
+         Odinga_won = ifelse(VOTES_ODINGA > VOTES_KENYATTA, 1, 0),
+         Kenyatta_won = ifelse(VOTES_ODINGA < VOTES_KENYATTA, 1, 0)) %>% 
+  # What is the difference in turnout rates over time?
+  group_by(CONST_CODE) %>% 
+  mutate(turnout_lag = lag(TURNOUT, n = 1, order_by = YEAR),
+         turnout_delta = TURNOUT - turnout_lag) %>% 
+  ungroup() %>% 
   left_join(., asal, by = c("County_name" = "Counties"))
 
 # Check the merge to see that it is doing what you think it is
@@ -46,12 +54,57 @@ elec_geo %>%
          dpi = "retina")
 
 # What did turnout look like in each county?
-  turnout_dev = unlist(elec %>% summarise(RELATIVE_TURNOUT_CONST = max(abs(RELATIVE_TURNOUT_CONST), na.rm = TRUE)))
+  #Filter out outliers in NYANDO (242) and TURKANA WEST (124) in 2017
+  
+  turnout_dev = unlist(elec %>% 
+                         filter(turnout_flag == 0) %>% 
+                                summarise(RELATIVE_TURNOUT_CONST = max(abs(RELATIVE_TURNOUT_CONST), na.rm = TRUE)))
   
   
   elec_geo %>% 
     ggplot(.) +
     geom_sf(aes(fill = RELATIVE_TURNOUT_CONST), colour = "white", size = 0.25) +
-    scale_fill_gradientn(colours = RColorBrewer::brewer.pal(11, ''),
+    scale_fill_gradientn(colours = RColorBrewer::brewer.pal(11, 'PiYG'),
+                         limits = c(-1 * turnout_dev, turnout_dev), 
                          labels = scales::percent) +
+    facet_wrap(~YEAR) +
     theme(legend.position = "top")
+  ggsave(file.path(imagepath, "Constituency_turnout_Deviation.pdf"),
+         plot = last_plot(), 
+         device = "pdf",
+         width = 11, height = 8.5,
+         dpi = "retina")
+
+# Turnout rates across years - where did things decrease the most?
+ turnout_delta_max = unlist(elec %>% 
+                           filter(YEAR == 2017 & turnout_flag == 0) %>% 
+                           summarise(turnout_delta_max = max(abs(turnout_delta), na.rm = TRUE)))
+  
+   elec_geo %>% 
+    filter(turnout_flag == 0) %>% 
+    ggplot(.) +
+    geom_sf(aes(fill = TURNOUT_COUNTY), colour = "white", size = 0) +
+    scale_fill_gradientn(colours = RColorBrewer::brewer.pal(9, 'YlGnBu'),
+                         limits = c(.5, 1), 
+                         labels = scales::percent) +
+    theme(legend.position = "top")+
+     facet_wrap(~YEAR)
+   
+   ggsave(file.path(imagepath, "Constituency_turnout.pdf"),
+          plot = last_plot(), 
+          device = "pdf",
+          width = 11, height = 8.5,
+          dpi = "retina")
+   
+   
+# Show who won where by year
+   elec_geo %>% 
+     filter(turnout_flag == 0) %>% 
+     ggplot(.) +
+     geom_sf(aes(fill = percent_share_ODINGA), colour = "white", size = 0.25) +
+     scale_fill_gradientn(colours = RColorBrewer::brewer.pal(11, 'Spectral'),
+                          limits = c(0, 1), 
+                          labels = scales::percent) +
+     facet_grid(YEAR ~ Odinga_won) +
+     theme(legend.position = "top")
+  
