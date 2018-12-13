@@ -133,7 +133,5 @@ elec_geo %>%
 
 # TODO: Additional questions to look into 
 # What constituencies had the largest growth in registered voters (levels and percentages)
-# At the county level, any major swings that stand out? Any constituency packing?
-   
-   
+# At the county level, any major swings that stand out? Any constituency packing
    
