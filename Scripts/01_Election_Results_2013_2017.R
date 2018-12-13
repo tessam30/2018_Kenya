@@ -13,7 +13,13 @@ elec <- read_csv(file.path(elecpath, "20181127_2013_2017_Elections_by_const.csv"
   # What is the difference in turnout rates over time?
   group_by(CONST_CODE) %>% 
   mutate(turnout_lag = lag(TURNOUT, n = 1, order_by = YEAR),
-         turnout_delta = TURNOUT - turnout_lag) %>% 
+         turnout_delta = TURNOUT - turnout_lag,
+         constit_changed = ifelse(sum(Odinga_won) == 1, "swing", "no change"),
+         swing_party = case_when(
+           VOTES_ODINGA > VOTES_KENYATTA & constit_changed == "swing" & YEAR == 2017 ~ "swing Odinga",
+           VOTES_ODINGA < VOTES_KENYATTA & constit_changed == "swing" & YEAR == 2017 ~ "swing Kenyatta",
+           TRUE ~ "no change"
+         )) %>%  
   ungroup() %>% 
   mutate(County_name = ifelse(County_name == "Muranga","Murang'a", County_name)) %>% 
   # One county seems to be missing = Murang'a not Muranga
@@ -113,6 +119,21 @@ elec_geo %>%
    ggsave(file.path(imagepath, "KEN_election_results.pdf"),
           plot = last_plot(), 
           device = "pdf",
-          width = 11, height = 8.5,
+          height = 11, width = 8.5,
           dpi = "retina")
-  
+   
+   
+   elec_geo %>% 
+     filter(YEAR == 2017) %>% 
+     ggplot() +
+     geom_sf(aes(fill = factor(swing_party)), colour = "white", size = 0.25, alpha = 0.75) +
+     scale_fill_manual(values = c("no change" = "#E0E0E0",
+                                  "swing Kenyatta" ="#d53e4f",
+                                  "swing Odinga" = "#3288bd"))
+
+# TODO: Additional questions to look into 
+# What constituencies had the largest growth in registered voters (levels and percentages)
+# At the county level, any major swings that stand out? Any constituency packing?
+   
+   
+   
