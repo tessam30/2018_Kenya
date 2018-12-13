@@ -15,6 +15,8 @@ elec <- read_csv(file.path(elecpath, "20181127_2013_2017_Elections_by_const.csv"
   mutate(turnout_lag = lag(TURNOUT, n = 1, order_by = YEAR),
          turnout_delta = TURNOUT - turnout_lag) %>% 
   ungroup() %>% 
+  mutate(County_name = ifelse(County_name == "Muranga","Murang'a", County_name)) %>% 
+  # One county seems to be missing = Murang'a not Muranga
   left_join(., asal, by = c("County_name" = "Counties"))
 
 # Check the merge to see that it is doing what you think it is
@@ -106,5 +108,11 @@ elec_geo %>%
                           limits = c(0, 1), 
                           labels = scales::percent) +
      facet_grid(YEAR ~ Odinga_won) +
-     theme(legend.position = "top")
+     theme(legend.position = "top") 
+   
+   ggsave(file.path(imagepath, "KEN_election_results.pdf"),
+          plot = last_plot(), 
+          device = "pdf",
+          width = 11, height = 8.5,
+          dpi = "retina")
   
