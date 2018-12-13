@@ -129,7 +129,14 @@ elec_geo %>%
      geom_sf(aes(fill = factor(swing_party)), colour = "white", size = 0.25, alpha = 0.75) +
      scale_fill_manual(values = c("no change" = "#E0E0E0",
                                   "swing Kenyatta" ="#d53e4f",
-                                  "swing Odinga" = "#3288bd"))
+                                  "swing Odinga" = "#3288bd")) +
+     theme(legend.position = "top")
+   
+   ggsave(file.path(imagepath, "KEN_swing_constituencies.pdf"),
+          plot = last_plot(), 
+          device = "pdf",
+          height = 11, width = 8.5,
+          dpi = "retina")
 
 # TODO: Additional questions to look into 
 # What constituencies had the largest growth in registered voters (levels and percentages)
