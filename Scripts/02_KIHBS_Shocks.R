@@ -34,11 +34,46 @@ shk_df <-
            cope3     = q09_3) %>% 
     arrange(clid, hhid)
   str(shk_df)
+  
 
+
+  tmp %>%
+    pairwise_cor(item_desc, id, sort = TRUE) %>% 
+    print(n = 50)
+  
 # Shock crosswalk mergeed in
 # Located here https://github.com/tessam30/2018_Kenya/wiki/Shocks-&-Coping
   shk_df_cw <- left_join(shk_df, shock_cw, by = c("item_code" = "code")) 
   names(shk_df_cw)  
+
+  # What shocks are more likley to occur together?
+  library(widyr)
+  shk_tmp <- shk_df_cw %>% 
+    mutate(id_tmp = interaction(clid, hhid)) %>% 
+    mutate(id = group_indices(., id_tmp)) 
+  
+    shk_tmp %>% 
+    pairwise_cor(shock_alt, id, sort = TRUE) %>% 
+    ggplot(aes(x = item1, y = item2)) + 
+    geom_raster(aes(fill = correlation)) +
+    scale_fill_gradientn(colours = RColorBrewer::brewer.pal(9, 'BrBG'),
+                                                 limits = c(-.5, .5))
+  # Some correlation, but most things point towards our groupings that we have
+  # Main takeawy - demographic shocks are one type of major disruption
+  # and are pretty orthogonal to other types. Hazard, livestock and ag bunch
+  # as do the price shocks.
+  principal_components <-  shk_tmp %>%
+    mutate(value = 1) %>% 
+    widely_svd(shock_alt, id, value, nv = 3)
+
+  principal_components %>%
+    filter(dimension == 2) %>%
+    top_n(10, abs(value)) %>%
+    mutate(shock_alt = fct_reorder(shock_alt, value)) %>%
+    ggplot(aes(shock_alt, value)) +
+    geom_col() +
+    coord_flip()
+  
 
 # First, let's check if we are dealing with whole sample or just a subset
   shk_df_cw %>% group_by(s_severity) %>% count() 
