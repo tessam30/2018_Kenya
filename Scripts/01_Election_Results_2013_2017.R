@@ -36,11 +36,12 @@ str(constit_geo)
 # Note
 elec_geo <- 
   constit_geo %>% 
-  right_join(., elec, by = c("CONSTI_COD" = "CONST_CODE"))
+  right_join(., elec, by = c("CONSTI_COD" = "CONST_CODE")) %>% 
+  left_join(., pov, by = c("CID" = "CC_1"))
 
 strip_geom(elec_geo, CONST_NAME, CONSTITUEN) %>% 
   group_by(CONST_NAME, CONSTITUEN) %>% 
-  count() %>% print(n = Inf)
+  count() %>% filter(n == 1) %>% arrange(n) %>% print(n = Inf)
 
 # Plot the swing by constituency
 swing_max_od = unlist(elec %>% summarise(shift_share_max = max(abs(share_shift_Odinga), na.rm = TRUE)))
@@ -141,4 +142,9 @@ elec_geo %>%
 # TODO: Additional questions to look into 
 # What constituencies had the largest growth in registered voters (levels and percentages)
 # At the county level, any major swings that stand out? Any constituency packing
+   
+   st_write(elec_geo, file.path(gispath, "KEN_election_2013_2017.shp"))
+   elec_geo %>% 
+     strip_geom(everything()) %>% 
+     write_csv(., file.path(elecpath, "KEN_election_2013_2017.csv"))
    

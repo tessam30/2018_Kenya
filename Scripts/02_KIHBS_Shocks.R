@@ -64,13 +64,13 @@ shk_df <-
   # as do the price shocks.
   principal_components <-  shk_tmp %>%
     mutate(value = 1) %>% 
-    widely_svd(shock_alt, id, value, nv = 3)
+    widely_svd(item_desc, id, value, nv = 6)
 
   principal_components %>%
     filter(dimension == 2) %>%
-    top_n(10, abs(value)) %>%
-    mutate(shock_alt = fct_reorder(shock_alt, value)) %>%
-    ggplot(aes(shock_alt, value)) +
+    top_n(26, abs(value)) %>%
+    mutate(item_desc = fct_reorder(item_desc, value)) %>%
+    ggplot(aes(item_desc, value)) +
     geom_col() +
     coord_flip()
   
