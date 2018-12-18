@@ -9,7 +9,9 @@ elec <- read_csv(file.path(elecpath, "20181127_2013_2017_Elections_by_const.csv"
   mutate(County_name = str_to_title(COUNTY),
          turnout_flag = ifelse(CONST_CODE %in% c(242, 124) & YEAR == 2017, 1, 0),
          Odinga_won = ifelse(VOTES_ODINGA > VOTES_KENYATTA, 1, 0),
-         Kenyatta_won = ifelse(VOTES_ODINGA < VOTES_KENYATTA, 1, 0)) %>% 
+         Kenyatta_won = ifelse(VOTES_ODINGA < VOTES_KENYATTA, 1, 0),
+         who_won = ifelse(Odinga_won == 1, "Odinga", "Kenyatta"),
+         third_partY = VALID_VOTES - (VOTES_KENYATTA + VOTES_ODINGA)) %>% 
   # What is the difference in turnout rates over time?
   group_by(CONST_CODE) %>% 
   mutate(turnout_lag = lag(TURNOUT, n = 1, order_by = YEAR),
@@ -21,8 +23,13 @@ elec <- read_csv(file.path(elecpath, "20181127_2013_2017_Elections_by_const.csv"
            TRUE ~ "no change"
          )) %>%  
   ungroup() %>% 
-  mutate(County_name = ifelse(County_name == "Muranga","Murang'a", County_name)) %>% 
   # One county seems to be missing = Murang'a not Muranga
+  mutate(County_name = ifelse(County_name == "Muranga","Murang'a", County_name)) %>% 
+  # Create a ranking for each candidate to control sorts in Tableau
+  group_by(YEAR) %>% 
+  mutate(Odinga_sort = percent_rank(percent_share_ODINGA),
+         Kenyatta_sort = percent_rank(percent_share_KENYATTA)) %>% 
+  ungroup() %>% 
   left_join(., asal, by = c("County_name" = "Counties"))
 
 # Check the merge to see that it is doing what you think it is
