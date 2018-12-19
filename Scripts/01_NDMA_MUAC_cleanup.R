@@ -34,9 +34,11 @@ muac <-
   filter(!is.na(varinfo)) %>% 
   # Flag variable names so we know what data go w/ what variable
   mutate(ave_flag = ifelse(str_detect(varinfo, regex("average", ignore_case = TRUE)), 1, 0),
-         commodity = ifelse(varinfo  %like% "Price|price|Maize|risk", 1, 0)) %>% 
-  select(county, varinfo, commodity, ave_flag, everything()) %>% 
-  filter(ave_flag == 0)
+         commodity = ifelse(varinfo  %like% "Price|price|Maize|risk", varinfo, NA_character_),
+         commodity_flag = ifelse(varinfo  %like% "Price|price|Maize|risk", 1, 0)) %>% 
+  select(county, varinfo, commodity, commodity_flag, ave_flag, everything()) %>% 
+  filter(ave_flag == 0, varinfo != "Year") %>% 
+  fill(commodity)
 
 tmp2 <- muac %>% 
   set_names() %>%  
