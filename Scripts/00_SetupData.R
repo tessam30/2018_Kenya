@@ -24,8 +24,14 @@ imagepath <- "Images"
 rpath <- "Scripts"
 
 #Source helper functions
-source(file.path(rpath, "strip_geom.R"))
-source(file.path(rpath, "KEN_helper_functions.R"))
+file_list <- list("strip_geom.R", 
+                  "KEN_helper_functions.R",
+                  "county_list.R")
+
+# Source custom scripts and data needed for project
+file_list %>% 
+  map(~source(file.path(rpath, .)))
+rm(file_list)
 
 
 # Create merge base file that contains geography for household roster
