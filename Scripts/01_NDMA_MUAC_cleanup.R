@@ -129,23 +129,3 @@ map(list(muac_malnut, prices), ~str(.))
 
 
 
-
-
-tmp2 <- muac %>% 
-  set_names() %>%  
-  map(., ~read_excel(file.path(datapath, "malnutrition", .), range = "B1:N72", sheet = "Data") %>% 
-        mutate(file_name = )) %>% 
-  reduce(rbind)
-
-  
-map(tmp2, ~names(.))
-
-
-
-tmp <- 
-  map(tmp_list, ~read_excel(file.path(datapath, "malnutrition", .), range = "B2:", data = ))
-  
-  
-  
-tmp <- read_excel(file.path(datapath, "malnutrition", "Baringo Prices and MUAC.xlsx")) %>% 
-  mutate(county = str_remove("Baringo Prices and MUAC.xlsx", " Prices and MUAC.xlsx"))
