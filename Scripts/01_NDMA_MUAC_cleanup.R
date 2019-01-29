@@ -14,7 +14,7 @@
 muac_files <- list.files(file.path(datapath, "malnutrition"), pattern = "MUAC")
 muac_path <- "Data/malnutrition"
 
-muac_raw <- data_frame(filename = muac_files) %>% 
+muac_raw <- tibble(filename = muac_files) %>% 
   mutate(file_contents = map(filename, 
          ~read_excel(file.path(muac_path, .), range = "B1:N72", sheet = "Data"))) %>% 
   mutate(filename = str_remove(filename, " Prices and MUAC.xlsx")) %>% 
@@ -23,19 +23,19 @@ muac_raw <- data_frame(filename = muac_files) %>%
 # Process the raw data into a usable format
 muac <- 
   muac_raw %>% 
-  rename(varinfo = X__1,
-         Jan = X__2,
-         Feb = X__3,
-         Mar = X__4,
-         Apr = X__5,
-         May = X__6,
-         Jun = X__7,
-         Jul = X__8,
-         Aug = X__9,
-         Sep = X__10,
-         Oct = X__11,
-         Nov = X__12,
-         Dec = X__13, 
+  rename(varinfo = "..1",
+         Jan = "..2",
+         Feb = "..3",
+         Mar = "..4",
+         Apr = "..5",
+         May = "..6",
+         Jun = "..7",
+         Jul = "..8",
+         Aug = "..9",
+         Sep = "..10",
+         Oct = "..11",
+         Nov = "..12",
+         Dec = "..13", 
          county = filename) %>% 
   filter(!is.na(varinfo)) %>% 
   
@@ -116,7 +116,7 @@ muac_malnut %>%
   ggtitle("Percent of children U-5yrs at risk of malnutrition (MUAC<135 mm)")
 
 prices %>% 
-  filter(commodity == "Goat") %>% 
+  filter(commodity == "Maize") %>% 
   ggplot(aes(x = date, y = value, group = county)) +
   geom_smooth(aes(colour = "#D3D3D3"), span = span, alpha = 0.5) +
   geom_line() +
@@ -126,6 +126,9 @@ prices %>%
 
 
 map(list(muac_malnut, prices), ~str(.))
+
+
+# TODO: Deflate prices ----------------------------------------------------
 
 
 
