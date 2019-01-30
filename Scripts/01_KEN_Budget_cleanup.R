@@ -168,7 +168,7 @@ budget_totals_GC %>%
   scale_fill_viridis_c(alpha = 0.66, direction = -1, option = "A") +
   facet_wrap(Absorption_type ~ budget_year)
 
-# Checking out absorbtion rates by categoryies
+# Checking out absorbtion rates by categories
 budget %>% 
   left_join(asal_geo, by = c("CID" = "CID")) %>% 
   filter(budget_year == 2016) %>% 
