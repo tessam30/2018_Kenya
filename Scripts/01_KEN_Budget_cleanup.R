@@ -11,10 +11,14 @@ excel_sheets(file.path(budgetpath, "County Budget Database_TE_Edits.xlsx"))
 budget_2015_in <- read_excel(file.path(budgetpath, 
                                        "County Budget Database_TE_Edits.xlsx"), 
                              sheet = "Budget Nos 15-16")
-budget_2016_in  <- read_excel(file.path(budgetpath, "County Budget Database_TE_Edits.xlsx"), 
+budget_2016_in <- read_excel(file.path(budgetpath, "County Budget Database_TE_Edits.xlsx"), 
                               sheet = "Budget Nos 16-17")
 
-map(list(budget_2015_in, budget_2016_in), ~str(.))
+budget_2017_in <- read_excel(file.path(budgetpath, "County Budget Database_TE_Edits.xlsx"),
+                             sheet = "Budget Nos 17-18") 
+
+budget_list <- list(budget_2015_in, budget_2016_in, budget_2017_in)
+map(budget_list, ~str(.))
 
 # Need to fix a few columns that are read-in as characters rather than numbers
 budget_2015 <- budget_2015_in %>% 
@@ -25,11 +29,16 @@ budget_2016 <- budget_2016_in %>%
   mutate_at(vars(`Exp_Exq Rec`), as.numeric) %>% 
   mutate(budget_year = 2016)
 
+budget_2017 <- budget_2017_in %>% 
+  mutate(budget_year = 2017)
+
+# Use $ at the end to ensure that we only captures objects that end in "_in"
+rm(list = ls(pattern = "*_in$"))
 
 # Create budget database with proper roll-ups and budget shares -----------
 
 budget_raw <- 
-  bind_rows(budget_2015, budget_2016) %>%
+  bind_rows(budget_2015, budget_2016, budget_2017) %>%
   
   # add in ASAL categories
   left_join(., asal, by = c("CID" ="CID")) %>% 
@@ -58,6 +67,9 @@ budget_raw <-
   select(budget_category_count, everything()) %>% 
   arrange(CID, `Category Code`, budget_year)
 
+str(budget_raw)
+Hmisc::describe(budget_raw)
+
 # Subset the raw totals
   budget_totals_pdf <-  
     budget_raw %>% 
@@ -81,6 +93,8 @@ budget_raw <-
       filter(`Category Code` != 13) %>% 
       group_by(CID, `Category Code`, budget_year, Budget_title, County, ASAL) %>% 
       summarise_at(vars(`ASBA Rec`:`Exp Dev`), funs(sum(., na.rm = TRUE))) %>% 
+    
+    # using bs_calc custom function to calculate relative shares
       mutate(Expend_excheq_rec = bs_calc(`Exp Rec`, `Exq Rec`),
              Expend_excheq_dev = bs_calc(`Exp Dev`, `Exq Dev`),
              Absorption_recur = bs_calc(`Exp Rec`, `ASBA Rec`),
@@ -96,14 +110,32 @@ budget_raw <-
     mutate_at(vars(`Exp Dev`, Absorption_dev), .funs = funs(lag = lag(. , n = 1, by = budget_year))) %>% 
     mutate(exp_higher_2016 = `Exp Dev` > `Exp Dev_lag`,
            exp_compare = case_when(
-             `Exp Dev` > `Exp Dev_lag` & budget_year == 2016 ~ "higher in 2016",
-             `Exp Dev` <= `Exp Dev_lag` & budget_year == 2016 ~ "lower or same in 2015",
+             `Exp Dev` > `Exp Dev_lag` ~ "higher than previous year",
+             `Exp Dev` <= `Exp Dev_lag` ~ "lower or same than previous year",
              TRUE ~ NA_character_
            )) %>% 
     ungroup() 
 
+  # Check how many categories are "filled" for each code
+  budget %>% group_by(`Category Code`, budget_year) %>% count() %>% spread(budget_year, n)
+  
+# function to create plot based on a category
 
- # Now create GeoCenter totals to compare with PDFs
+    budget %>% 
+      filter(`Category Code` == 3) %>%
+      select(budget_year,  Absorption_dev, County, `Category Code`) %>% 
+      ggplot(aes(x = budget_year, y = Absorption_dev)) +
+      geom_line(colour = "grey") +
+      geom_point(aes(colour = Absorption_dev)) +
+      scale_colour_viridis_c(direction = -1) +
+      facet_wrap(~ County) +
+      theme_minimal()
+      
+
+
+  
+  
+ # Now create GeoCenter totals to compare with PDFs from the Controller's Office Official Reports
   budget_totals_GC <- 
     budget %>% 
     group_by(CID, budget_year, County, ASAL) %>% 
@@ -119,22 +151,25 @@ budget_raw <-
   ungroup()
 
   
-  
 
 # Read in County Totals from Eric K.’s Github Account ---------------------
-  # Data are repeated for each year, waiting on Eric to fix
-  #
-  
-County_budget_allocation <- "https://raw.githubusercontent.com/kabuchanga/KE-budgetsDB/master/data_final/County%20Budget%20Allocation%2C%20Expenditure%20and%20Absorption%20Rate.csv"
+
+County_budget_allocation <- "https://raw.githubusercontent.com/kabuchanga/KE-budgetsDB/master/data_final/KEN_county_budget_totals_15-18.csv"
 
 county_BA <- read_csv(County_budget_allocation) %>% 
   mutate_at(vars(contains("Rate")), funs(. / 100)) %>% 
   left_join(asal, by = c("CID" = "CID")) %>% 
-  mutate(year = ifelse(FYear == "2015-2016", 2015, 2016)) %>% 
+  mutate(year = case_when(
+    FYear == "2015-2016" ~ 2015, 
+    FYear == "2016-2017" ~ 2016, 
+    FYear == "2017-2018" ~ 2017,
+  )) %>% 
   arrange(CID, year) %>% 
   group_by(CID) %>% 
-  mutate(prv_year_absorb = lag(`Overall Absorption Rate`, n = 1, order_by = year), 
-         absorb_delta = `Overall Absorption Rate` - prv_year_absorb)
+  mutate(prv_year_absorb = lag(`Overall Absorption Rate`, n = 1, order_by = year),
+         prv_2year_absorb = lag(`Overall Absorption Rate`, n = 2, order_by = year), 
+         absorb_delta = `Overall Absorption Rate` - prv_year_absorb,
+         tot_absorb_delta = `Overall Absorption Rate` - prv_2year_absorb)
 
 county_BA %>% 
   left_join(asal_geo, by = c("CID" = "CID")) %>% 
@@ -151,8 +186,26 @@ county_BA %>%
   geom_sf(aes(fill = absorb_delta), colour = "white", size = 0.05) +
   scale_fill_gradientn(colours = RColorBrewer::brewer.pal(11, 'PiYG'),
                        limits = c(-1 * absorp_max, absorp_max), 
-                       labels = scales::percent) 
+                       labels = scales::percent) +
+  facet_wrap(~ year)
   
+# Show counties over time, sorted by 2018 levels
+county_BA %>% 
+  group_by(year) %>% 
+  mutate(ave_absorp = mean(`Overall Absorption Rate`)) %>% 
+  ungroup() %>% 
+  ggplot() + # Move the 
+  geom_line(aes(x = year, y = ave_absorp), colour = "gray", size = 1.25, alpha = 0.75) +
+  geom_point(aes(x = year, y = `Overall Absorption Rate`)) +
+  geom_line(aes(x = year, y = `Overall Absorption Rate`)) + 
+  facet_wrap(~ County) +
+  theme_minimal() +
+  scale_x_continuous(breaks=seq(2015, 2017, 1))
+  
+
+  
+  
+
 # Variable creation for analysis and visualization ------------------------
 
 
