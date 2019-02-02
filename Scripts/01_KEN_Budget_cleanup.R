@@ -122,16 +122,29 @@ Hmisc::describe(budget_raw)
 # function to create plot based on a category
 
     budget %>% 
-      filter(`Category Code` == 3) %>%
-      select(budget_year,  Absorption_dev, County, `Category Code`) %>% 
+      filter(`Category Code` == 12) %>%
+      select(budget_year,  Absorption_dev, County, `Category Code`, Budget_title) %>% 
       ggplot(aes(x = budget_year, y = Absorption_dev)) +
       geom_line(colour = "grey") +
       geom_point(aes(colour = Absorption_dev)) +
       scale_colour_viridis_c(direction = -1) +
       facet_wrap(~ County) +
-      theme_minimal()
+      theme_minimal() 
       
+# Budget notes to be resolved
+    # Homa Bay 2015 Econ Growth (3) really was 18.34
+    # Machakos jumps to nearly 2 in 2016 for Transport and Infrastructure (4)
+    # Tana River is very high in 2015 for Econ Growth (5); Tharaki Nithi also worth checking out
+    # Kisumu and Nandi are high for Education in 2016, and 2017 respectively
+    # Uasin Gishu shoots up in 2016 for Health (7); Should the 19.3 really be 193? ~ Numbers match if yes.
+    # Kisumu Agriculture shoots up in 2017 (9) to nearly 4 --> see table Table 3.51 in the 2017/18 report pp141/120
+    # Embu in 2016 is odd at over 60; Table Table 3.18 was scraped incorrectly in 2016/17. Need to verify everythinng
+    
+    
+    
 
+    
+    
 
   
   
