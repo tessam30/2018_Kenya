@@ -73,3 +73,9 @@ caption_graph <- function(x, y, padding = 20) {
   return(caption)
 }
 
+
+
+  
+  
+ 
+  

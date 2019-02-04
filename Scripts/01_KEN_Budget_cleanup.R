@@ -121,17 +121,59 @@ Hmisc::describe(budget_raw)
   
 # function to create plot based on a category
 
-    budget %>% 
-      filter(`Category Code` == 12) %>%
+    b_plot <- function(df, x) {
+      ptitle <- budget_cw$Budget_title[x] 
+      
+      df %>% 
+      filter(`Category Code` == x) %>% 
       select(budget_year,  Absorption_dev, County, `Category Code`, Budget_title) %>% 
       ggplot(aes(x = budget_year, y = Absorption_dev)) +
       geom_line(colour = "grey") +
       geom_point(aes(colour = Absorption_dev)) +
       scale_colour_viridis_c(direction = -1) +
       facet_wrap(~ County) +
-      theme_minimal() 
+      theme_minimal() +
+        ggtitle(str_c(ptitle, " Budget"))
+    }
+    
+    b_plot(budget, 2)
+    
+# Show which counties do not have categories across all 12 categories (47 X 12 matrix basically)
+    budget %>% 
+      filter(`Category Code` != 0) %>% 
+      group_by(County, Budget_title) %>% 
+      count() %>% 
+      mutate(count = as.character(n)) %>% 
+      ggplot(aes(x = Budget_title, y = County )) + 
+      geom_tile(aes(fill = count), colour = "grey") +
+      scale_fill_brewer(palette = 13, direction = 1) +
+      theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+      theme(legend.position = "top") +
+      labs(title = "Health is the most consistent budget category across 2015/16 - 2017/18",
+           y = "", x = "") +
+      coord_flip() 
       
-# Budget notes to be resolved
+    
+    
+    
+    
+  # Or the purr way - saving all plots as pdfs
+budget %>% 
+    group_by(Budget_title) %>% 
+    nest() %>% 
+    mutate(plot = map(data, ~ggplot(., aes(budget_year, y = Absorption_dev))+
+                        geom_line(colour = "grey") +
+                        geom_point(aes(colour = Absorption_dev)) +
+                        scale_colour_viridis_c(direction = -1) +
+                        facet_wrap(~ County) +
+                        theme_minimal()
+                      ),
+           filename = paste0(Budget_title, ".pdf")
+           ) %>% 
+    select(filename, plot) %>% 
+  pwalk(., ggsave, path = imagepath)
+    
+# Budget notes to be resolved - updated in github on 2/4/2019
     # Homa Bay 2015 Econ Growth (3) really was 18.34
     # Machakos jumps to nearly 2 in 2016 for Transport and Infrastructure (4)
     # Tana River is very high in 2015 for Econ Growth (5); Tharaki Nithi also worth checking out
@@ -139,12 +181,6 @@ Hmisc::describe(budget_raw)
     # Uasin Gishu shoots up in 2016 for Health (7); Should the 19.3 really be 193? ~ Numbers match if yes.
     # Kisumu Agriculture shoots up in 2017 (9) to nearly 4 --> see table Table 3.51 in the 2017/18 report pp141/120
     # Embu in 2016 is odd at over 60; Table Table 3.18 was scraped incorrectly in 2016/17. Need to verify everythinng
-    
-    
-    
-
-    
-    
 
   
   
@@ -163,6 +199,18 @@ Hmisc::describe(budget_raw)
            absorb_dev_delta = Absorption_dev_tot - absorb_dev_lag) %>% 
   ungroup()
 
+  budget_totals_GC %>% 
+    mutate(county_sort = fct_reorder(County, `Exp Dev`, .desc = TRUE)) %>% 
+    group_by(budget_year) %>% 
+    mutate(exp_dev_ave = mean(`Exp Dev`, na.rm = TRUE)) %>% 
+    ungroup() %>% 
+    ggplot(.) +
+    geom_line(aes(x = budget_year, y = exp_dev_ave), colour = "grey") +
+    geom_line(aes(x = budget_year, y = `Exp Dev`)) + 
+    geom_point(aes(x = budget_year, y = `Exp Dev`)) +
+    facet_wrap(~county_sort) +
+    theme_minimal()
+  
   
 
 # Read in County Totals from Eric K.’s Github Account ---------------------
@@ -189,9 +237,12 @@ county_BA %>%
   ggplot(.) +
   geom_sf(aes(fill = `Overall Absorption Rate`), colour = "white", size = 0.5) +
   facet_wrap(~ year) +
-  scale_fill_viridis_c(option = "A", direction = -1)
+  scale_fill_viridis_c(option = "A", direction = -1) +
+  theme(legend.position = "top")
 
-absorp_max = unlist(county_BA %>% ungroup() %>% summarise(max_dev = max(abs(absorb_delta), na.rm = TRUE)))
+yabsorp_max = unlist(county_BA %>% 
+                       ungroup() %>% 
+                       summarise(max_dev = max(abs(absorb_delta), na.rm = TRUE)))
 
 county_BA %>% 
   left_join(asal_geo, by = c("CID" = "CID")) %>% 
