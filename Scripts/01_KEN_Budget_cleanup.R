@@ -122,7 +122,8 @@ Hmisc::describe(budget_raw)
 # function to create plot based on a category
 
     b_plot <- function(df, x) {
-      ptitle <- budget_cw$Budget_title[x] 
+      #ptitle <- budget_cw$Budget_title[x]
+      ptitle <- budget_cw$Budget_title[budget_cw$`Category Code` == x]
       
       df %>% 
       filter(`Category Code` == x) %>% 
@@ -145,13 +146,14 @@ Hmisc::describe(budget_raw)
       count() %>% 
       mutate(count = as.character(n)) %>% 
       ggplot(aes(x = Budget_title, y = County )) + 
-      geom_tile(aes(fill = count), colour = "grey") +
+      geom_tile(aes(fill = count), colour = "white") +
       scale_fill_brewer(palette = 13, direction = 1) +
       theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
       theme(legend.position = "top") +
       labs(title = "Health is the most consistent budget category across 2015/16 - 2017/18",
-           y = "", x = "") +
-      coord_flip() 
+           y = "", x = "", caption = "Source: 2015/16, 2016/17 & 2017/18 Budget Data") +
+      coord_flip() +
+      ggsave(file.path(imagepath, "Budget_summary.pdf"), width = 11, height = 5) 
       
     
     
