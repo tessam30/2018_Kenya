@@ -79,6 +79,15 @@ Hmisc::describe(budget_raw)
            Expend_excheq_dev = bs_calc(`Exp Dev`, `Exq Dev`),
            Absorbtion_recur = bs_calc(`Exp Rec`, `ASBA Rec`),
            Absorbtion_dev = bs_calc(`Exp Dev`, ASBADev))
+  
+  # Who spent the most?
+  budget_totals_pdf %>% 
+    group_by(County) %>% 
+    mutate(tot_exp_dev = sum(`Exp Dev`, na.rm = TRUE)) %>% 
+    ungroup() %>% 
+    mutate(county_sort = fct_reorder(County, tot_exp_dev, .desc = TRUE)) %>% 
+    ggplot(aes(x = budget_year, y = `Exp Dev`)) + geom_col() + coord_flip() + theme_minimal() +
+    facet_wrap(~county_sort)
 
   # Collapsing everything down to standardized budget categories to create budget shares
   # Based on yearly totals
@@ -114,30 +123,58 @@ Hmisc::describe(budget_raw)
              `Exp Dev` <= `Exp Dev_lag` ~ "lower or same than previous year",
              TRUE ~ NA_character_
            )) %>% 
-    ungroup() 
+    ungroup() %>% 
+    
+    # Create development expenditure shares as share of total development expenditures
+    group_by(CID, budget_year) %>% 
+    mutate(total_exp_dev = sum(`Exp Dev`, na.rm = TRUE)) %>% 
+    ungroup() %>% 
+    mutate(exp_dev_share = bs_calc(`Exp Dev`, total_exp_dev))
 
   # Check how many categories are "filled" for each code
   budget %>% group_by(`Category Code`, budget_year) %>% count() %>% spread(budget_year, n)
   
 # function to create plot based on a category
 
-    b_plot <- function(df, x) {
-      #ptitle <- budget_cw$Budget_title[x]
+    b_plot <- function(df, x, y) {
       ptitle <- budget_cw$Budget_title[budget_cw$`Category Code` == x]
+      yvar <- enquo(y)
       
       df %>% 
       filter(`Category Code` == x) %>% 
-      select(budget_year,  Absorption_dev, County, `Category Code`, Budget_title) %>% 
-      ggplot(aes(x = budget_year, y = Absorption_dev)) +
+      select(budget_year,  Absorption_dev, County, `Category Code`, Budget_title, exp_dev_share) %>% 
+      ggplot(aes(x = budget_year, y = !!yvar)) +
       geom_line(colour = "grey") +
-      geom_point(aes(colour = Absorption_dev)) +
+      geom_point(aes(colour = !!yvar)) +
       scale_colour_viridis_c(direction = -1) +
-      facet_wrap(~ County) +
+      facet_wrap(~ County, nrow = 8) +
       theme_minimal() +
-        ggtitle(str_c(ptitle, " Budget"))
+        theme(axis.title.x = element_text(size = 8),
+              legend.position = "none") +
+        scale_y_continuous(labels = scales::percent_format(accuracy = 1), breaks = seq(0, 1, by = 0.25)) +
+        scale_x_continuous(breaks = seq(2015, 2018, by = 1)) +
+        ggtitle(str_c(ptitle, " Budget: Absorption Rate")) +
+        labs(x = "Fiscal year", y = "")
     }
     
-    b_plot(budget, 2)
+    b_plot(budget, x = 11, y = exp_dev_share)
+    
+    budget %>% select(County, exp_dev_share, budget_year) %>% 
+      ggplot(aes(x = budget_year, y = County, fill = exp_dev_share)) +
+      geom_tile(color = "white") + scale_fill_distiller(palette = "PuBu", direction = 1) +
+      theme_minimal()
+    
+  budget %>% 
+    filter(`Category Code` == 11) %>% 
+    mutate(county_sort = fct_reorder(County, exp_dev_share, .desc = TRUE)) %>% 
+    select(county_sort, `Exp Dev`, budget_year, total_exp_dev, exp_dev_share) %>%
+    ggplot() +
+    geom_col(aes(x = budget_year, y = total_exp_dev), fill = "grey") +
+    geom_col(aes(x = budget_year, y = `Exp Dev`), fill = "#1d91c0") +
+    scale_fill_viridis_c(option = "A") +
+    facet_wrap(~county_sort) + coord_flip() + theme_minimal()
+    
+    
     
 # Show which counties do not have categories across all 12 categories (47 X 12 matrix basically)
     budget %>% 
@@ -159,7 +196,7 @@ Hmisc::describe(budget_raw)
     
     
     
-  # Or the purr way - saving all plots as pdfs
+# Or the purr way - saving all plots as pdfs
 budget %>% 
     group_by(Budget_title) %>% 
     nest() %>% 
