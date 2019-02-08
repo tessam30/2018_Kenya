@@ -166,14 +166,31 @@ Hmisc::describe(budget_raw)
     
   budget %>% 
     filter(`Category Code` == 11) %>% 
-    mutate(county_sort = fct_reorder(County, exp_dev_share, .desc = TRUE)) %>% 
+    mutate(county_sort = fct_reorder(County, `Exp Dev`, .desc = TRUE)) %>% 
     select(county_sort, `Exp Dev`, budget_year, total_exp_dev, exp_dev_share) %>%
     ggplot() +
     geom_col(aes(x = budget_year, y = total_exp_dev), fill = "grey") +
     geom_col(aes(x = budget_year, y = `Exp Dev`), fill = "#1d91c0") +
     scale_fill_viridis_c(option = "A") +
-    facet_wrap(~county_sort) + coord_flip() + theme_minimal()
-    
+    facet_wrap(~county_sort) + coord_flip() + theme_minimal() +
+    labs(x = "Development expenditures in ")
+
+# Compare GOK development expenditure totals to GC calculated totals
+options(scipen = 999)
+   b_gc <- budget %>% filter(`Category Code` == 11) %>% select(County, budget_year, total_exp_dev) 
+ b_gc_pdf <-  budget_totals_pdf %>% select(County, budget_year, `Exp Dev`) %>% 
+   left_join(., b_gc, by = c("County" = "County", "budget_year" = "budget_year")) %>% 
+   mutate(diff = `Exp Dev` - total_exp_dev,
+          diff = round(diff, 2)) %>% 
+   arrange(diff) 
+  
+# Kisumu in 2017 should be 70.8 for City of Kisumu Development Expenditures
+
+# Incorrect budget totals -------------------------------------------------
+
+  
+  
+      
     
     
 # Show which counties do not have categories across all 12 categories (47 X 12 matrix basically)
