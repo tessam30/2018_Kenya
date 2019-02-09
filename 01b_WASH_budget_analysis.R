@@ -31,11 +31,16 @@ bs_plot <- function(df, x, color = "#1d91c0") {
 # Need to figure out how to purrr this or nest it to iterate across all budget categories
 
 
+
+
+
+
+
 health_plot <- bs_plot(budget, 7, color = health_color) 
 water_plot <- bs_plot(budget, 11)
 ggsave(plot = water_plot, file.path(imagepath, "KEN_Water_Dev_budget.pdf"), height = 8, width = 11.5)
 ggsave(plot = health_plot, file.path(imagepath, "KEN_Health_Dev_budget.pdf"), device = "pdf",
        height = 8, width = 11.5)
 
-bs_plot(budget, 6)
+  
 
