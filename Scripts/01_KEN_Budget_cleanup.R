@@ -165,31 +165,47 @@ Hmisc::describe(budget_raw)
       theme_minimal()
     
   budget %>% 
-    filter(`Category Code` == 11) %>% 
-    mutate(county_sort = fct_reorder(County, `Exp Dev`, .desc = TRUE)) %>% 
-    select(county_sort, `Exp Dev`, budget_year, total_exp_dev, exp_dev_share) %>%
-    ggplot() +
-    geom_col(aes(x = budget_year, y = total_exp_dev), fill = "grey") +
-    geom_col(aes(x = budget_year, y = `Exp Dev`), fill = "#1d91c0") +
-    scale_fill_viridis_c(option = "A") +
-    facet_wrap(~county_sort) + coord_flip() + theme_minimal() +
-    labs(x = "Development expenditures in ")
+    group_by(Budget_title) %>% 
+    nest() %>% 
+    mutate(plot = map(data, ~ggplot(., aes(budget_year, y = Absorption_dev))+
+                        geom_line(colour = "grey") +
+                        geom_point(aes(colour = Absorption_dev)) +
+                        scale_colour_viridis_c(direction = -1) +
+                        facet_wrap(~ County) +
+                        theme_minimal()
+    ),
+    filename = paste0(Budget_title, ".pdf")
+    ) %>% 
+    select(filename, plot) %>% 
+    pwalk(., ggsave, path = imagepath)
+  
+     
+
+    
+    
+    
 
 # Compare GOK development expenditure totals to GC calculated totals
 options(scipen = 999)
-   b_gc <- budget %>% filter(`Category Code` == 11) %>% select(County, budget_year, total_exp_dev) 
- b_gc_pdf <-  budget_totals_pdf %>% select(County, budget_year, `Exp Dev`) %>% 
-   left_join(., b_gc, by = c("County" = "County", "budget_year" = "budget_year")) %>% 
+   b_gc <- budget %>% filter(`Category Code` == 7) %>% select(CID, County, budget_year, total_exp_dev) 
+  
+# Be careful how you merge the data b/c not all category codes are available for all Counties    
+ b_gc_pdf <-  budget_totals_pdf %>% select(CID, County, budget_year, `Exp Dev`) %>% 
+   left_join(., b_gc, by = c("CID" = "CID", "budget_year" = "budget_year")) %>% 
    mutate(diff = `Exp Dev` - total_exp_dev,
           diff = round(diff, 2)) %>% 
-   arrange(diff) 
+   arrange(diff)
   
-# Kisumu in 2017 should be 70.8 for City of Kisumu Development Expenditures
-
 # Incorrect budget totals -------------------------------------------------
-
+ # Kisumu in 2017 should be 70.8 for City of Kisumu Development Expenditures - still off even after this
+ # Wajir 2015/16 development expenditures do not add up to pdf total
+ # Isiolo 2017/18 developmen expenditures do not add up
+ # Tana River in 2017/18 is off due to a special program
+ # Kirinyaga development expenditures do not add up in 2017/18 
+ # Nyeri totals are 1,140,315,329 in 2017 for development expenditures, but line item budget only sums to 841
+ 
   
-  
+# Plot to make - absorption rate by county by budget category, looped over county, sorted by category
       
     
     
@@ -237,6 +253,7 @@ budget %>%
     # Uasin Gishu shoots up in 2016 for Health (7); Should the 19.3 really be 193? ~ Numbers match if yes.
     # Kisumu Agriculture shoots up in 2017 (9) to nearly 4 --> see table Table 3.51 in the 2017/18 report pp141/120
     # Embu in 2016 is odd at over 60; Table Table 3.18 was scraped incorrectly in 2016/17. Need to verify everythinng
+
 
   
   
@@ -286,7 +303,11 @@ county_BA <- read_csv(County_budget_allocation) %>%
   mutate(prv_year_absorb = lag(`Overall Absorption Rate`, n = 1, order_by = year),
          prv_2year_absorb = lag(`Overall Absorption Rate`, n = 2, order_by = year), 
          absorb_delta = `Overall Absorption Rate` - prv_year_absorb,
-         tot_absorb_delta = `Overall Absorption Rate` - prv_2year_absorb)
+         tot_absorb_delta = `Overall Absorption Rate` - prv_2year_absorb) %>% 
+  left_join(., b_gc_pdf, by = c("CID" = "CID", "year" = "budget_year")) %>% 
+  select(County, Dev_Expenditure, total_exp_dev, `Exp Dev`, diff, everything()) %>% 
+  mutate(final_check = (Dev_Expenditure - total_exp_dev) %>% round(., 2))  %>% 
+  select(CID, County, year, final_check, everything())
 
 county_BA %>% 
   left_join(asal_geo, by = c("CID" = "CID")) %>% 
