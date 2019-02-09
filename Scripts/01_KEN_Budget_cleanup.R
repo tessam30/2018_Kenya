@@ -7,6 +7,7 @@
 # load data and crosswalks ---------------------------------------------------------------
 source(file.path(rpath, "budget_cw.R"))
 
+# Reading these in separately to check insheeting carefully. Data have been scraped from PDFs
 excel_sheets(file.path(budgetpath, "County Budget Database_TE_Edits.xlsx"))
 budget_2015_in <- read_excel(file.path(budgetpath, 
                                        "County Budget Database_TE_Edits.xlsx"), 
@@ -67,10 +68,11 @@ budget_raw <-
   select(budget_category_count, everything()) %>% 
   arrange(CID, `Category Code`, budget_year)
 
+# checking structure to ensure data types are as expected. Get some wonkiness from pdfs
 str(budget_raw)
 Hmisc::describe(budget_raw)
 
-# Subset the raw totals
+# Subset the raw totals - These will be used later to compare with my own calculations
   budget_totals_pdf <-  
     budget_raw %>% 
     filter(`Category Code` == 13) %>% 
@@ -92,6 +94,7 @@ Hmisc::describe(budget_raw)
   # Collapsing everything down to standardized budget categories to create budget shares
   # Based on yearly totals
   # Need to recreate the following variables that are based on two variables
+  # The bs_calc takes care of the calculation, just feed in x and y 
   # Exp_exq_rec = Exp Rec / Exq Rec 
   # Exp_exq_dev = Exp Dev / Exq Dev 
   # Absorption_recurring =  Exp Rec / ASBA Rec 
@@ -126,17 +129,22 @@ Hmisc::describe(budget_raw)
     ungroup() %>% 
     
     # Create development expenditure shares as share of total development expenditures
+    # This is needed to do share analysis and show relative importance of each category 
     group_by(CID, budget_year) %>% 
     mutate(total_exp_dev = sum(`Exp Dev`, na.rm = TRUE)) %>% 
     ungroup() %>% 
     mutate(exp_dev_share = bs_calc(`Exp Dev`, total_exp_dev))
 
-  # Check how many categories are "filled" for each code
+  # Check how many categories are "complete" for each code
+  # Need to have a sense of what categories we can trust for comparison over time
   budget %>% group_by(`Category Code`, budget_year) %>% count() %>% spread(budget_year, n)
   
 # function to create plot based on a category
 
     b_plot <- function(df, x, y) {
+      # df - data to read
+      # x = category code, should be numeric
+      # y = fill variable to use 
       ptitle <- budget_cw$Budget_title[budget_cw$`Category Code` == x]
       yvar <- enquo(y)
       
@@ -159,10 +167,7 @@ Hmisc::describe(budget_raw)
     
     b_plot(budget, x = 11, y = exp_dev_share)
     
-    budget %>% select(County, exp_dev_share, budget_year) %>% 
-      ggplot(aes(x = budget_year, y = County, fill = exp_dev_share)) +
-      geom_tile(color = "white") + scale_fill_distiller(palette = "PuBu", direction = 1) +
-      theme_minimal()
+
     
   budget %>% 
     group_by(Budget_title) %>% 
