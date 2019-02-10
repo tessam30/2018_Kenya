@@ -138,36 +138,6 @@ Hmisc::describe(budget_raw)
   # Check how many categories are "complete" for each code
   # Need to have a sense of what categories we can trust for comparison over time
   budget %>% group_by(`Category Code`, budget_year) %>% count() %>% spread(budget_year, n)
-  
-# function to create plot based on a category
-
-    b_plot <- function(df, x, y) {
-      # df - data to read
-      # x = category code, should be numeric
-      # y = fill variable to use 
-      ptitle <- budget_cw$Budget_title[budget_cw$`Category Code` == x]
-      yvar <- enquo(y)
-      
-      df %>% 
-      filter(`Category Code` == x) %>% 
-      select(budget_year,  Absorption_dev, County, `Category Code`, Budget_title, exp_dev_share) %>% 
-      ggplot(aes(x = budget_year, y = !!yvar)) +
-      geom_line(colour = "grey") +
-      geom_point(aes(colour = !!yvar)) +
-      scale_colour_viridis_c(direction = -1) +
-      facet_wrap(~ County, nrow = 8) +
-      theme_minimal() +
-        theme(axis.title.x = element_text(size = 8),
-              legend.position = "none") +
-        scale_y_continuous(labels = scales::percent_format(accuracy = 1), breaks = seq(0, 1, by = 0.25)) +
-        scale_x_continuous(breaks = seq(2015, 2018, by = 1)) +
-        ggtitle(str_c(ptitle, " Budget: Absorption Rate")) +
-        labs(x = "Fiscal year", y = "")
-    }
-    
-    b_plot(budget, x = 11, y = exp_dev_share)
-    
-
     
   budget %>% 
     group_by(Budget_title) %>% 
