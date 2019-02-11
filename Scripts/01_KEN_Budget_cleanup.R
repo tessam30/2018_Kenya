@@ -272,6 +272,7 @@ county_BA <- read_csv(County_budget_allocation) %>%
     FYear == "2015-2016" ~ 2015, 
     FYear == "2016-2017" ~ 2016, 
     FYear == "2017-2018" ~ 2017,
+    TRUE ~ NA_real_
   )) %>% 
   arrange(CID, year) %>% 
   group_by(CID) %>% 
@@ -281,16 +282,37 @@ county_BA <- read_csv(County_budget_allocation) %>%
          tot_absorb_delta = `Overall Absorption Rate` - prv_2year_absorb) %>% 
   left_join(., b_gc_pdf, by = c("CID" = "CID", "year" = "budget_year")) %>% 
   select(County, Dev_Expenditure, total_exp_dev, `Exp Dev`, diff, everything()) %>% 
-  mutate(final_check = (Dev_Expenditure - total_exp_dev) %>% round(., 2))  %>% 
-  select(CID, County, year, final_check, everything())
+  mutate(final_check = (Dev_Expenditure - total_exp_dev) %>% 
+           round(., 2))  %>% 
+  select(CID, County, year, final_check, everything()) %>% 
+  arrange(final_check)
 
 county_BA %>% 
   left_join(asal_geo, by = c("CID" = "CID")) %>% 
   ggplot(.) +
   geom_sf(aes(fill = `Overall Absorption Rate`), colour = "white", size = 0.5) +
   facet_wrap(~ year) +
-  scale_fill_viridis_c(option = "A", direction = -1) +
-  theme(legend.position = "top")
+  scale_fill_viridis_c(option = "A", direction = -1, label = percent_format(accuracy = 2)) +
+  theme_minimal() +
+  theme(legend.position = "top",
+        legend.key.width = unit(2, "cm")) + #adjust the width of the legend
+  labs(caption = GC_caption,
+       fill = "Overall absorption rate") +
+  ggtitle("Garissa and Bomet had the highest average development absorption rates") +
+  ggsave(file.path(imagepath, "KEN_develompent_absorption_rates_map.pdf"),
+         height = 11.7, width = 16.5)
+  
+
+# Tabular summary of absorption rates by county
+county_BA %>% 
+  group_by(County) %>% 
+  mutate(ave_abs_rate = mean(`Overall Absorption Rate`)) %>% 
+  ungroup() %>% 
+  select(County, year, ave_abs_rate, `Overall Absorption Rate`) %>% 
+  spread(year, `Overall Absorption Rate`) %>% 
+  arrange(-ave_abs_rate,) %>% 
+  print(n = 47)
+
 
 yabsorp_max = unlist(county_BA %>% 
                        ungroup() %>% 
