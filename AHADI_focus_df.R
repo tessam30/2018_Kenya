@@ -1,3 +1,5 @@
+# Fact sheet: https://www.usaid.gov/sites/default/files/documents/1860/AHADI_Fact_Sheet_-_Jan._2018.pdf
+
 AHADI_df <- tibble::tribble(
             ~County, ~CID, ~AHADI_focus,
           "BARINGO",   30,            0,
