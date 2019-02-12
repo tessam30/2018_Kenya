@@ -9,6 +9,10 @@ source(file.path(rpath, "budget_cw.R"))
 
 # Reading these in separately to check insheeting carefully. Data have been scraped from PDFs
 excel_sheets(file.path(budgetpath, "County Budget Database_TE_Edits.xlsx"))
+
+budget_2014_in <- read_excel(file.path(budgetpath, "County Budget Database_TE_Edits.xlsx"),
+                             sheet = "Budget Nos 14-15")
+
 budget_2015_in <- read_excel(file.path(budgetpath, 
                                        "County Budget Database_TE_Edits.xlsx"), 
                              sheet = "Budget Nos 15-16")
@@ -18,16 +22,17 @@ budget_2016_in <- read_excel(file.path(budgetpath, "County Budget Database_TE_Ed
 budget_2017_in <- read_excel(file.path(budgetpath, "County Budget Database_TE_Edits.xlsx"),
                              sheet = "Budget Nos 17-18") 
 
-budget_list <- list(budget_2015_in, budget_2016_in, budget_2017_in)
+budget_list <- list(budget_2014_in, budget_2015_in, budget_2016_in, budget_2017_in)
 map(budget_list, ~str(.))
 
 # Need to fix a few columns that are read-in as characters rather than numbers
+budget_2014 <- budget_2014_in %>% 
+  mutate(budget_year = 2014)
+
 budget_2015 <- budget_2015_in %>% 
-  mutate_at(vars(`Exq Dev`, `Exp Rec`, `Exp Dev`), as.numeric) %>% 
   mutate(budget_year = 2015)
 
 budget_2016 <- budget_2016_in %>% 
-  mutate_at(vars(`Exp_Exq Rec`), as.numeric) %>% 
   mutate(budget_year = 2016)
 
 budget_2017 <- budget_2017_in %>% 
@@ -219,6 +224,19 @@ budget %>%
            ) %>% 
     select(filename, plot) %>% 
   pwalk(., ggsave, path = imagepath)
+
+# Heatmap maybe just as effective for showing development absorption rates across time
+  budget %>% 
+    filter(!is.na(Absorption_dev) & Budget_title != "Uncategorized") %>% 
+    ggplot(aes(y = Budget_title, x = County)) +
+    geom_tile(aes(fill = Absorption_dev), colour = grey60K) +
+    facet_rep_wrap(~ budget_year, nrow = 3, repeat.tick.labels = TRUE) + 
+    coord_equal() + 
+    scale_fill_viridis_c(option = "A", alpha = 0.9, direction = -1) +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+    geom_text(label)
+    
     
 # Budget notes to be resolved - updated in github on 2/4/2019
     # Homa Bay 2015 Econ Growth (3) really was 18.34
@@ -376,10 +394,10 @@ budget %>%
     select(-County.y) %>% 
     rename(County = County.x)
 
-  export_list <- list(KEN_budget_2015_16 = budget,
-                      KEN_budget_totals_2015_16 = budget_totals_GC,
+  export_list <- list(KEN_budget_2015_2018 = budget,
+                      KEN_budget_totals_2015_2018 = budget_totals_GC,
                       county_BA = county_BA, 
-                      KEN_budget_raw_2015_16 = budget_raw)
+                      KEN_budget_raw_2015_2018 = budget_raw)
 
   export_list %>%  
     names() %>% 
