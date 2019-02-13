@@ -49,7 +49,7 @@
 
 
 # Plot basics
-  GC_caption <- c("Source: USAID GeoCenter Calculations from County Government Budget Implementation Review Reports 2014/15, 2015/16, 2016/17, 2017/18")
+
 
 # First, we'll show the total development spending on Water as a total share
 bs_plot <- function(df, x) {
@@ -129,7 +129,7 @@ budget %>%
   facet_wrap(~budget_sort, ncol = 2) +
   theme(
     legend.position = "top",
-    axis.text.x = element_text(angle = 90, hjust = 1),
+    axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.05),
     axis.title = element_text(size = 8, hjust = 0), # making the x-axis title smaller
     panel.spacing = unit(1.5, "lines")
   ) + # adding more spaced between panels

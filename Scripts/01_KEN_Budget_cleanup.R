@@ -43,7 +43,8 @@ budget_2017 <- budget_2017_in %>%
 # Use $ at the end to ensure that we only captures objects that end in "_in"
 rm(list = ls(pattern = "*_in$"))
 
-
+# Caption of data, for later use in graphics
+GC_caption <- c("Source: USAID GeoCenter Calculations from County Government Budget Implementation Review Reports 2014/15, 2015/16, 2016/17, 2017/18")
 
 # Create budget database with proper roll-ups and budget shares -----------
 
@@ -194,15 +195,22 @@ Hmisc::describe(budget_raw)
     
     budget_totals_pdf %>% 
       group_by(budget_year) %>% 
-      mutate(yrly_ave = mean(Absorption_dev, na.rm = TRUE)) %>% 
+      mutate(dev_exp = sum(`Exp Dev`, na.rm = TRUE),
+             ASBADev = sum(ASBADev, na.rm = TRUE),
+             natl_absorp = dev_exp / ASBADev) %>% 
+      ungroup() %>% 
       group_by(County) %>%
       mutate(ave_absorp = mean(Absorption_dev, na.rm = TRUE)) %>% 
       ungroup() %>% 
       mutate(County_sort = fct_reorder(County, ave_absorp, .desc = TRUE)) %>% 
-      ggplot(aes(x = budget_year, y = yrly_ave)) +
+      ggplot(aes(x = budget_year, y = natl_absorp)) +
       geom_line(color = grey40K) +
       geom_line(aes(y = Absorption_dev)) +
-      facet_wrap(~ County_sort) + theme_minimal()
+      facet_wrap(~ County_sort) + theme_minimal() +
+      labs(x = "", y = "",
+           caption = GC_caption,
+           title = "Bomet, Isiolo, and West Pokot had the highest development absorption rates",
+              subtitle = "Gray line indicates national absorption rate")
     
 
 # Compare GOK development expenditure totals to GC calculated totals
