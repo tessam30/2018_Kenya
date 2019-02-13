@@ -49,7 +49,7 @@
 
 
 # Plot basics
-  GC_caption <- c("Source: USAID GeoCenter Calculations from County Government Budget Implementation Review Reports 2015/16, 2016/17, 2017/18")
+  GC_caption <- c("Source: USAID GeoCenter Calculations from County Government Budget Implementation Review Reports 2014/15, 2015/16, 2016/17, 2017/18")
 
 # First, we'll show the total development spending on Water as a total share
 bs_plot <- function(df, x) {

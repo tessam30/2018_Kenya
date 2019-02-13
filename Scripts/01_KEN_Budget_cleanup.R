@@ -26,8 +26,10 @@ budget_list <- list(budget_2014_in, budget_2015_in, budget_2016_in, budget_2017_
 map(budget_list, ~str(.))
 
 # Need to fix a few columns that are read-in as characters rather than numbers
+# Acutally fixed these upstream so that Mission can have original working raw data
 budget_2014 <- budget_2014_in %>% 
-  mutate(budget_year = 2014)
+  mutate(budget_year = 2014) %>% 
+  select(-County)
 
 budget_2015 <- budget_2015_in %>% 
   mutate(budget_year = 2015)
@@ -41,10 +43,12 @@ budget_2017 <- budget_2017_in %>%
 # Use $ at the end to ensure that we only captures objects that end in "_in"
 rm(list = ls(pattern = "*_in$"))
 
+
+
 # Create budget database with proper roll-ups and budget shares -----------
 
 budget_raw <- 
-  bind_rows(budget_2015, budget_2016, budget_2017) %>%
+  bind_rows(budget_2015, budget_2016, budget_2017, budget_2014) %>%
   
   # add in ASAL categories
   left_join(., asal, by = c("CID" ="CID")) %>% 
@@ -84,17 +88,29 @@ Hmisc::describe(budget_raw)
     mutate(budget_type = "Total") %>% 
     mutate(Expend_excheq_rec = bs_calc(`Exp Rec`, `Exq Rec`),
            Expend_excheq_dev = bs_calc(`Exp Dev`, `Exq Dev`),
-           Absorbtion_recur = bs_calc(`Exp Rec`, `ASBA Rec`),
-           Absorbtion_dev = bs_calc(`Exp Dev`, ASBADev))
+           Absorption_recur = bs_calc(`Exp Rec`, `ASBA Rec`),
+           Absorption_dev = bs_calc(`Exp Dev`, ASBADev))
   
-  # Who spent the most?
-  budget_totals_pdf %>% 
-    group_by(County) %>% 
-    mutate(tot_exp_dev = sum(`Exp Dev`, na.rm = TRUE)) %>% 
-    ungroup() %>% 
-    mutate(county_sort = fct_reorder(County, tot_exp_dev, .desc = TRUE)) %>% 
-    ggplot(aes(x = budget_year, y = `Exp Dev`)) + geom_col() + coord_flip() + theme_minimal() +
-    facet_wrap(~county_sort)
+  # Who planned the most, expended the most? Generalize into a function
+  county_look <- function(df, x) {
+    xvar <- enquo(x)
+    
+    df %>% 
+      group_by(County) %>% 
+      mutate(tmp = sum(!!xvar, na.rm = TRUE)) %>% 
+      ungroup() %>% 
+      mutate(c_sort = fct_reorder(County, tmp, .desc = TRUE)) %>% 
+      ggplot(aes(x = budget_year, y = !!xvar))+
+      geom_col(fill = grey70K) +
+      coord_flip() +
+      theme_minimal() +
+      facet_wrap(~c_sort) +
+      labs(x = "", y = "")
+  }
+  
+  county_look(budget_totals_pdf, `ASBADev`)
+  county_look(budget_totals_pdf, `Exp Dev`)
+  
 
   # Collapsing everything down to standardized budget categories to create budget shares
   # Based on yearly totals
@@ -140,6 +156,7 @@ Hmisc::describe(budget_raw)
     ungroup() %>% 
     mutate(exp_dev_share = bs_calc(`Exp Dev`, total_exp_dev))
 
+  
   # Check how many categories are "complete" for each code
   # Need to have a sense of what categories we can trust for comparison over time
   budget %>% group_by(`Category Code`, budget_year) %>% count() %>% spread(budget_year, n)
@@ -159,10 +176,33 @@ Hmisc::describe(budget_raw)
     select(filename, plot) %>% 
     pwalk(., ggsave, path = imagepath)
   
-     
-
+# Overall absorption rate from the totals cateogry (# 13)
+  budget_totals_pdf %>% 
+    left_join(asal_geo, by = c("CID" = "CID")) %>% 
+    ggplot(.) +
+    geom_sf(aes(fill = Absorption_dev), colour = "white", size = 0.5) +
+    facet_wrap(~ budget_year, nrow = 1) +
+    scale_fill_viridis_c(option = "A", direction = -1, label = percent_format(accuracy = 2)) +
+    theme_minimal() +
+    theme(legend.position = "top",
+          legend.key.width = unit(2, "cm")) + #adjust the width of the legend
+    labs(caption = GC_caption,
+         fill = "Overall absorption rate") +
+    ggtitle("Garissa and Bomet had the highest average development absorption rates")+
+    ggsave(file.path(imagepath, "KEN_develompent_absorption_rates_map.pdf"),
+           height = 11.7, width = 16.5)
     
-    
+    budget_totals_pdf %>% 
+      group_by(budget_year) %>% 
+      mutate(yrly_ave = mean(Absorption_dev, na.rm = TRUE)) %>% 
+      group_by(County) %>%
+      mutate(ave_absorp = mean(Absorption_dev, na.rm = TRUE)) %>% 
+      ungroup() %>% 
+      mutate(County_sort = fct_reorder(County, ave_absorp, .desc = TRUE)) %>% 
+      ggplot(aes(x = budget_year, y = yrly_ave)) +
+      geom_line(color = grey40K) +
+      geom_line(aes(y = Absorption_dev)) +
+      facet_wrap(~ County_sort) + theme_minimal()
     
 
 # Compare GOK development expenditure totals to GC calculated totals
@@ -200,8 +240,9 @@ options(scipen = 999)
       scale_fill_brewer(palette = 13, direction = 1) +
       theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
       theme(legend.position = "top") +
-      labs(title = "Health is the most consistent budget category across 2015/16 - 2017/18",
-           y = "", x = "", caption = "Source: 2015/16, 2016/17 & 2017/18 Budget Data") +
+      labs(title = "Health is the most consistent budget category across 2014/15 - 2017/18",
+           y = "", x = "", caption = "Source: 2014/15, 2015/16, 2016/17 & 2017/18 Budget Data",
+           fill = "Number of times budget category appears") +
       coord_flip() +
       ggsave(file.path(imagepath, "Budget_summary.pdf"), width = 11, height = 5) 
       
@@ -230,13 +271,11 @@ budget %>%
     filter(!is.na(Absorption_dev) & Budget_title != "Uncategorized") %>% 
     ggplot(aes(y = Budget_title, x = County)) +
     geom_tile(aes(fill = Absorption_dev), colour = grey60K) +
-    facet_rep_wrap(~ budget_year, nrow = 3, repeat.tick.labels = TRUE) + 
+    facet_rep_wrap(~ budget_year, nrow = 4, repeat.tick.labels = TRUE) + 
     coord_equal() + 
     scale_fill_viridis_c(option = "A", alpha = 0.9, direction = -1) +
     theme_minimal() +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
-    geom_text(label)
-    
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) 
     
 # Budget notes to be resolved - updated in github on 2/4/2019
     # Homa Bay 2015 Econ Growth (3) really was 18.34
