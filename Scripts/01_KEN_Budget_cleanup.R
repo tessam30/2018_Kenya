@@ -70,19 +70,22 @@ source(file.path(rpath, "budget_cw.R"))
 # Caption of data, for later use in graphics
 GC_caption = c("Source: USAID GeoCenter Calculations from County Government Budget Implementation Review Reports 2014/15, 2015/16, 2016/17, 2017/18")
 
+
+
+
+##%######################################################%##
+#                                                          #
+####                  Data Processing                   ####
+#                                                          #
+##%######################################################%##
+
 # Create budget database with proper roll-ups and budget shares -----------
 
 budget_raw <- 
   bind_rows(budget_2015, budget_2016, budget_2017, budget_2014) %>%
-  
-  # add in ASAL categories
-  left_join(., asal, by = c("CID" ="CID")) %>% 
-  
-  # Add in budget category crosswalk
-  left_join(., budget_cw, by = c("Category Code" = "Category Code")) %>% 
-  
-  # Clean up names and rearrange for ease of viewing
-  select(CID, 
+  left_join(., asal, by = c("CID" ="CID")) %>%  # add in ASAL categories
+  left_join(., budget_cw, by = c("Category Code" = "Category Code")) %>%  # Add in budget category crosswalk
+  select(CID, # Clean up names and rearrange for ease of viewing
          County = Counties, 
          budget_year, 
          `Category Code`,
@@ -118,8 +121,14 @@ budget_raw <-
     mutate(absorp_rank = rank(Absorption_dev)) %>% 
     ungroup()
     
-  
-  # Who planned the most, expended the most? Generalize into a function
+##%######################################################%##
+#                                                          #
+####                 Visual Exploration                 ####
+#                                                          #
+##%######################################################%##
+
+
+# Who planned the most, expended the most? Generalize into a function
   county_look <- function(df, x) {
     xvar <- enquo(x)
     
@@ -142,27 +151,47 @@ budget_raw <-
     ggtitle("Per capita development expenditures") +
     labs(caption = GC_caption)
   
-  # Map out development expenditures per capita over time  
-  # Create a generic function to create small multiple maps based on budget_totals_pdf data
+# Map out development expenditures per capita over time  
+# Function to create small multiple maps based on budget_totals_pdf data
   budg_map <- function(df, xvar, leg_text = "") {
-    xvar = enquo(xvar) # grab the input text to know what to map
-    
-    df %>% 
-      left_join(asal_geo, by = c("CID" = "CID")) %>% 
+    xvar <- enquo(xvar) # grab the input text to know what to map
+  
+    df %>%
+      left_join(asal_geo, by = c("CID" = "CID")) %>%
       ggplot(.) +
       geom_sf(aes(fill = !!xvar), colour = "white", size = 0.5) +
-      facet_wrap(~ budget_year, nrow = 1) +
+      facet_wrap(~budget_year, nrow = 1) +
       scale_fill_viridis_c(option = "A", direction = -1, alpha = 0.75) +
       theme_minimal() +
-      theme(legend.position = "top",
-            legend.key.width = unit(1.5, "cm")) + #adjust the width of the legend
-      labs(fill = leg_text,
-           caption = GC_caption) 
-    }
-  budg_map(budget_totals_pdf, poor_pop_mil, leg_text = "absorption rate") 
-  budg_map(budget_totals_pdf, Exp_dev_pc_poor, leg_text = "Development spending per poor person")
+      theme(
+        legend.position = "top",
+        legend.key.width = unit(1.5, "cm")
+      ) + # adjust the width of the legend
+      labs(
+        fill = leg_text,
+        caption = GC_caption
+      )
+  }
   
-  budget_totals_pdf %>%
+budg_map(budget_totals_pdf, poor_pop_mil, leg_text = "absorption rate")
+budg_map(budget_totals_pdf, Exp_dev_pc_poor, leg_text = "Development spending per poor person")
+  
+  
+ # Check bar graph to go alongside map; Filling in w/ ASAL
+  budget_bar <- function(df, xvar) {
+    df %>% 
+      mutate(c_sort = fct_reorder(County, poor_pop_mil, .desc = FALSE)) %>% 
+      ggplot(aes(x = c_sort, y = poor_pop_mil, fill = ASAL), alpha = 0.75) + 
+      geom_col() +
+      facet_wrap(~ budget_year, nrow = 1) +
+      coord_flip() +
+      theme_minimal() +
+      theme(legend.position = "top") +
+      scale_fill_brewer(palette = "Set2")
+  }
+
+
+budget_totals_pdf %>%
     mutate(c_sort = fct_reorder(County, poor_pop_mil, .desc = FALSE)) %>% 
     ggplot(aes(x = c_sort, y = poor_pop_mil, fill = ASAL), alpha = 0.75) + 
     geom_col() +
@@ -201,7 +230,11 @@ budget_raw <-
   # Exp_exq_dev = Exp Dev / Exq Dev 
   # Absorption_recurring =  Exp Rec / ASBA Rec 
   # Absorption_development = Exp Dev / ASBADev 
+
   
+  
+  
+    
   budget <- 
     budget_raw %>% 
       filter(`Category Code` != 13) %>% 

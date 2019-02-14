@@ -83,7 +83,7 @@ pov <-
 
 
 
-`# ---- Child poverty by age groups
+# ---- Child poverty by age groups
 
 child_pov_pop <- 
   Proportion_poor_children %>% 
@@ -145,8 +145,6 @@ rm(list = ls(pattern = "_pov_"))
 
 # Might as well go ahead and join it with a shapefile and create couple sample maps
 gis_admin1 <- read_sf(file.path(gispath, "gadm36_KEN_1.shp"))
-
-source("KEN_helper_functions.R")
 
 # Poverty plotted by age group for children
 pov_plot(pov_child, percent, "Kenya Child poverty (%) by county", age)
