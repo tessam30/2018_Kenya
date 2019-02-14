@@ -133,8 +133,28 @@ prices %>%
 
 map(list(muac_malnut, prices), ~str(.))
 
-
+write_csv(muac_malnut, file.path(muac_path, "KEN_acute_malnutrition_2008_18.csv"))
 # TODO: Deflate prices ----------------------------------------------------
 
+# See if you can animate MUAC data; Nothing great from this given the time 
+tmp <- muac_malnut %>% 
+  left_join(., asal_geo, by = c("CID" = "CID"))
 
+library(gganimate)
+library(transformr)
+
+  tmp %>% 
+  ggplot(.) +
+  geom_sf(aes(fill = value), colour = "white") +
+  scale_fill_viridis_c(option = "B", alpha = 0.75, label = percent_format(accuracy = 2),
+                       direction = -1) +
+    labs(fill = "MUAC rate") +
+  theme_void() +
+  labs(title = 'Date: {current_frame}') +
+  transition_manual(date) 
+
+  tmp %>% 
+    ggplot(aes(x = date, y = value)) +
+             geom_line(color = grey80K, size = 1) +
+    transition_reveal(date)
 

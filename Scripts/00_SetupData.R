@@ -80,4 +80,3 @@ pov_natl <-
 # Combining national average (constants with poverty data for merging w/ budget etc).
 pov_all <- 
   cbind(pov, pov_natl) 
-
