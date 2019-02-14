@@ -204,13 +204,18 @@ Hmisc::describe(budget_raw)
       ungroup() %>% 
       mutate(County_sort = fct_reorder(County, ave_absorp, .desc = TRUE)) %>% 
       ggplot(aes(x = budget_year, y = natl_absorp)) +
-      geom_line(color = grey40K) +
-      geom_line(aes(y = Absorption_dev)) +
+      geom_line(color = grey30K) +
+      geom_line(aes(y = Absorption_dev), colour = grey60K) +
+      geom_point(aes(y = Absorption_dev, fill = grey80K), colour  = grey90K, shape = 21) +
       facet_wrap(~ County_sort) + theme_minimal() +
       labs(x = "", y = "",
            caption = GC_caption,
            title = "Bomet, Isiolo, and West Pokot had the highest development absorption rates",
-              subtitle = "Gray line indicates national absorption rate")
+              subtitle = "Gray line indicates average absorption rate") +
+      scale_y_continuous(
+        labels = scales::percent_format(accuracy = 1),
+        breaks = seq(0, 1, by = 0.25)
+      )
     
 
 # Compare GOK development expenditure totals to GC calculated totals
@@ -363,7 +368,7 @@ county_BA %>%
         legend.key.width = unit(2, "cm")) + #adjust the width of the legend
   labs(caption = GC_caption,
        fill = "Overall absorption rate") +
-  ggtitle("Garissa and Bomet had the highest average development absorption rates") +
+  ggtitle("Garissa and Bomet had the highest average absorption rates for development expenditures") +
   ggsave(file.path(imagepath, "KEN_develompent_absorption_rates_map.pdf"),
          height = 11.7, width = 16.5)
   
