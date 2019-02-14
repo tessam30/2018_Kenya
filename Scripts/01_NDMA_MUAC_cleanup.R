@@ -108,12 +108,18 @@ muac_malnut %>%
   ungroup() %>% 
   mutate(county_sort = fct_reorder(county, mean, .desc = TRUE)) %>%
   ggplot(aes(x = date, y = value)) +
-  geom_smooth(aes(colour = "#D3D3D3"), span = span, alpha = 0.5) +
-  geom_line() +
+  geom_smooth(colour = "#d6604d", span = span, alpha = 0.5) +
+  geom_line(colour = grey70K) +
   facet_wrap(~county_sort) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  theme_minimal() +
   theme(legend.position = "none") +
-  ggtitle("Percent of children U-5yrs at risk of malnutrition (MUAC<135 mm)")
+  labs(x = "", y = "",
+       caption = "Source: GeoCenter Caculations based on National Drought Management Authority MUAC data 2008-2018") +
+  ggtitle("DRAFT: Acute malnutrition trends",
+          subtitle = "Percent of under-5 children at risk of malnutrition (MUAC < 135 mm") +
+  ggsave(file.path(imagepath, "KEN_acute_malnutrition_trends_2008_2018.pdf"), 
+         height = 8.5, width = 11.5, units = "in")
 
 prices %>% 
   filter(commodity == "Maize") %>% 

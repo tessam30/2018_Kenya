@@ -8,43 +8,67 @@
 source(file.path(rpath, "budget_cw.R"))
 
 # Reading these in separately to check insheeting carefully. Data have been scraped from PDFs
-excel_sheets(file.path(budgetpath, "County Budget Database_TE_Edits.xlsx"))
-
-budget_2014_in <- read_excel(file.path(budgetpath, "County Budget Database_TE_Edits.xlsx"),
-                             sheet = "Budget Nos 14-15")
-
-budget_2015_in <- read_excel(file.path(budgetpath, 
-                                       "County Budget Database_TE_Edits.xlsx"), 
-                             sheet = "Budget Nos 15-16")
-budget_2016_in <- read_excel(file.path(budgetpath, "County Budget Database_TE_Edits.xlsx"), 
-                              sheet = "Budget Nos 16-17")
-
-budget_2017_in <- read_excel(file.path(budgetpath, "County Budget Database_TE_Edits.xlsx"),
-                             sheet = "Budget Nos 17-18") 
-
-budget_list <- list(budget_2014_in, budget_2015_in, budget_2016_in, budget_2017_in)
-map(budget_list, ~str(.))
+  file_name = c("County Budget Database_TE_Edits.xlsx")
+  excel_sheets(file.path(budgetpath, file_name))
+  
+  budget_2014_in <- read_excel(file.path(budgetpath, file_name),
+                               sheet = "Budget Nos 14-15")
+  
+  budget_2015_in <- read_excel(file.path(budgetpath, file_name), 
+                               sheet = "Budget Nos 15-16")
+  
+  budget_2016_in <- read_excel(file.path(budgetpath, file_name), 
+                                sheet = "Budget Nos 16-17")
+  
+  budget_2017_in <- read_excel(file.path(budgetpath, file_name),
+                               sheet = "Budget Nos 17-18") 
+  
+  budget_list <- list(budget_2014_in, budget_2015_in, budget_2016_in, budget_2017_in)
+  map(budget_list, ~str(.))
 
 # Need to fix a few columns that are read-in as characters rather than numbers
 # Acutally fixed these upstream so that Mission can have original working raw data
-budget_2014 <- budget_2014_in %>% 
-  mutate(budget_year = 2014) %>% 
-  select(-County)
+  budget_2014 <- budget_2014_in %>% 
+    mutate(budget_year = 2014) %>% 
+    select(-County)
+  
+  budget_2015 <- budget_2015_in %>% 
+    mutate(budget_year = 2015)
+  
+  budget_2016 <- budget_2016_in %>% 
+    mutate(budget_year = 2016)
+  
+  budget_2017 <- budget_2017_in %>% 
+    mutate(budget_year = 2017)
 
-budget_2015 <- budget_2015_in %>% 
-  mutate(budget_year = 2015)
-
-budget_2016 <- budget_2016_in %>% 
-  mutate(budget_year = 2016)
-
-budget_2017 <- budget_2017_in %>% 
-  mutate(budget_year = 2017)
-
-# Use $ at the end to ensure that we only captures objects that end in "_in"
-rm(list = ls(pattern = "*_in$"))
+# Use $ at the end to ensure that we only captures objects that end in "_in
+  rm(list = ls(pattern = "*_in$"))
+  
+# Using previously loaded poverty data, create population figures for 2015, 2016, 2017 and 2018 based on 2.5 % growth rate
+  pop_rate = 1.025
+  
+  pop <- pov %>% 
+    mutate(pop_2014 = Population / pop_rate,
+           pop_2015 = Population,
+           pop_2016 = Population * pop_rate,
+           pop_2017 = Population * (pop_rate^2),
+           poor_2014 = Number_poor / pop_rate,
+           poor_2015 = Number_poor,
+           poor_2016 = Number_poor * pop_rate,
+           poor_2017 = Number_poor * (pop_rate^2)) %>% 
+    select(CID, County, pop_2014:poor_2017) %>% 
+    gather(key = "tmp", value = "population", -c(CID, County)) %>% 
+    separate(tmp, c("drop", "year"), by = "_") %>%
+    mutate(population = round(population, 0)) %>% 
+    spread(drop, population)%>% 
+    mutate(poor_pop_mil = poor / 1e6,
+           pop_mil = pop / 1e6, 
+           year = as.numeric(year)) %>% 
+    select(-c(County)) %>% 
+    filter(CID != 0)
 
 # Caption of data, for later use in graphics
-GC_caption <- c("Source: USAID GeoCenter Calculations from County Government Budget Implementation Review Reports 2014/15, 2015/16, 2016/17, 2017/18")
+GC_caption = c("Source: USAID GeoCenter Calculations from County Government Budget Implementation Review Reports 2014/15, 2015/16, 2016/17, 2017/18")
 
 # Create budget database with proper roll-ups and budget shares -----------
 
@@ -68,19 +92,18 @@ budget_raw <-
          ASAL = `Category.y`,
          everything()) %>% 
   arrange(CID, budget_type, budget_year) %>% 
-  
-  # Before looking at whether or not categories change, we need count the budget_title
-  # occurences per year to see where categories are repeating.
-  # Anything greater than 1 indicates a repeated budget category
   group_by(CID, budget_year, `Category Code`) %>% 
-  mutate(budget_category_count = n()) %>% 
+  mutate(budget_category_count = n()) %>% # Count occurences of budget titles to see what is repeating
   ungroup() %>% 
   select(budget_category_count, everything()) %>% 
-  arrange(CID, `Category Code`, budget_year)
+  arrange(CID, `Category Code`, budget_year) %>% 
+  left_join(., pop, by = c("budget_year" = "year", "CID" = "CID")) %>% 
+  mutate(Exp_dev_pc = (`Exp Dev` / pop_mil),
+         Exp_dev_pc_poor = (`Exp Dev` / poor_pop_mil))
 
 # checking structure to ensure data types are as expected. Get some wonkiness from pdfs
-str(budget_raw)
-Hmisc::describe(budget_raw)
+  str(budget_raw)
+  Hmisc::describe(budget_raw)
 
 # Subset the raw totals - These will be used later to compare with my own calculations
   budget_totals_pdf <-  
@@ -90,7 +113,11 @@ Hmisc::describe(budget_raw)
     mutate(Expend_excheq_rec = bs_calc(`Exp Rec`, `Exq Rec`),
            Expend_excheq_dev = bs_calc(`Exp Dev`, `Exq Dev`),
            Absorption_recur = bs_calc(`Exp Rec`, `ASBA Rec`),
-           Absorption_dev = bs_calc(`Exp Dev`, ASBADev))
+           Absorption_dev = bs_calc(`Exp Dev`, ASBADev)) %>% 
+    group_by(budget_year) %>% 
+    mutate(absorp_rank = rank(Absorption_dev)) %>% 
+    ungroup()
+    
   
   # Who planned the most, expended the most? Generalize into a function
   county_look <- function(df, x) {
@@ -101,17 +128,70 @@ Hmisc::describe(budget_raw)
       mutate(tmp = sum(!!xvar, na.rm = TRUE)) %>% 
       ungroup() %>% 
       mutate(c_sort = fct_reorder(County, tmp, .desc = TRUE)) %>% 
-      ggplot(aes(x = budget_year, y = !!xvar))+
+      ggplot(aes(x = budget_year, y = !!xvar)) +
       geom_col(fill = grey70K) +
       coord_flip() +
       theme_minimal() +
       facet_wrap(~c_sort) +
-      labs(x = "", y = "")
+      labs(x = "", y = "") 
   }
   
   county_look(budget_totals_pdf, `ASBADev`)
   county_look(budget_totals_pdf, `Exp Dev`)
+  county_look(budget_totals_pdf, `Exp_dev_pc`) +
+    ggtitle("Per capita development expenditures") +
+    labs(caption = GC_caption)
   
+  # Map out development expenditures per capita over time  
+  # Create a generic function to create small multiple maps based on budget_totals_pdf data
+  budg_map <- function(df, xvar, leg_text = "") {
+    xvar = enquo(xvar) # grab the input text to know what to map
+    
+    df %>% 
+      left_join(asal_geo, by = c("CID" = "CID")) %>% 
+      ggplot(.) +
+      geom_sf(aes(fill = !!xvar), colour = "white", size = 0.5) +
+      facet_wrap(~ budget_year, nrow = 1) +
+      scale_fill_viridis_c(option = "A", direction = -1, alpha = 0.75) +
+      theme_minimal() +
+      theme(legend.position = "top",
+            legend.key.width = unit(1.5, "cm")) + #adjust the width of the legend
+      labs(fill = leg_text,
+           caption = GC_caption) 
+    }
+  budg_map(budget_totals_pdf, poor_pop_mil, leg_text = "absorption rate") 
+  budg_map(budget_totals_pdf, Exp_dev_pc_poor, leg_text = "Development spending per poor person")
+  
+  budget_totals_pdf %>%
+    mutate(c_sort = fct_reorder(County, poor_pop_mil, .desc = FALSE)) %>% 
+    ggplot(aes(x = c_sort, y = poor_pop_mil, fill = ASAL), alpha = 0.75) + 
+    geom_col() +
+    facet_wrap(~ budget_year, nrow = 1) +
+    coord_flip() +
+    theme_minimal() +
+    theme(legend.position = "top") +
+    scale_fill_brewer(palette = "Set2")
+
+  # The northern bias is clear - what if we compare the north v the rest, what is the diff?
+  budget_totals_pdf %>% 
+    group_by(budget_year, ASAL) %>% 
+    summarise_at(vars(`Exp Dev`, pop_mil), funs(sum(., na.rm = TRUE))) %>% 
+    mutate(exp_pc_ASAL = `Exp Dev` / pop_mil) %>% 
+    arrange(ASAL, desc(exp_pc_ASAL)) %>% 
+    ggplot(aes(x = ASAL, y = exp_pc_ASAL)) +
+    geom_col() + coord_flip() + facet_wrap(~budget_year, nrow = 1) + theme_minimal()
+      
+  # Where are the poor?
+  pov_all %>% 
+    left_join(asal_geo, by = c("CID" = "CID")) %>% 
+    ggplot() +
+    geom_sf(aes(fill = Number_poor), colour = "white") +
+    scale_fill_viridis_c(option = "A", direction = -1)
+  
+  pov_all %>% filter(CID != 0) %>% 
+    mutate(County = fct_reorder(County, Number_poor)) %>% 
+    ggplot(aes(x = County, y = Number_poor)) + geom_col() +
+    coord_flip() + theme_minimal()
 
   # Collapsing everything down to standardized budget categories to create budget shares
   # Based on yearly totals
@@ -178,21 +258,42 @@ Hmisc::describe(budget_raw)
     pwalk(., ggsave, path = imagepath)
   
 # Overall absorption rate from the totals cateogry (# 13)
-  budget_totals_pdf %>% 
+budget_totals_pdf %>% 
     left_join(asal_geo, by = c("CID" = "CID")) %>% 
     ggplot(.) +
     geom_sf(aes(fill = Absorption_dev), colour = "white", size = 0.5) +
     facet_wrap(~ budget_year, nrow = 1) +
-    scale_fill_viridis_c(option = "A", direction = -1, label = percent_format(accuracy = 2)) +
+    scale_fill_viridis_c(option = "A", direction = -1, alpha = 0.75,
+                         label = percent_format(accuracy = 2)) +
     theme_minimal() +
     theme(legend.position = "top",
-          legend.key.width = unit(2, "cm")) + #adjust the width of the legend
-    labs(caption = GC_caption,
-         fill = "Overall absorption rate") +
-    ggtitle("Garissa and Bomet had the highest average development absorption rates")+
+          legend.key.width = unit(1.5, "cm")) + #adjust the width of the legend
+    labs(fill = "Overall absorption rate",
+         caption = GC_caption) +
+    ggtitle("Garissa and Bomet had the largest average development absorption rates", 
+            subtitle = "Bar graphs sorted by overall average") +
     ggsave(file.path(imagepath, "KEN_develompent_absorption_rates_map.pdf"),
-           height = 11.7, width = 16.5)
+            height = 12, width = 36)
     
+# Now, show data data but in bar graph form / combine w/ the map when time is right
+budget_totals_pdf %>% 
+    mutate(County = fct_reorder(County, absorp_rank)) %>% 
+    ggplot(aes(x = County, y = Absorption_dev, fill = Absorption_dev)) +
+    geom_col() +
+    coord_flip() +
+    scale_y_continuous(
+      labels = scales::percent_format(accuracy = 1),
+      breaks = seq(0, 1, by = 0.25)
+    ) +
+    scale_fill_viridis_c(option = "A", direction = -1, alpha = 0.75, label = percent_format(accuracy = 2)) +
+    facet_wrap(~budget_year, nrow = 1) +
+    theme_minimal() +
+    theme(legend.position = "none") +
+    labs(caption = GC_caption) +
+   ggsave(file.path(imagepath, "KEN_develompent_absorption_rates_bar.pdf"),
+          height = 12, width = 36)
+
+  
     budget_totals_pdf %>% 
       group_by(budget_year) %>% 
       mutate(dev_exp = sum(`Exp Dev`, na.rm = TRUE),

@@ -206,3 +206,13 @@ map(b_list, ~ b_plot(budget, .))
 # Exporting budget data ---------------------------------------------------
 
 write_csv(budget, path = file.path(budgetpath, "KEN_budget_draft_2019_02_10.csv"))
+
+
+
+# Export budget data for ESRI map production w/ shape files ---------------
+
+
+
+
+
+
