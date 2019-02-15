@@ -292,7 +292,7 @@ budget_totals_pdf %>%
     ungroup()
       
     # Add in AHADI info an calculate stats on that 
-    budget %>%
+    budget %>% filter(`Category Code` == 1) %>% 
       mutate(c_order = fct_reorder(County, CID_absorption_dev)) %>% 
       ggplot(aes(x = CID_absorption_dev, y = c_order)) +
     geom_col() + facet_wrap(~ budget_year)
