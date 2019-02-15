@@ -6,6 +6,7 @@
 
 # load data and crosswalks ---------------------------------------------------------------
 source(file.path(rpath, "budget_cw.R"))
+source(file.path(rpath, "AHADI_focus_df.R"))
 
 # Reading these in separately to check insheeting carefully. Data have been scraped from PDFs
   file_name = c("County Budget Database_TE_Edits.xlsx")
@@ -70,6 +71,13 @@ source(file.path(rpath, "budget_cw.R"))
 # Caption of data, for later use in graphics
 GC_caption = c("Source: USAID GeoCenter Calculations from County Government Budget Implementation Review Reports 2014/15, 2015/16, 2016/17, 2017/18")
 
+bar_formatr <- list(
+  geom_col(),
+  theme_minimal(), 
+  coord_flip()
+)
+
+viridis_c <- scale_fill_viridis_c(alpha = 0.75, option = "C", direction = -1)
 
 
 
@@ -80,7 +88,7 @@ GC_caption = c("Source: USAID GeoCenter Calculations from County Government Budg
 ##%######################################################%##
 
 # Create budget database with proper roll-ups and budget shares -----------
-
+# Raw dataset has the original category codes, w/ hand coded mapping to budget categories
 budget_raw <- 
   bind_rows(budget_2015, budget_2016, budget_2017, budget_2014) %>%
   left_join(., asal, by = c("CID" ="CID")) %>%  # add in ASAL categories
@@ -109,6 +117,7 @@ budget_raw <-
   Hmisc::describe(budget_raw)
 
 # Subset the raw totals - These will be used later to compare with my own calculations
+# There are quite a few of the totals that are wrong, like Kisumu in 2017 due to a misplaced comma in the pdf
   budget_totals_pdf <-  
     budget_raw %>% 
     filter(`Category Code` == 13) %>% 
@@ -146,7 +155,7 @@ budget_raw <-
   }
   
   county_look(budget_totals_pdf, `ASBADev`)
-  county_look(budget_totals_pdf, `Exp Dev`)
+  county_look(budget_totals_pdf, `Exp Dev`) # Kisumu numbers are wrong in 2017; Use manual calculations.
   county_look(budget_totals_pdf, `Exp_dev_pc`) +
     ggtitle("Per capita development expenditures") +
     labs(caption = GC_caption)
@@ -193,8 +202,8 @@ budg_map(budget_totals_pdf, Exp_dev_pc_poor, leg_text = "Development spending pe
 
 budget_totals_pdf %>%
     mutate(c_sort = fct_reorder(County, poor_pop_mil, .desc = FALSE)) %>% 
-    ggplot(aes(x = c_sort, y = poor_pop_mil, fill = ASAL), alpha = 0.75) + 
-    geom_col() +
+    ggplot(aes(x = c_sort, y = poor_pop_mil, fill = ASAL)) + 
+    geom_col(alpha = 0.75) +
     facet_wrap(~ budget_year, nrow = 1) +
     coord_flip() +
     theme_minimal() +
@@ -222,17 +231,22 @@ budget_totals_pdf %>%
     ggplot(aes(x = County, y = Number_poor)) + geom_col() +
     coord_flip() + theme_minimal()
 
-  # Collapsing everything down to standardized budget categories to create budget shares
-  # Based on yearly totals
-  # Need to recreate the following variables that are based on two variables
-  # The bs_calc takes care of the calculation, just feed in x and y 
-  # Exp_exq_rec = Exp Rec / Exq Rec 
-  # Exp_exq_dev = Exp Dev / Exq Dev 
-  # Absorption_recurring =  Exp Rec / ASBA Rec 
-  # Absorption_development = Exp Dev / ASBADev 
 
   
   
+##%######################################################%##
+#                                                          #
+####            Hand crafted budget totals              ####
+#                                                          #
+##%######################################################%##
+# Collapsing everything down to standardized budget categories to create budget shares
+# Based on yearly totals
+# Need to recreate the following variables that are based on two variables  
+# The bs_calc takes care of the calculation, just feed in x and y 
+# Exp_exq_rec = Exp Rec / Exq Rec 
+# Exp_exq_dev = Exp Dev / Exq Dev 
+# Absorption_recurring =  Exp Rec / ASBA Rec 
+# Absorption_development = Exp Dev / ASBADev 
   
     
   budget <- 
@@ -240,12 +254,11 @@ budget_totals_pdf %>%
       filter(`Category Code` != 13) %>% 
       group_by(CID, `Category Code`, budget_year, Budget_title, County, ASAL) %>% 
       summarise_at(vars(`ASBA Rec`:`Exp Dev`), funs(sum(., na.rm = TRUE))) %>% 
-    
-    # using bs_calc custom function to calculate relative shares
-      mutate(Expend_excheq_rec = bs_calc(`Exp Rec`, `Exq Rec`),
+    mutate(Expend_excheq_rec = bs_calc(`Exp Rec`, `Exq Rec`),#  bs_calc function to calculate relative shares
              Expend_excheq_dev = bs_calc(`Exp Dev`, `Exq Dev`),
              Absorption_recur = bs_calc(`Exp Rec`, `ASBA Rec`),
              Absorption_dev = bs_calc(`Exp Dev`, ASBADev)) %>% 
+    
     # Create a count for each county / year to see how many categories are in data
     group_by(CID, budget_year) %>% 
     mutate(category_count = n()) %>% 
@@ -262,18 +275,73 @@ budget_totals_pdf %>%
              TRUE ~ NA_character_
            )) %>% 
     ungroup() %>% 
-    
+    group_by(CID, budget_year) %>% # Calculate overall absorption rates for recurring and dev
+    mutate_at(vars(`ASBA Rec`, ASBADev, `Exp Rec`, `Exp Dev`), .funs = funs(tot_year = sum(., na.rm = TRUE))) %>% 
+    mutate(CID_absorption_rec = (`Exp Rec_tot_year`/`ASBA Rec_tot_year`),
+          CID_absorption_dev = (`Exp Dev_tot_year`/ASBADev_tot_year)) %>% 
     # Create development expenditure shares as share of total development expenditures
     # This is needed to do share analysis and show relative importance of each category 
-    group_by(CID, budget_year) %>% 
     mutate(total_exp_dev = sum(`Exp Dev`, na.rm = TRUE)) %>% 
     ungroup() %>% 
-    mutate(exp_dev_share = bs_calc(`Exp Dev`, total_exp_dev))
+    mutate(exp_dev_share = bs_calc(`Exp Dev`, total_exp_dev)) %>% 
+    left_join(., AHADI_df, by = c("CID")) %>% 
+    group_by(AHADI, budget_year) %>% # Calculate AHADI focus absorption rates
+    mutate_at(vars(`ASBA Rec`, ASBADev, `Exp Rec`, `Exp Dev`), .funs = funs(AHADI_year = sum(., na.rm = TRUE))) %>% 
+    mutate(CID_absorption_rec_AHADI = (`Exp Rec_tot_year`/`ASBA Rec_tot_year`),
+           CID_absorption_dev_AHADI = (`Exp Dev_tot_year`/ASBADev_tot_year)) %>% 
+    ungroup()
+      
+    # Add in AHADI info an calculate stats on that 
+    budget %>%
+      mutate(c_order = fct_reorder(County, CID_absorption_dev)) %>% 
+      ggplot(aes(x = CID_absorption_dev, y = c_order)) +
+    geom_col() + facet_wrap(~ budget_year)
+    
 
+  
+  
+  
+  
+  
+  # Scatter plot function to check outliers
+  budg_scatter <- function(df, xvar, yvar) {
+    xvar <- enquo(xvar)
+    yvar <- enquo(yvar)
+    
+    df %>% 
+      ggplot(aes(!!xvar, !!yvar)) + geom_point() +
+      theme_minimal()
+  }
+  
+  budg_scatter(budget, absorption_rec, absorption_dev)  + 
+    geom_text(aes(label = str_c(County, " ", budget_year, "\n",Budget_title)),
+                  data = budget %>% filter(`Exq Dev` > 2000 | `Exp Dev` > 1500))
+  
+  # Machakos looks wrong, let's plot with numbers to see; Public Service Boards look really odd
+  budget %>% filter(County == "Machakos") %>% 
+    ggplot(aes(x = budget_year, y = Budget_title, fill = `Exp Rec`)) +
+    geom_tile(colour = "white") + geom_text(aes(label = `Exp Rec`), colour = "white", size = 3) +
+    coord_equal() + scale_fill_viridis_c(option = "D", direction = -1)
+  
+library(gganimate)
+library(transformr)
+  
+  budget %>% 
+    ggplot(aes(x = CID_absorption_dev, y = CID_absorption_rec, 
+               size = total_exp_dev, colour = budget_year)) +
+    geom_point(alpha = 0.7) +
+    facet_wrap(~ ASAL) +
+    geom_text(aes(label = County), size = 3) +
+    theme(legend.position = "none") + viridis_c
+    #labs(title = 'Budget Year: {frame_time}') +
+    #transition_time(budget_year) +
+    #ease_aes('linear')
+    
+  
   
   # Check how many categories are "complete" for each code
   # Need to have a sense of what categories we can trust for comparison over time
-  budget %>% group_by(`Category Code`, budget_year) %>% count() %>% spread(budget_year, n)
+  budget %>% group_by(`Budget_title`, budget_year) %>% count() %>% spread(budget_year, n)
     
   budget %>% 
     group_by(Budget_title) %>% 

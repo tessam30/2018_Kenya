@@ -1,7 +1,7 @@
 # Fact sheet: https://www.usaid.gov/sites/default/files/documents/1860/AHADI_Fact_Sheet_-_Jan._2018.pdf
 
 AHADI_df <- tibble::tribble(
-            ~County, ~CID, ~AHADI_focus,
+       ~County_name, ~CID,       ~AHADI,
           "BARINGO",   30,            0,
             "BOMET",   36,            1,
           "BUNGOMA",   39,            0,
