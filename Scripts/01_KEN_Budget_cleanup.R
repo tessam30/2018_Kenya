@@ -77,9 +77,6 @@ bar_formatr <- list(
   coord_flip()
 )
 
-viridis_c <- scale_fill_viridis_c(alpha = 0.75, option = "C", direction = -1)
-
-
 
 ##%######################################################%##
 #                                                          #
@@ -199,25 +196,6 @@ budg_map(budget_totals_pdf, Exp_dev_pc_poor, leg_text = "Development spending pe
       scale_fill_brewer(palette = "Set2")
   }
 
-
-budget_totals_pdf %>%
-    mutate(c_sort = fct_reorder(County, poor_pop_mil, .desc = FALSE)) %>% 
-    ggplot(aes(x = c_sort, y = poor_pop_mil, fill = ASAL)) + 
-    geom_col(alpha = 0.75) +
-    facet_wrap(~ budget_year, nrow = 1) +
-    coord_flip() +
-    theme_minimal() +
-    theme(legend.position = "top") +
-    scale_fill_brewer(palette = "Set2")
-
-  # The northern bias is clear - what if we compare the north v the rest, what is the diff?
-  budget_totals_pdf %>% 
-    group_by(budget_year, ASAL) %>% 
-    summarise_at(vars(`Exp Dev`, pop_mil), funs(sum(., na.rm = TRUE))) %>% 
-    mutate(exp_pc_ASAL = `Exp Dev` / pop_mil) %>% 
-    arrange(ASAL, desc(exp_pc_ASAL)) %>% 
-    ggplot(aes(x = ASAL, y = exp_pc_ASAL)) +
-    geom_col() + coord_flip() + facet_wrap(~budget_year, nrow = 1) + theme_minimal()
       
   # Where are the poor?
   pov_all %>% 
@@ -278,30 +256,54 @@ budget_totals_pdf %>%
     group_by(CID, budget_year) %>% # Calculate overall absorption rates for recurring and dev
     mutate_at(vars(`ASBA Rec`, ASBADev, `Exp Rec`, `Exp Dev`), .funs = funs(tot_year = sum(., na.rm = TRUE))) %>% 
     mutate(CID_absorption_rec = (`Exp Rec_tot_year`/`ASBA Rec_tot_year`),
-          CID_absorption_dev = (`Exp Dev_tot_year`/ASBADev_tot_year)) %>% 
+          CID_absorption_dev = (`Exp Dev_tot_year`/ASBADev_tot_year))%>% 
     # Create development expenditure shares as share of total development expenditures
     # This is needed to do share analysis and show relative importance of each category 
     mutate(total_exp_dev = sum(`Exp Dev`, na.rm = TRUE)) %>% 
     ungroup() %>% 
     mutate(exp_dev_share = bs_calc(`Exp Dev`, total_exp_dev)) %>% 
     left_join(., AHADI_df, by = c("CID")) %>% 
-    group_by(AHADI, budget_year) %>% # Calculate AHADI focus absorption rates
-    mutate_at(vars(`ASBA Rec`, ASBADev, `Exp Rec`, `Exp Dev`), .funs = funs(AHADI_year = sum(., na.rm = TRUE))) %>% 
+    group_by(AHADI, budget_year) %>% # Calculate AHADI focus absorption rates to see if Mission support makes a diff
+    mutate_at(vars(`ASBA Rec`, ASBADev, `Exp Rec`, `Exp Dev`), 
+              .funs = funs(AHADI_year = sum(., na.rm = TRUE))) %>% 
     mutate(CID_absorption_rec_AHADI = (`Exp Rec_tot_year`/`ASBA Rec_tot_year`),
            CID_absorption_dev_AHADI = (`Exp Dev_tot_year`/ASBADev_tot_year)) %>% 
-    ungroup()
-      
+    ungroup() %>% 
+    left_join(., pop, by = c("CID" = "CID", "budget_year" = "year")) %>%  # Add in population data for per cap budgets
+    mutate(tot_dev_exp_pc = (total_exp_dev/pop_mil))
+  
+
+# AHADI program focused on certain counties, any difference? --------------
+# short answer: no, not really.
+  
+   budget %>% group_by(AHADI, budget_year) %>% 
+      summarise(mean = mean(CID_absorption_dev)) %>% spread(AHADI, mean)
+  
+    # Box plot of 
+    ahadi_bud <- budget %>% group_by(County, budget_year, AHADI) %>% 
+      summarise(testvar = mean(CID_absorption_dev)) %>% 
+      mutate(AHADI = ifelse(AHADI == 1, "Treatment", "Control")) 
+    
+   # Appears to be no difference in each of the four budget years on absorption rates dev
+     ahadi_bud %>% split(.$budget_year) %>% 
+     map(~t.test(testvar ~ AHADI, data = .))
+    
+    ahadi_bud %>% 
+      ggplot(aes(x = AHADI, y = testvar)) + geom_boxplot() +
+      facet_wrap(~budget_year) + theme_minimal()
+    
     # Add in AHADI info an calculate stats on that 
-    budget %>% filter(`Category Code` == 1) %>% 
+    budget %>% 
       mutate(c_order = fct_reorder(County, CID_absorption_dev)) %>% 
-      ggplot(aes(x = CID_absorption_dev, y = c_order)) +
-    geom_col() + facet_wrap(~ budget_year)
+      ggplot(aes(y = CID_absorption_dev, x = c_order, fill = factor(AHADI))) +
+    geom_col() + facet_wrap(~ budget_year) + coord_flip()
     
 
-  
-  
-  
-  
+##%######################################################%##
+#                                                          #
+####                   Budget plots                     ####
+#                                                          #
+##%######################################################%##
   
   # Scatter plot function to check outliers
   budg_scatter <- function(df, xvar, yvar) {
@@ -313,29 +315,28 @@ budget_totals_pdf %>%
       theme_minimal()
   }
   
-  budg_scatter(budget, absorption_rec, absorption_dev)  + 
-    geom_text(aes(label = str_c(County, " ", budget_year, "\n",Budget_title)),
-                  data = budget %>% filter(`Exq Dev` > 2000 | `Exp Dev` > 1500))
+  budg_scatter(budget, CID_absorption_dev, CID_absorption_rec)  + 
+    #geom_text(aes(label = str_c(County, " ", budget_year, "\n",Budget_title)),
+    #              data = budget %>% filter(`Exq Dev` > 2000 | `Exp Dev` > 1500)) +
+    scale_y_continuous(breaks = seq(0, 1, .25), limits = c(0, 1)) +
+    scale_x_continuous(limits = c(0, 1))
   
   # Machakos looks wrong, let's plot with numbers to see; Public Service Boards look really odd
   budget %>% filter(County == "Machakos") %>% 
     ggplot(aes(x = budget_year, y = Budget_title, fill = `Exp Rec`)) +
     geom_tile(colour = "white") + geom_text(aes(label = `Exp Rec`), colour = "white", size = 3) +
     coord_equal() + scale_fill_viridis_c(option = "D", direction = -1)
-  
-library(gganimate)
-library(transformr)
-  
+
   budget %>% 
     ggplot(aes(x = CID_absorption_dev, y = CID_absorption_rec, 
                size = total_exp_dev, colour = budget_year)) +
     geom_point(alpha = 0.7) +
     facet_wrap(~ ASAL) +
     geom_text(aes(label = County), size = 3) +
-    theme(legend.position = "none") + viridis_c
+    theme(legend.position = "none")
     #labs(title = 'Budget Year: {frame_time}') +
-    #transition_time(budget_year) +
-    #ease_aes('linear')
+    #gganimate::transition_time(budget_year) +
+    #transformr::ease_aes('linear')
     
   
   
@@ -359,22 +360,57 @@ library(transformr)
     pwalk(., ggsave, path = imagepath)
   
 # Overall absorption rate from the totals cateogry (# 13)
-budget_totals_pdf %>% 
-    left_join(asal_geo, by = c("CID" = "CID")) %>% 
-    ggplot(.) +
-    geom_sf(aes(fill = Absorption_dev), colour = "white", size = 0.5) +
-    facet_wrap(~ budget_year, nrow = 1) +
-    scale_fill_viridis_c(option = "A", direction = -1, alpha = 0.75,
-                         label = percent_format(accuracy = 2)) +
-    theme_minimal() +
-    theme(legend.position = "top",
-          legend.key.width = unit(1.5, "cm")) + #adjust the width of the legend
-    labs(fill = "Overall absorption rate",
-         caption = GC_caption) +
-    ggtitle("Garissa and Bomet had the largest average development absorption rates", 
-            subtitle = "Bar graphs sorted by overall average") +
-    ggsave(file.path(imagepath, "KEN_develompent_absorption_rates_map.pdf"),
-            height = 12, width = 36)
+# Create a new dataset of key budget categories for mapping
+  budget_summary <- 
+    budget %>% 
+    group_by(CID, budget_year, County, ASAL, AHADI) %>% 
+    summarise_at(vars(CID_absorption_rec, 
+                      CID_absorption_dev,
+                      total_exp_dev,
+                      tot_dev_exp_pc,
+                      poor),
+                 funs(mean(., na.rm = TRUE)))
+  
+  # export for maps
+  write_csv(budget_summary, file.path(budgetpath, "KEN_budget_summary.csv"))
+  
+  
+# Generic mapping function
+  budget_map <- function(df, xvar)  {
+    xvar = enquo(xvar)
+    
+    df %>% left_join(., asal_geo, by = c("CID" = "CID")) %>% 
+      ggplot() +
+      geom_sf(aes(fill = !!xvar), colour = "white", size = 0.5) +
+      facet_wrap(~budget_year, nrow = 1) +
+      scale_fill_viridis_c(option = "A", direction = -1, alpha = 0.75,
+                           label = percent_format(accuracy = 2)) +
+      theme_minimal() +
+      theme(legend.position = "top",
+            legend.key.width = unit(1.25, "cm"))
+  }
+  
+budget_map(budget_summary, total_exp_dev) +
+  labs(fill = "Overall absorption rate",
+       caption = GC_caption) 
+
++
+  ggtitle("Garissa and Bomet had the largest average development absorption rates") +
+  ggsave(file.path(imagepath, "KEN_develompent_absorption_rates_map.pdf"),
+         height = 12, width = 36)
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
     
 # Now, show data data but in bar graph form / combine w/ the map when time is right
 budget_totals_pdf %>% 
@@ -386,7 +422,8 @@ budget_totals_pdf %>%
       labels = scales::percent_format(accuracy = 1),
       breaks = seq(0, 1, by = 0.25)
     ) +
-    scale_fill_viridis_c(option = "A", direction = -1, alpha = 0.75, label = percent_format(accuracy = 2)) +
+    scale_fill_viridis_c(option = "A", direction = -1, 
+                         alpha = 0.75, label = percent_format(accuracy = 2)) +
     facet_wrap(~budget_year, nrow = 1) +
     theme_minimal() +
     theme(legend.position = "none") +
