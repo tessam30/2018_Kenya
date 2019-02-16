@@ -369,12 +369,17 @@ budg_map(budget_totals_pdf, Exp_dev_pc_poor, leg_text = "Development spending pe
                       total_exp_dev,
                       tot_dev_exp_pc,
                       poor),
-                 funs(mean(., na.rm = TRUE)))
-  
+                 funs(mean(., na.rm = TRUE))) %>% 
+    ungroup() %>% 
+    group_by(budget_year) %>% # rank the vars for plotting later
+    mutate_at(vars(CID_absorption_rec:tot_dev_exp_pc), .funs = funs(rank = rank(.)))
+    
   # export for maps
-  write_csv(budget_summary, file.path(budgetpath, "KEN_budget_summary.csv"))
+
+    write_csv(budget_summary, file.path(budgetpath, "KEN_budget_summary.csv"))
   
   
+# ---- Use this if you need a print produciton quality map    
 # Generic mapping function
   budget_map <- function(df, xvar)  {
     xvar = enquo(xvar)
@@ -383,45 +388,53 @@ budg_map(budget_totals_pdf, Exp_dev_pc_poor, leg_text = "Development spending pe
       ggplot() +
       geom_sf(aes(fill = !!xvar), colour = "white", size = 0.5) +
       facet_wrap(~budget_year, nrow = 1) +
-      scale_fill_viridis_c(option = "A", direction = -1, alpha = 0.75,
-                           label = percent_format(accuracy = 2)) +
       theme_minimal() +
       theme(legend.position = "top",
             legend.key.width = unit(1.25, "cm"))
   }
   
-budget_map(budget_summary, total_exp_dev) +
-  labs(fill = "Overall absorption rate",
-       caption = GC_caption) 
-
+budget_map(budget_summary, tot_dev_exp_pc) +
+  scale_fill_viridis_c(option = "A", direction = -1, alpha = 0.75,
+                       label = percent_format(accuracy = 2)) 
 +
   ggtitle("Garissa and Bomet had the largest average development absorption rates") +
   ggsave(file.path(imagepath, "KEN_develompent_absorption_rates_map.pdf"),
          height = 12, width = 36)
   
   
+  budget_summary %>% 
+    mutate(csort = fct_reorder(County, CID_absorption_dev_rank)) %>% 
+    ggplot(aes(x = csort, y = budget_year)) +
+    geom_line(aes(group = County )) +
+    geom_point(aes(size = CID_absorption_dev, colour = CID_absorption_dev_rank)) + 
+    coord_flip() + theme_minimal() + 
+    labs(caption = GC_caption, x = "", y = "") +
+    scale_color_viridis_c()
   
   
+# Try a 10 X 10 waffle chart to show budget composition by categories
+  nrows <- 10
+  df_grid <- expand.grid(y = 1:nrows, x = 1:nrows)
   
+ grid_stat <-  budget %>% filter(CID == 1 & budget_year == 2014) %>%
+    select(Budget_title, exp_dev_share) %>% 
+   mutate(exp_dev_share = round(exp_dev_share *100, 0)) %>% 
+   uncount(exp_dev_share) %>% 
+   cbind(df_grid)
   
-  
-  
-  
-  
+library(waffle) # may be a compact way of showing budget shares across time
+ 
   
   
 
     
 # Now, show data data but in bar graph form / combine w/ the map when time is right
-budget_totals_pdf %>% 
+budget %>% 
     mutate(County = fct_reorder(County, absorp_rank)) %>% 
     ggplot(aes(x = County, y = Absorption_dev, fill = Absorption_dev)) +
     geom_col() +
     coord_flip() +
-    scale_y_continuous(
-      labels = scales::percent_format(accuracy = 1),
-      breaks = seq(0, 1, by = 0.25)
-    ) +
+ +
     scale_fill_viridis_c(option = "A", direction = -1, 
                          alpha = 0.75, label = percent_format(accuracy = 2)) +
     facet_wrap(~budget_year, nrow = 1) +
