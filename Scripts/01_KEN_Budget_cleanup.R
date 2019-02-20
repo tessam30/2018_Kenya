@@ -61,7 +61,7 @@ source(file.path(rpath, "AHADI_focus_df.R"))
     gather(key = "tmp", value = "population", -c(CID, County)) %>% 
     separate(tmp, c("drop", "year"), by = "_") %>%
     mutate(population = round(population, 0)) %>% 
-    spread(drop, population)%>% 
+    spread(drop, population) %>% 
     mutate(poor_pop_mil = poor / 1e6,
            pop_mil = pop / 1e6, 
            year = as.numeric(year)) %>% 
@@ -88,7 +88,7 @@ bar_formatr <- list(
 # Raw dataset has the original category codes, w/ hand coded mapping to budget categories
 budget_raw <- 
   bind_rows(budget_2015, budget_2016, budget_2017, budget_2014) %>%
-  left_join(., asal, by = c("CID" ="CID")) %>%  # add in ASAL categories
+  left_join(., asal, by = c("CID" = "CID")) %>%  # add in ASAL categories
   left_join(., budget_cw, by = c("Category Code" = "Category Code")) %>%  # Add in budget category crosswalk
   select(CID, # Clean up names and rearrange for ease of viewing
          County = Counties, 
@@ -126,6 +126,12 @@ budget_raw <-
     group_by(budget_year) %>% 
     mutate(absorp_rank = rank(Absorption_dev)) %>% 
     ungroup()
+  
+  # Make a table of the budget errors encountered thus far; Posted to github on the Budget Analysis wiki
+  # https://github.com/tessam30/2018_Kenya/wiki/Budget-Analysis
+  budget_raw %>% filter(!is.na(Notes)) %>% arrange(CID, budget_year, `Category Code`) %>% 
+    select(CID, budget_year, County, Budget_title, budget_type, Notes) %>% 
+    knitr::kable()
     
 ##%######################################################%##
 #                                                          #
@@ -217,6 +223,7 @@ budg_map(budget_totals_pdf, Exp_dev_pc_poor, leg_text = "Development spending pe
 ####            Hand crafted budget totals              ####
 #                                                          #
 ##%######################################################%##
+  
 # Collapsing everything down to standardized budget categories to create budget shares
 # Based on yearly totals
 # Need to recreate the following variables that are based on two variables  
@@ -256,7 +263,7 @@ budg_map(budget_totals_pdf, Exp_dev_pc_poor, leg_text = "Development spending pe
     group_by(CID, budget_year) %>% # Calculate overall absorption rates for recurring and dev
     mutate_at(vars(`ASBA Rec`, ASBADev, `Exp Rec`, `Exp Dev`), .funs = funs(tot_year = sum(., na.rm = TRUE))) %>% 
     mutate(CID_absorption_rec = (`Exp Rec_tot_year`/`ASBA Rec_tot_year`),
-          CID_absorption_dev = (`Exp Dev_tot_year`/ASBADev_tot_year))%>% 
+          CID_absorption_dev = (`Exp Dev_tot_year`/ASBADev_tot_year)) %>% 
     # Create development expenditure shares as share of total development expenditures
     # This is needed to do share analysis and show relative importance of each category 
     mutate(total_exp_dev = sum(`Exp Dev`, na.rm = TRUE)) %>% 
@@ -395,8 +402,7 @@ budg_map(budget_totals_pdf, Exp_dev_pc_poor, leg_text = "Development spending pe
   
 budget_map(budget_summary, tot_dev_exp_pc) +
   scale_fill_viridis_c(option = "A", direction = -1, alpha = 0.75,
-                       label = percent_format(accuracy = 2)) 
-+
+                       label = percent_format(accuracy = 2)) +
   ggtitle("Garissa and Bomet had the largest average development absorption rates") +
   ggsave(file.path(imagepath, "KEN_develompent_absorption_rates_map.pdf"),
          height = 12, width = 36)
@@ -418,68 +424,44 @@ budget_map(budget_summary, tot_dev_exp_pc) +
   
  grid_stat <-  budget %>% filter(CID == 1 & budget_year == 2014) %>%
     select(Budget_title, exp_dev_share) %>% 
-   mutate(exp_dev_share = round(exp_dev_share *100, 0)) %>% 
+   mutate(exp_dev_share = round(exp_dev_share * 100, 0)) %>% 
    uncount(exp_dev_share) %>% 
    cbind(df_grid)
   
 library(waffle) # may be a compact way of showing budget shares across time
- 
-  
-  
 
-    
-# Now, show data data but in bar graph form / combine w/ the map when time is right
-budget %>% 
-    mutate(County = fct_reorder(County, absorp_rank)) %>% 
-    ggplot(aes(x = County, y = Absorption_dev, fill = Absorption_dev)) +
-    geom_col() +
-    coord_flip() +
- +
-    scale_fill_viridis_c(option = "A", direction = -1, 
-                         alpha = 0.75, label = percent_format(accuracy = 2)) +
-    facet_wrap(~budget_year, nrow = 1) +
-    theme_minimal() +
-    theme(legend.position = "none") +
-    labs(caption = GC_caption) +
-   ggsave(file.path(imagepath, "KEN_develompent_absorption_rates_bar.pdf"),
-          height = 12, width = 36)
 
   
-    budget_totals_pdf %>% 
-      group_by(budget_year) %>% 
-      mutate(dev_exp = sum(`Exp Dev`, na.rm = TRUE),
-             ASBADev = sum(ASBADev, na.rm = TRUE),
-             natl_absorp = dev_exp / ASBADev) %>% 
-      ungroup() %>% 
-      group_by(County) %>%
-      mutate(ave_absorp = mean(Absorption_dev, na.rm = TRUE)) %>% 
-      ungroup() %>% 
-      mutate(County_sort = fct_reorder(County, ave_absorp, .desc = TRUE)) %>% 
-      ggplot(aes(x = budget_year, y = natl_absorp)) +
-      geom_line(color = grey30K) +
-      geom_line(aes(y = Absorption_dev), colour = grey60K) +
-      geom_point(aes(y = Absorption_dev, fill = grey80K), colour  = grey90K, shape = 21) +
-      facet_wrap(~ County_sort) + theme_minimal() +
-      labs(x = "", y = "",
-           caption = GC_caption,
-           title = "Bomet, Isiolo, and West Pokot had the highest development absorption rates",
-              subtitle = "Gray line indicates average absorption rate") +
-      scale_y_continuous(
-        labels = scales::percent_format(accuracy = 1),
-        breaks = seq(0, 1, by = 0.25)
-      )
-    
+# TODO - CLEAN up below
+################################################
 
+
+################################################
 # Compare GOK development expenditure totals to GC calculated totals
-options(scipen = 999)
-   b_gc <- budget %>% filter(`Category Code` == 7) %>% select(CID, County, budget_year, total_exp_dev) 
+   b_gc <- budget_summary %>% select(CID, County, budget_year, total_exp_dev) 
   
 # Be careful how you merge the data b/c not all category codes are available for all Counties    
- b_gc_pdf <-  budget_totals_pdf %>% select(CID, County, budget_year, `Exp Dev`) %>% 
+ b_gc_pdf <-  budget_totals_pdf %>% select(CID, budget_year, `Exp Dev`) %>% 
    left_join(., b_gc, by = c("CID" = "CID", "budget_year" = "budget_year")) %>% 
    mutate(diff = `Exp Dev` - total_exp_dev,
           diff = round(diff, 2)) %>% 
    arrange(diff)
+ 
+ # TODO: Create a plot of the discrepancies
+ b_gc_pdf %>% filter(abs(diff) > 1) 
+ %>% 
+   mutate(sortvar = fct_reorder(County, diff, .desc = TRUE),
+          fillvar = ifelse(diff > 0, "True", "False"),
+          diff_round = round(diff, 0)) %>% 
+   ggplot(aes(x = sortvar, y = diff, fill = fillvar, label = diff_round)) + 
+   geom_col() + coord_flip() + theme_minimal() +
+   scale_fill_manual(values = c("True" = grey80K, "False" = "#ef6548")) +
+   scale_y_continuous(limits = c(-200, 1000)) + 
+   geom_text(hjust = "outward", size = 4) +
+   theme(legend.position = "none") +
+   labs(x = "Difference between hand calculations and pdf totals",
+        title = "Wajir had the largest discrepancy when aggregating development expenditures")
+  
   
 # Incorrect budget totals -------------------------------------------------
  # Kisumu in 2017 should be 70.8 for City of Kisumu Development Expenditures - still off even after this
@@ -488,10 +470,6 @@ options(scipen = 999)
  # Tana River in 2017/18 is off due to a special program
  # Kirinyaga development expenditures do not add up in 2017/18 
  # Nyeri totals are 1,140,315,329 in 2017 for development expenditures, but line item budget only sums to 841
- 
-  
-# Plot to make - absorption rate by county by budget category, looped over county, sorted by category
-      
     
     
 # Show which counties do not have categories across all 12 categories (47 X 12 matrix basically)
@@ -503,18 +481,16 @@ options(scipen = 999)
       ggplot(aes(x = Budget_title, y = County )) + 
       geom_tile(aes(fill = count), colour = "white") +
       scale_fill_brewer(palette = 13, direction = 1) +
+      theme_minimal() +
       theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
       theme(legend.position = "top") +
       labs(title = "Health is the most consistent budget category across 2014/15 - 2017/18",
            y = "", x = "", caption = "Source: 2014/15, 2015/16, 2016/17 & 2017/18 Budget Data",
            fill = "Number of times budget category appears") +
-      coord_flip() +
+      coord_flip()
+ + 
       ggsave(file.path(imagepath, "Budget_summary.pdf"), width = 11, height = 5) 
       
-    
-    
-    
-    
 # Or the purr way - saving all plots as pdfs
 budget %>% 
     group_by(Budget_title) %>% 
@@ -553,144 +529,104 @@ budget %>%
 
 
   
-  
- # Now create GeoCenter totals to compare with PDFs from the Controller's Office Official Reports
-  budget_totals_GC <- 
-    budget %>% 
-    group_by(CID, budget_year, County, ASAL) %>% 
-    summarise_at(vars(`ASBA Rec`:`Exp Dev`), funs(sum(., na.rm = TRUE))) %>% 
-    mutate(Expend_excheq_rec_tot = bs_calc(`Exp Rec`, `Exq Rec`),
-           Expend_excheq_dev_tot = bs_calc(`Exp Dev`, `Exq Dev`),
-           Absorption_recur_tot = bs_calc(`Exp Rec`, `ASBA Rec`),
-           Absorption_dev_tot = bs_calc(`Exp Dev`, ASBADev)) %>% 
-    ungroup() %>% 
-    group_by(CID) %>% 
-           mutate(absorb_dev_lag = lag(Absorption_dev_tot, n = 1, order_by = budget_year), 
-           absorb_dev_delta = Absorption_dev_tot - absorb_dev_lag) %>% 
-  ungroup()
 
-  budget_totals_GC %>% 
-    mutate(county_sort = fct_reorder(County, `Exp Dev`, .desc = TRUE)) %>% 
-    group_by(budget_year) %>% 
-    mutate(exp_dev_ave = mean(`Exp Dev`, na.rm = TRUE)) %>% 
-    ungroup() %>% 
-    ggplot(.) +
-    geom_line(aes(x = budget_year, y = exp_dev_ave), colour = "grey") +
-    geom_line(aes(x = budget_year, y = `Exp Dev`)) + 
-    geom_point(aes(x = budget_year, y = `Exp Dev`)) +
-    facet_wrap(~county_sort) +
-    theme_minimal()
+##%######################################################%##
+#                                                          #
+####          Comparing Budget Totals Part II           ####
+#                                                          #
+##%######################################################%##
+
+# Now create GeoCenter totals to compare with PDFs from the Controller's Office Official Reports
+# First, wrangle the 2014/15 data as it had to be scraped in a vector
+  budg_tot_14 <- read_excel(file.path(budgetpath, "KEN_FY2014_15_budget_raw.xlsx"),
+                            col_names = FALSE) %>% 
+    rename(col_1 = "..1") %>% 
+    mutate(flag = ifelse(str_detect(col_1, "[^A-Za-z]"), 0, 1)) 
+  
+  %>% 
+    split(., .$flag)
+    
+    
+# Now, need to get everyth 10th row as that is where the county names are
+  df.new = budg_tot_14[seq(1, nrow(budg_tot_14), 10), ]
   
   
+  d <- matrix(budg_tot_14, nrow = 10, byrow = FALSE)
+  
+  
+  # Read in County Totals from Eric K.’s Github Account ---------------------
 
-# Read in County Totals from Eric K.’s Github Account ---------------------
-
+  
+  
+  
 County_budget_allocation <- "https://raw.githubusercontent.com/kabuchanga/KE-budgetsDB/master/data_final/KEN_county_budget_totals_15-18.csv"
 
-county_BA <- read_csv(County_budget_allocation) %>% 
-  mutate_at(vars(contains("Rate")), funs(. / 100)) %>% 
-  left_join(asal, by = c("CID" = "CID")) %>% 
+county_BA <- read_csv(County_budget_allocation) %>%
+  mutate_at(vars(contains("Rate")), funs(. / 100)) %>%
+  left_join(asal, by = c("CID" = "CID")) %>%
   mutate(year = case_when(
-    FYear == "2015-2016" ~ 2015, 
-    FYear == "2016-2017" ~ 2016, 
+    FYear == "2015-2016" ~ 2015,
+    FYear == "2016-2017" ~ 2016,
     FYear == "2017-2018" ~ 2017,
     TRUE ~ NA_real_
-  )) %>% 
-  arrange(CID, year) %>% 
-  group_by(CID) %>% 
-  mutate(prv_year_absorb = lag(`Overall Absorption Rate`, n = 1, order_by = year),
-         prv_2year_absorb = lag(`Overall Absorption Rate`, n = 2, order_by = year), 
-         absorb_delta = `Overall Absorption Rate` - prv_year_absorb,
-         tot_absorb_delta = `Overall Absorption Rate` - prv_2year_absorb) %>% 
-  left_join(., b_gc_pdf, by = c("CID" = "CID", "year" = "budget_year")) %>% 
-  select(County, Dev_Expenditure, total_exp_dev, `Exp Dev`, diff, everything()) %>% 
-  mutate(final_check = (Dev_Expenditure - total_exp_dev) %>% 
-           round(., 2))  %>% 
-  select(CID, County, year, final_check, everything()) %>% 
+  )) %>%
+  arrange(CID, year) %>%
+  group_by(CID) %>%
+  mutate(
+    prv_year_absorb = lag(`Overall Absorption Rate`, n = 1, order_by = year),
+    prv_2year_absorb = lag(`Overall Absorption Rate`, n = 2, order_by = year),
+    absorb_delta = `Overall Absorption Rate` - prv_year_absorb,
+    tot_absorb_delta = `Overall Absorption Rate` - prv_2year_absorb,
+    County2 = County
+  ) %>%
+  select(-County) %>%
+  left_join(., b_gc_pdf, by = c("CID" = "CID", "year" = "budget_year")) %>%
+  select(County, Dev_Expenditure, total_exp_dev, `Exp Dev`, diff, everything()) %>%
+  mutate(final_check = (Dev_Expenditure - total_exp_dev) %>%
+    round(., 2)) %>%
+  select(CID, County, year, final_check, everything()) %>%
   arrange(final_check)
 
-county_BA %>% 
-  left_join(asal_geo, by = c("CID" = "CID")) %>% 
-  ggplot(.) +
-  geom_sf(aes(fill = `Overall Absorption Rate`), colour = "white", size = 0.5) +
-  facet_wrap(~ year) +
-  scale_fill_viridis_c(option = "A", direction = -1, label = percent_format(accuracy = 2)) +
-  theme_minimal() +
-  theme(legend.position = "top",
-        legend.key.width = unit(2, "cm")) + #adjust the width of the legend
-  labs(caption = GC_caption,
-       fill = "Overall absorption rate") +
-  ggtitle("Garissa and Bomet had the highest average absorption rates for development expenditures") +
-  ggsave(file.path(imagepath, "KEN_develompent_absorption_rates_map.pdf"),
-         height = 11.7, width = 16.5)
-  
+#TODO # Plot three calculations for those with discrepancies larger than 5
+
+
+
+
+
 
 # Tabular summary of absorption rates by county
-county_BA %>% 
-  group_by(County) %>% 
-  mutate(ave_abs_rate = mean(`Overall Absorption Rate`)) %>% 
-  ungroup() %>% 
-  select(County, year, ave_abs_rate, `Overall Absorption Rate`) %>% 
-  spread(year, `Overall Absorption Rate`) %>% 
-  arrange(-ave_abs_rate,) %>% 
+county_BA %>%
+  group_by(County) %>%
+  mutate(ave_abs_rate = mean(`Overall Absorption Rate`)) %>%
+  ungroup() %>%
+  select(County, year, ave_abs_rate, `Overall Absorption Rate`) %>%
+  spread(year, `Overall Absorption Rate`) %>%
+  arrange(-ave_abs_rate) %>%
   print(n = 47)
 
 
-yabsorp_max = unlist(county_BA %>% 
-                       ungroup() %>% 
-                       summarise(max_dev = max(abs(absorb_delta), na.rm = TRUE)))
+yabsorp_max <- unlist(county_BA %>%
+  ungroup() %>%
+  summarise(max_dev = max(abs(absorb_delta), na.rm = TRUE)))
 
-county_BA %>% 
-  left_join(asal_geo, by = c("CID" = "CID")) %>% 
+county_BA %>%
+  left_join(asal_geo, by = c("CID" = "CID")) %>%
   ggplot(.) +
   geom_sf(aes(fill = absorb_delta), colour = "white", size = 0.05) +
-  scale_fill_gradientn(colours = RColorBrewer::brewer.pal(11, 'PiYG'),
-                       limits = c(-1 * absorp_max, absorp_max), 
-                       labels = scales::percent) +
-  facet_wrap(~ year)
-  
-# Show counties over time, sorted by 2018 levels
-county_BA %>% 
-  group_by(year) %>% 
-  mutate(ave_absorp = mean(`Overall Absorption Rate`)) %>% 
-  ungroup() %>% 
-  ggplot() + # Move the 
-  geom_line(aes(x = year, y = ave_absorp), colour = "gray", size = 1.25, alpha = 0.75) +
-  geom_point(aes(x = year, y = `Overall Absorption Rate`)) +
-  geom_line(aes(x = year, y = `Overall Absorption Rate`)) + 
-  facet_wrap(~ County) +
-  theme_minimal() +
-  scale_x_continuous(breaks=seq(2015, 2017, 1))
+  scale_fill_gradientn(
+    colours = RColorBrewer::brewer.pal(11, "PiYG"),
+    limits = c(-1 * absorp_max, absorp_max),
+    labels = scales::percent
+  ) +
+  facet_wrap(~year)
   
 
-  
-  
+##%######################################################%##
+#                                                          #
+####              Export data for Tableau               ####
+#                                                          #
+##%######################################################%##
 
-# Variable creation for analysis and visualization ------------------------
-
-
-# Exploratory plots -------------------------------------------------------
-
-
-# Quick visualization of absorbtion rates across categories
-budget_totals_GC %>% 
-  left_join(asal_geo, by = c("CID" = "CID")) %>% 
-  gather(key = "Absorption_type", value = "percent", Absorption_recur_tot:Absorption_dev_tot) %>% 
-  ggplot() +
-  geom_sf(aes(fill = percent), colour = "white", size = 0.5) +
-  scale_fill_viridis_c(alpha = 0.66, direction = -1, option = "A") +
-  facet_wrap(Absorption_type ~ budget_year)
-
-# Checking out absorbtion rates by categories
-budget %>% 
-  left_join(asal_geo, by = c("CID" = "CID")) %>% 
-  filter(budget_year == 2016) %>% 
-  ggplot() +
-  geom_sf(aes(fill = `Exp Dev`), colour = "white", size = 0.5) +
-  scale_fill_viridis_c(alpha = 0.66, direction = -1, option = "A") +
-  facet_wrap(~Budget_title)
-
-# Export data for Plotting in Tableau
   budget <- 
     budget %>% 
     left_join(., pov_all, by = c("CID")) %>% 
