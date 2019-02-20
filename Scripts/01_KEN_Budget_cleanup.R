@@ -109,6 +109,8 @@ budget_raw <-
   mutate(Exp_dev_pc = (`Exp Dev` / pop_mil),
          Exp_dev_pc_poor = (`Exp Dev` / poor_pop_mil))
 
+remove(list = ls(pattern = "^budget_[0-9]"))
+
 # checking structure to ensure data types are as expected. Get some wonkiness from pdfs
   str(budget_raw)
   Hmisc::describe(budget_raw)
@@ -448,8 +450,7 @@ library(waffle) # may be a compact way of showing budget shares across time
    arrange(diff)
  
  # TODO: Create a plot of the discrepancies
- b_gc_pdf %>% filter(abs(diff) > 1) 
- %>% 
+ b_gc_pdf %>% filter(abs(diff) > 1) %>% 
    mutate(sortvar = fct_reorder(County, diff, .desc = TRUE),
           fillvar = ifelse(diff > 0, "True", "False"),
           diff_round = round(diff, 0)) %>% 
@@ -487,8 +488,7 @@ library(waffle) # may be a compact way of showing budget shares across time
       labs(title = "Health is the most consistent budget category across 2014/15 - 2017/18",
            y = "", x = "", caption = "Source: 2014/15, 2015/16, 2016/17 & 2017/18 Budget Data",
            fill = "Number of times budget category appears") +
-      coord_flip()
- + 
+      coord_flip() + 
       ggsave(file.path(imagepath, "Budget_summary.pdf"), width = 11, height = 5) 
       
 # Or the purr way - saving all plots as pdfs
@@ -541,19 +541,43 @@ budget %>%
   budg_tot_14 <- read_excel(file.path(budgetpath, "KEN_FY2014_15_budget_raw.xlsx"),
                             col_names = FALSE) %>% 
     rename(col_1 = "..1") %>% 
-    mutate(flag = ifelse(str_detect(col_1, "[^A-Za-z]"), 0, 1)) 
+    mutate(flag = ifelse(str_detect(col_1, "[a-z]"), 1, 0))
   
-  %>% 
-    split(., .$flag)
-    
-    
-# Now, need to get everyth 10th row as that is where the county names are
-  df.new = budg_tot_14[seq(1, nrow(budg_tot_14), 10), ]
+# Subet counties, keepingin order, then convert remaining data into a matrix, reshape to be a 
+  county14_order <- budg_tot_14 %>% filter(flag == 1)
+  county14_nums  <- budg_tot_14 %>% filter(flag != 1) %>% select(-flag) %>% mutate(col_1 = as.numeric(col_1))
+  mtx <- as.matrix(county14_nums)
   
-  
-  d <- matrix(budg_tot_14, nrow = 10, byrow = FALSE)
-  
-  
+  budget_14_tot <- matrix(mtx, nrow = 48, byrow = TRUE) %>% as_tibble() %>% 
+    cbind(county14_order, .) %>% 
+    mutate(year = 2014,
+           Fyear = "2014-2015") %>% # make it compatible with the csv we read in below
+    mutate_at(vars(V1:V9), funs(. / 1e6)) %>% 
+    select(-c(V3, V6, V9, flag)) %>% 
+    rename(`Rec_Budget Estimates` = V1,
+           `Dev_Budget Estimates` = V2,
+           `Rec_Exchequer` = V4,
+           `Dev_Exchequer` = V5,
+           `Rec_Expenditure` = V7,
+           `Dev_Expenditure` = V8,
+           County = col_1) %>% 
+    mutate(`Exp_Exq Rec` = (Rec_Expenditure / Rec_Exchequer),
+           `Exp_Exq Dev` = (Dev_Expenditure / Dev_Exchequer),
+           `Recurrent Absorption Rate (%)` = (Rec_Expenditure / `Rec_Budget Estimates`),
+           `Development Absorption Rate (%)` = (Dev_Expenditure / `Dev_Budget Estimates`),
+           `Total_Budget Estimates` = `Rec_Budget Estimates` + `Dev_Budget Estimates`,
+           Total_Expenditure = `Rec_Expenditure` + `Dev_Expenditure`) %>% 
+    filter(County != "Total") %>% 
+    left_join(., (county_list %>% select(CID, Counties)), by = c("County" = "Counties")) %>% 
+    group_by(year) %>%
+    mutate(tot_ASBArec = sum(`Rec_Budget Estimates`, na.rm = TRUE),
+           tot_ASBAdev = sum(`Dev_Budget Estimates`, na.rm = TRUE),
+           totl_exp_rec = sum(Rec_Expenditure, na.rm = TRUE),
+           tot_exp_dev = sum(Dev_Expenditure, na.rm = TRUE),
+           `Overall Absorption Rate` = (tot_exp_dev / tot_ASBAdev),
+           `Overall Absorption Rate Recurring` = (totl_exp_rec / tot_ASBArec)) %>% 
+    select(-c(tot_ASBArec, tot_ASBAdev, totl_exp_rec, tot_exp_dev))
+             
   # Read in County Totals from Eric K.’s Github Account ---------------------
 
   
@@ -570,7 +594,12 @@ county_BA <- read_csv(County_budget_allocation) %>%
     FYear == "2017-2018" ~ 2017,
     TRUE ~ NA_real_
   )) %>%
-  arrange(CID, year) %>%
+  arrange(CID, year) %>% 
+  bind_rows(., budget_14_tot) %>% 
+  select(-c(Counties, Category)) 
+
+budget_totals_GOK <- 
+  county_BA %>% 
   group_by(CID) %>%
   mutate(
     prv_year_absorb = lag(`Overall Absorption Rate`, n = 1, order_by = year),
@@ -579,14 +608,32 @@ county_BA <- read_csv(County_budget_allocation) %>%
     tot_absorb_delta = `Overall Absorption Rate` - prv_2year_absorb,
     County2 = County
   ) %>%
+  ungroup() %>% 
   select(-County) %>%
   left_join(., b_gc_pdf, by = c("CID" = "CID", "year" = "budget_year")) %>%
   select(County, Dev_Expenditure, total_exp_dev, `Exp Dev`, diff, everything()) %>%
   mutate(final_check = (Dev_Expenditure - total_exp_dev) %>%
     round(., 2)) %>%
-  select(CID, County, year, final_check, everything()) %>%
-  arrange(final_check)
+  select(CID, County, year, final_check, diff, everything()) %>%
+  arrange(final_check, diff) 
 
+budget_totals_GOK %>% 
+  filter(abs(final_check) > 1) %>% 
+  select(County, final_check, year) %>% 
+  mutate(group = ifelse(final_check > 0, "Positive", "Negative"), 
+         csort = fct_reorder(County, final_check, .desc = TRUE)) %>% 
+  ggplot(aes(x = csort, y = final_check, fill = group)) +
+  geom_col() + coord_flip() + theme_minimal() +
+  scale_fill_manual(values = c("Positive" = "#8073ac", "Negative" = "#e08214")) +
+  labs(x = "", y = "Difference between GeoCenter totals (brown) and GOK Calculations (purple)",
+       caption = "GeoCenter Calculations from Official GOK Budget Documents",
+       title = "GeoCenter calculations differ from budget summary tables") +
+  facet_wrap(~year) +
+  theme(legend.position = "none",
+        panel.spacing = unit(1, "lines"))
+
+
+rm(budget_2014, budget_2015, budget_2016, budget_2017, budg_tot_14, mtx, county14_nums, county14_order)
 #TODO # Plot three calculations for those with discrepancies larger than 5
 
 
