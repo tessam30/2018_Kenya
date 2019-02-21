@@ -1,3 +1,8 @@
+###%######################################################%##
+#                                                          #
+####        Election Analysis Prep                      ####
+#                                                          #
+##%######################################################%##
 # Purpose: Analyze Election data from 2013 & 2018
 # Author: Tim Essam, Ph.D., Kevin Horn, Ph.D.
 # Date: 2018_12_07
@@ -63,7 +68,7 @@ elec_geo %>%
                        limits = c(-1 * swing_max_ky, swing_max_ky), 
                        labels = scales::percent) +
   theme(legend.position = "top")
-  ggsave(file.path(imagepath, "Kenyatta swing 2013 to 2017.pdf"),
+ggsave(file.path(imagepath, "Kenyatta swing 2013 to 2017.pdf"),
          plot = last_plot(), 
          device = "pdf",
          width = 8.5, height = 11,
@@ -105,7 +110,6 @@ elec_geo %>%
                          labels = scales::percent) +
     theme(legend.position = "top")+
      facet_wrap(~YEAR)
-   
    ggsave(file.path(imagepath, "Constituency_turnout.pdf"),
           plot = last_plot(), 
           device = "pdf",
@@ -138,7 +142,8 @@ elec_geo %>%
      scale_fill_manual(values = c("no change" = "#E0E0E0",
                                   "swing Kenyatta" ="#d53e4f",
                                   "swing Odinga" = "#3288bd")) +
-     theme(legend.position = "top")
+     theme(legend.position = "top") +
+     theme_minimal()
    
    ggsave(file.path(imagepath, "KEN_swing_constituencies.pdf"),
           plot = last_plot(), 
@@ -146,6 +151,23 @@ elec_geo %>%
           height = 11, width = 8.5,
           dpi = "retina")
 
+   # What is the correlation between poverty levels in 2016 and Kenyatta/Odinga areas
+   elec_geo %>% 
+     ggplot(aes(x = Headcount_rate, y = percent_share_KENYATTA, weight = VALID_VOTES)) +
+     geom_point(aes(colour = who_won, size = VALID_VOTES)) + stat_smooth(span = 3) +
+     facet_wrap(~ YEAR) + theme_minimal()
+   
+  # Could also look at which constitutencies carried the largest share of the county?
+  # Do counties with better development absorption rates have higher voter turnout? Or is it the opposite?
+   elec_county <- 
+     elec_geo %>% 
+     strip_geom(., c(TURNOUT_COUNTY, RELATIVE_TURNOUT_COUNTY, CID, County_name, YEAR)) %>% 
+     group_by(CID, YEAR, County_name) %>% 
+     summarise_at(vars(TURNOUT_COUNTY, RELATIVE_TURNOUT_COUNTY), funs(mean(., na.rm = TRUE))) %>% 
+     filter(!is.na(CID))
+    
+   
+   
 # TODO: Additional questions to look into 
 # What constituencies had the largest growth in registered voters (levels and percentages)
 # At the county level, any major swings that stand out? Any constituency packing
