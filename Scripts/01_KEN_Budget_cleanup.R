@@ -440,7 +440,7 @@ library(waffle) # may be a compact way of showing budget shares across time
 
 ################################################
 # Compare GOK development expenditure totals to GC calculated totals
-   b_gc <- budget_summary %>% select(CID, County, budget_year, total_exp_dev) 
+   b_gc <- budget_summary %>% select(CID, County, budget_year, total_exp_dev, tot_dev_exp_pc) 
   
 # Be careful how you merge the data b/c not all category codes are available for all Counties    
  b_gc_pdf <-  budget_totals_pdf %>% select(CID, budget_year, `Exp Dev`) %>% 
@@ -635,6 +635,23 @@ budget_totals_GOK %>%
 
 rm(budget_2014, budget_2015, budget_2016, budget_2017, budg_tot_14, mtx, county14_nums, county14_order)
 #TODO # Plot three calculations for those with discrepancies larger than 5
+
+
+##%######################################################%##
+#                                                          #
+####              Budget Election Analysis              ####
+#                                                          #
+##%######################################################%##
+elec_county %>% 
+  mutate(year = ifelse(YEAR == 2013, 2014, 2016)) %>% 
+  right_join(budget_totals_GOK, by = c("CID" = "CID", "year" ="year")) %>% 
+  filter(year %in% c(2014, 2016)) %>%
+  ggplot(aes(x = TURNOUT_COUNTY, y = `tot_dev_exp_pc`, colour = factor(year), label = County)) + geom_point() +
+  stat_smooth(method = "lm", formula = y ~ splines::bs(x, 3)) +
+  scale_x_symmetric(mid = 0.75) + theme_minimal() +
+  geom_text() + facet_grid(~year)
+
+
 
 
 

@@ -48,7 +48,7 @@ sample_size = dim(hh_base)[1]
 
 
 # Create a county crosswalk with county id and name
-county_labels <- as_data_frame(get_labels(hh_base$county)) %>% 
+county_labels <- enframe(get_labels(hh_base$county)) %>% 
   mutate(county_id = row_number()) %>% 
   rename(county_name = value)
 county_labels %>% print(n = 47)
