@@ -4,7 +4,7 @@
 # Audience: Kenya Mission
 
 
-# load data and crosswalks ---------------------------------------------------------------
+# Load data and crosswalks ---------------------------------------------------------------
 source(file.path(rpath, "budget_cw.R"))
 source(file.path(rpath, "AHADI_focus_df.R"))
 
@@ -163,7 +163,9 @@ remove(list = ls(pattern = "^budget_[0-9]"))
   county_look(budget_totals_pdf, `Exp Dev`) # Kisumu numbers are wrong in 2017; Use manual calculations.
   county_look(budget_totals_pdf, `Exp_dev_pc`) +
     ggtitle("Per capita development expenditures") +
-    labs(caption = GC_caption)
+    labs(caption = GC_caption, 
+         title = "Marsabit and Isiolo have the highest per capita development expenditures",
+         subtitle = "estimates in ")
   
 # Map out development expenditures per capita over time  
 # Function to create small multiple maps based on budget_totals_pdf data
@@ -188,7 +190,7 @@ remove(list = ls(pattern = "^budget_[0-9]"))
   }
   
 budg_map(budget_totals_pdf, poor_pop_mil, leg_text = "absorption rate")
-budg_map(budget_totals_pdf, Exp_dev_pc_poor, leg_text = "Development spending per poor person")
+budg_map(budget_totals_pdf, Exp_dev_pc, leg_text = "Development spending per capita")
   
   
  # Check bar graph to go alongside map; Filling in w/ ASAL
@@ -279,7 +281,11 @@ budg_map(budget_totals_pdf, Exp_dev_pc_poor, leg_text = "Development spending pe
            CID_absorption_dev_AHADI = (`Exp Dev_tot_year`/ASBADev_tot_year)) %>% 
     ungroup() %>% 
     left_join(., pop, by = c("CID" = "CID", "budget_year" = "year")) %>%  # Add in population data for per cap budgets
-    mutate(tot_dev_exp_pc = (total_exp_dev/pop_mil))
+    mutate(tot_dev_exp_pc = (total_exp_dev/pop_mil)) %>% 
+    ungroup() %>% 
+    group_by(budget_year) %>% 
+    mutate(natl_budget_dev = sum(`Exp Dev`, na.rm = TRUE),
+           nalt_budget_dev_ASBA)
   
 
 # AHADI program focused on certain counties, any difference? --------------
@@ -377,11 +383,28 @@ budg_map(budget_totals_pdf, Exp_dev_pc_poor, leg_text = "Development spending pe
                       CID_absorption_dev,
                       total_exp_dev,
                       tot_dev_exp_pc,
-                      poor),
+                      poor,
+                      ASBADev_tot_year),
                  funs(mean(., na.rm = TRUE))) %>% 
     ungroup() %>% 
     group_by(budget_year) %>% # rank the vars for plotting later
-    mutate_at(vars(CID_absorption_rec:tot_dev_exp_pc), .funs = funs(rank = rank(.)))
+    mutate_at(vars(CID_absorption_rec:tot_dev_exp_pc), .funs = funs(rank = rank(.))) %>% 
+    mutate(KEN_exp_dev_tot = sum(total_exp_dev, na.rm = TRUE),
+           KEN_exp_dev_ave = mean(total_exp_dev, na.rm = TRUE),
+           KEN_ASBA_dev_tot = sum(ASBADev_tot_year, na.rm = TRUE)) %>% 
+    ungroup() %>% 
+    group_by(CID) %>% 
+    mutate(tot_exp_dev_all_years = sum(total_exp_dev, na.rm = TRUE),
+           tot_ASBADev_tot_all_years = sum(ASBADev_tot_year, na.rm = TRUE),
+           CID_absorption_dev_all_years = (tot_exp_dev_all_years/tot_ASBADev_tot_all_years)) %>% 
+    ungroup() 
+  
+  
+  county_look(budget_summary, tot_dev_exp_pc) + 
+    labs(caption = GC_caption, 
+         title = "Marsabit and Isiolo have the highest per capita development expenditures")
+  
+  
     
   # export for maps
 
@@ -435,35 +458,8 @@ library(waffle) # may be a compact way of showing budget shares across time
 
   
 # TODO - CLEAN up below
-################################################
 
 
-################################################
-# Compare GOK development expenditure totals to GC calculated totals
-   b_gc <- budget_summary %>% select(CID, County, budget_year, total_exp_dev, tot_dev_exp_pc) 
-  
-# Be careful how you merge the data b/c not all category codes are available for all Counties    
- b_gc_pdf <-  budget_totals_pdf %>% select(CID, budget_year, `Exp Dev`) %>% 
-   left_join(., b_gc, by = c("CID" = "CID", "budget_year" = "budget_year")) %>% 
-   mutate(diff = `Exp Dev` - total_exp_dev,
-          diff = round(diff, 2)) %>% 
-   arrange(diff)
- 
- # TODO: Create a plot of the discrepancies
- b_gc_pdf %>% filter(abs(diff) > 1) %>% 
-   mutate(sortvar = fct_reorder(County, diff, .desc = TRUE),
-          fillvar = ifelse(diff > 0, "True", "False"),
-          diff_round = round(diff, 0)) %>% 
-   ggplot(aes(x = sortvar, y = diff, fill = fillvar, label = diff_round)) + 
-   geom_col() + coord_flip() + theme_minimal() +
-   scale_fill_manual(values = c("True" = grey80K, "False" = "#ef6548")) +
-   scale_y_continuous(limits = c(-200, 1000)) + 
-   geom_text(hjust = "outward", size = 4) +
-   theme(legend.position = "none") +
-   labs(x = "Difference between hand calculations and pdf totals",
-        title = "Wajir had the largest discrepancy when aggregating development expenditures")
-  
-  
 # Incorrect budget totals -------------------------------------------------
  # Kisumu in 2017 should be 70.8 for City of Kisumu Development Expenditures - still off even after this
  # Wajir 2015/16 development expenditures do not add up to pdf total
@@ -646,16 +642,11 @@ elec_county %>%
   mutate(year = ifelse(YEAR == 2013, 2014, 2016)) %>% 
   right_join(budget_totals_GOK, by = c("CID" = "CID", "year" ="year")) %>% 
   filter(year %in% c(2014, 2016)) %>%
-  ggplot(aes(x = TURNOUT_COUNTY, y = `tot_dev_exp_pc`, colour = factor(year), label = County)) + geom_point() +
-  stat_smooth(method = "lm", formula = y ~ splines::bs(x, 3)) +
+  ggplot(aes(x = TURNOUT_COUNTY, y = `tot_dev_exp_pc`, colour = factor(year), label = County)) + 
+  geom_point() +
+  stat_smooth(method = "lm", formula = y ~ x) +
   scale_x_symmetric(mid = 0.75) + theme_minimal() +
   geom_text() + facet_grid(~year)
-
-
-
-
-
-
 
 
 # Tabular summary of absorption rates by county
