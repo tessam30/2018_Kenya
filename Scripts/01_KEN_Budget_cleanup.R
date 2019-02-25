@@ -143,7 +143,7 @@ remove(list = ls(pattern = "^budget_[0-9]"))
 
 
 # Who planned the most, expended the most? Generalize into a function
-  county_look <- function(df, x) {
+  county_look <- function(df, x, barcolor = grey70K) {
     xvar <- enquo(x)
     
     df %>% 
@@ -152,7 +152,7 @@ remove(list = ls(pattern = "^budget_[0-9]"))
       ungroup() %>% 
       mutate(c_sort = fct_reorder(County, tmp, .desc = TRUE)) %>% 
       ggplot(aes(x = budget_year, y = !!xvar)) +
-      geom_col(fill = grey70K) +
+      geom_col(fill = barcolor) +
       coord_flip() +
       theme_minimal() +
       facet_wrap(~c_sort) +
@@ -191,20 +191,7 @@ remove(list = ls(pattern = "^budget_[0-9]"))
   
 budg_map(budget_totals_pdf, poor_pop_mil, leg_text = "absorption rate")
 budg_map(budget_totals_pdf, Exp_dev_pc, leg_text = "Development spending per capita")
-  
-  
- # Check bar graph to go alongside map; Filling in w/ ASAL
-  budget_bar <- function(df, xvar) {
-    df %>% 
-      mutate(c_sort = fct_reorder(County, poor_pop_mil, .desc = FALSE)) %>% 
-      ggplot(aes(x = c_sort, y = poor_pop_mil, fill = ASAL), alpha = 0.75) + 
-      geom_col() +
-      facet_wrap(~ budget_year, nrow = 1) +
-      coord_flip() +
-      theme_minimal() +
-      theme(legend.position = "top") +
-      scale_fill_brewer(palette = "Set2")
-  }
+
 
       
   # Where are the poor?
@@ -400,10 +387,16 @@ budg_map(budget_totals_pdf, Exp_dev_pc, leg_text = "Development spending per cap
     ungroup() 
   
   
-  county_look(budget_summary, tot_dev_exp_pc) + 
+  county_look(budget_summary, tot_dev_exp_pc, "#63a6a0") + 
     labs(caption = GC_caption, 
-         title = "Marsabit and Isiolo have the highest per capita development expenditures")
-  
+         title = "PER CAPITA DEVELOPMENT EXPENDITURES") +
+    theme(panel.grid.minor.x = element_blank(),
+          panel.grid.minor.y = element_blank(),
+          panel.grid.major.y = element_blank(),
+          strip.text = element_text(hjust = 0))
+  ggsave(file.path(imagepath, "KEN_PC_Dev_Expend_graph.pdf"),
+         plot = last_plot(),
+         height = 17, width = 16, units = c("in"), dpi = "retina")
   
     
   # export for maps
