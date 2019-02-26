@@ -271,8 +271,7 @@ budg_map(budget_totals_pdf, Exp_dev_pc, leg_text = "Development spending per cap
     mutate(tot_dev_exp_pc = (total_exp_dev/pop_mil)) %>% 
     ungroup() %>% 
     group_by(budget_year) %>% 
-    mutate(natl_budget_dev = sum(`Exp Dev`, na.rm = TRUE),
-           nalt_budget_dev_ASBA)
+    mutate(natl_budget_dev = sum(`Exp Dev`, na.rm = TRUE))
   
 
 # AHADI program focused on certain counties, any difference? --------------
@@ -424,25 +423,37 @@ budget_map(budget_summary, tot_dev_exp_pc) +
                        #label = percent_format(accuracy = 2)) +
   labs(title = "Counties in the north had the highest per capita development budget expenditures",
           fill = "Development expenditures per capita") 
-+
-  ggsave(file.path(imagepath, "KEN_develompent_absorption_rates_map.pdf"),
-         height = 12, width = 36)
+  ggsave(file.path(imagepath, "KEN_develompent_expenditures_per_capita_maps.pdf"),
+         height = 17, width = 16)
   
+
+# Budget Summary plots; Toggle AHADI Filter to get all Counties
   
   budget_summary %>% 
-    filter(AHADI == 1) %>% 
-    mutate(csort = fct_reorder(County, CID_absorption_dev_rank, .desc = TRUE)) %>% 
+    filter(AHADI %in% c(0, 1)) %>% 
+    #filter(ASAL %in% c("Arid - 85-100% Aridity")) %>% 
+    #mutate(csort = fct_reorder(County, County)) %>% 
+    mutate(csort = County) %>% 
     ggplot(aes(x = budget_year, y = CID_absorption_dev)) +
+    geom_area(fill = grey10K, alpha = 0.50) +
     geom_line(colour = grey50K) +
-    geom_point(fill = grey80K, size = 3.5, shape = 21, colour = "white", stroke = 2) + 
-    facet_wrap(~csort, ncol = 4) +
-    theme_minimal() + 
-    theme(legend.position = "top") +
+    geom_point(aes(fill = CID_absorption_dev), 
+               size = 3.5, shape = 21, colour = "white", stroke = 2) + 
+    facet_wrap(~csort) +
+    theme_minimal() +
+    scale_fill_viridis_c(direction = -1, option = "D") +
+    theme(legend.position = "none",
+          strip.text = element_text(hjust = 0, size = 9),
+          panel.grid.minor = element_blank(),
+          panel.spacing = unit(1.25, "lines")) +
     labs(caption = GC_caption, x = "", y = "",
-         title = "Boment, Wajir, and Isiolo had the highest, average absorption rate for development expenditures") +
+         title = "Development Absorption Rates By County 2014/15 - 2017/18") +
     scale_y_continuous(labels = scales::percent_format(),
-                       limits = c(0, 1),
+                       limits = c(0, 1.03), # Be careful in case absorption rate is > 1
                        breaks = c(0, 0.25, 0.50, 0.75, 1))
+  ggsave(file.path(imagepath, "KEN_Dev_absorption_rate_timeseries.pdf"),
+         plot = last_plot(), dpi = "retina", 
+         height = 17, width = 16)
   
   
 # Try a 10 X 10 waffle chart to show budget composition by categories

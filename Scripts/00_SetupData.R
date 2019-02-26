@@ -4,7 +4,7 @@
 # Audience: Kenya Mission
 
 # Load libraries and data -------------------------------------------------
-pacman::p_load("tidyverse", "lubridate", "sf", "extrafont", "readxl", "measurements", "pdftools", "purrr", "styler", "scales", "llamar", "haven", "sjlabelled", "vtable", "sjmisc", "survey", "data.table", "lemon", "widyr")
+pacman::p_load("tidyverse", "lubridate", "sf", "extrafont", "readxl", "measurements", "pdftools", "purrr", "styler", "scales", "llamar", "haven", "sjlabelled", "vtable", "sjmisc", "survey", "data.table", "lemon", "widyr", "RColorBrewer")
 
 # Create folders for project (if they do not exist)
 dir.create("Data")
@@ -55,11 +55,18 @@ county_labels %>% print(n = 47)
 
 # Read in ASAL county identifiers
 asal_geo <- st_read(file.path(datapath, "GIS/ASAL_Counties_2018/ASAL_Counties_2018.shp"))
-asal <- strip_geom(asal_geo, Counties, CID, Category)
+asal <- strip_geom(asal_geo, Counties, CID, Category) %>% 
+  mutate(Category_num = case_when(
+    Category == "Arid - 85-100% Aridity"         ~ 1,
+    Category == "Semi - Arid - 10-29% Aridity"   ~ 3,
+    Category == "Semi - Arid - 30-84% Aridity"   ~ 2,
+    TRUE ~ 4
+  ))
 asal %>% group_by(Category) %>% 
   summarise(counties = paste(Counties, collapse = ", "),
             sorder = length(Counties)) %>% 
   arrange(desc(sorder)) 
+
 
 # Read in proper shapefile
 counties_geo <- st_read(file.path(datapath, "GIS/CountyBoundary2013/CountyBoundary2013.shp"))
