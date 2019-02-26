@@ -92,7 +92,8 @@ bs_plot <- function(df, x) {
       axis.title = element_text(size = 8, hjust = 0),
       text = element_text(family = "Lato"),
       plot.caption = element_text(size = 7),
-      panel.grid = element_line(size = 0.25)
+      panel.grid = element_line(size = 0.25),
+      panel.grid.minor = element_blank()
     ) +
     ggsave(file.path(imagepath, str_c(ptitle, " Budget Share Summary.pdf")),
       plot = last_plot(),
@@ -105,7 +106,7 @@ bs_plot <- function(df, x) {
   b_list <- (seq(1, 12, by = 1))
   map(b_list, ~ bs_plot(budget, .))
   
-  bs_plot(budget, 2)
+  bs_plot(budget, 5)
 
 
 # Heatmap of all budget categories ----------------------------------------
@@ -131,16 +132,17 @@ budget %>%
     legend.position = "top",
     axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.05),
     axis.title = element_text(size = 8, hjust = 0), # making the x-axis title smaller
-    panel.spacing = unit(1.5, "lines")
+    panel.spacing = unit(1.5, "lines"),
+    panel.grid.minor.x = element_blank()
   ) + # adding more spaced between panels
   labs(
     fill = "Share of Development Expenditures",
     y = "", x = "",
     caption = GC_caption
-  ) +
+  )  +
   ggtitle("Development expenditures on Transport and Infrastructure formed the largest budget share") +
   ggsave(file.path(imagepath, "KEN_budget_shares_heatmap.pdf"),
-    height = 11.7, width = 16.5
+    height = 17, width = 16, dpi = "retina"
   )
 
 
@@ -158,11 +160,70 @@ budget %>%
 
 
 # TODO: Create a County profile map / product that summarises the budget; Markdown?
+# Take the bs_plot and flip it to produce a map of every county, sorted by greatest budget shares within a county
 
+county_plot <- function(df, x) {
+  # group_size = 12 # This can be adjusted to be calculated automoatically depending on category sizes
+  ptitle <- county_list$Counties[county_list$CID == x] # Grab category label for title/file name
+  
+  # color = colorRampPalette(RColorBrewer::brewer.pal(9,"Set1"))(group_size)[x] # Grab distinct color for each fill
+  color <- c(
+    "#fccde5", "#ffffb3", "#bebada", "#bc80bd",
+    "#fb8072", "#fdb462", "#8dd3c7", "#ffed6f",
+    "#b3de69", "#cab2d6", "#80b1d3", "#ccebc5"
+  )
+  
+  df %>%
+    filter(`CID` == x & `Category Code` != 0) %>%
+    group_by(Budget_title) %>% 
+    mutate(tmp_sort = sum(`Exp Dev`, na.rm = TRUE)) %>% 
+    ungroup() %>% 
+    mutate(
+      budg_sort = fct_reorder(Budget_title, tmp_sort, .desc = TRUE),
+      text_lab = percent(exp_dev_share, 2)
+    ) %>%
+    select(budg_sort, `Exp Dev`, budget_year, total_exp_dev, exp_dev_share, text_lab, `Category Code`) %>%
+    ggplot(aes(label = exp_dev_share)) +
+    geom_col(aes(x = budget_year, y = total_exp_dev), fill = "#f0f0f0") +
+    geom_col(aes(x = budget_year, y = `Exp Dev`, fill = factor(`Category Code`)), alpha = 1) +
+    geom_text(aes(
+      x = budget_year, y = `Exp Dev`,
+      label = str_c("  ", text_lab)
+    ),
+    size = 2.5, colour = grey70K,
+    hjust = 0
+    ) +
+    facet_wrap(~budg_sort, ncol = 4) +
+    coord_flip() +
+    theme_minimal() +
+    scale_fill_manual(values = color) +
+    ggtitle(str_c(ptitle, " Development Expenditures Compared to Overall Development Expenditures"),
+            subtitle = "Percentage indicates share of development spending relative to total development expenditures"
+    ) +
+    labs(
+      y = "Development expenditures in Kshs. Million", x = "",
+      caption = GC_caption
+    ) +
+    theme(
+      legend.position = "none",
+      strip.text = element_text(hjust = 0),
+      axis.text = element_text(size = 8),
+      axis.title = element_text(size = 8, hjust = 0),
+      text = element_text(family = "Lato"),
+      plot.caption = element_text(size = 7),
+      panel.grid = element_line(size = 0.25),
+      panel.grid.minor = element_blank()
+    ) +
+     ggsave(file.path(imagepath, str_c(ptitle, " Budget Share Summary.pdf")),
+            plot = last_plot(),
+            height = 8.5, width = 11, dpi = 300, useDingbats = FALSE
+    )
+}
 
+county_plot(budget, 47) # Test function
 
-
-
+c_list <- (seq(1, 47, by = 1))
+map(c_list, ~ county_plot(budget, .)) # Writing all 47 products to pdf
 
 # Absorption Rates over time ----------------------------------------------
 
@@ -178,34 +239,91 @@ b_plot <- function(df, x, y = exp_dev_share) {
     filter(`Category Code` == x) %>%
     select(budget_year, Absorption_dev, County, `Category Code`, Budget_title, exp_dev_share) %>%
     ggplot(aes(x = budget_year, y = !!yvar)) +
+    geom_area(fill = grey10K, alpha = 0.50) +
     geom_line(colour = "grey") +
-    geom_point(aes(colour = !!yvar)) +
-    scale_colour_viridis_c(direction = -1, option = "D") +
+    geom_point(aes(fill = !!yvar),
+               size = 3.5, shape = 21, colour = "white", stroke = 2) +
+    scale_fill_viridis_c(direction = -1, option = "D") +
     facet_wrap(~County, nrow = 8) +
     theme_minimal() +
     theme(
       axis.title.x = element_text(size = 8),
       legend.position = "none",
-      panel.spacing = unit(1.5, "lines")
+      panel.spacing = unit(1.5, "lines"),
+      panel.grid.minor = element_blank()
     ) +
     scale_y_continuous(
-      labels = scales::percent_format(accuracy = 1),
-      breaks = seq(0, 1, by = 0.25)
+      labels = scales::percent_format(accuracy = 1)
+      # breaks = seq(0, 1, by = 0.25)
     ) +
     scale_x_continuous(breaks = seq(2015, 2018, by = 1)) +
     ggtitle(str_c(ptitle, " Absorption Rate")) +
     labs(
       y = "absorption rate", x = "",
       caption = "Source: USAID GeoCenter Calculations from County Government Budget Implementation Review Reports 2015/16, 2016/17, 2017/18"
-    ) +
-    ggsave(file.path(imagepath, str_c(ptitle, " Absorption Rate Summary.pdf")),
-      plot = last_plot(),
-      height = 8.5, width = 11, dpi = 300, useDingbats = FALSE
+     ) +
+     ggsave(file.path(imagepath, str_c(ptitle, " Absorption Rate Summary.pdf")),
+       plot = last_plot(),
+       height = 8.5, width = 11, dpi = 300, useDingbats = FALSE
     )
 }
 
-b_plot(budget, x = 4)
-map(b_list, ~ b_plot(budget, .))
+b_plot(budget, x = 4, Absorption_dev)
+map(b_list, ~ b_plot(budget, ., Absorption_dev))
+
+
+# Create one final function to make County-organized plots of abso --------
+
+c_plot <- function(df, x, y = Absorption_dev) {
+  # df - data to read
+  # x = category code, should be numeric
+  # y = fill variable to use
+  ptitle <- county_list$Counties[county_list$CID == x]
+  yvar <- enquo(y)
+  
+  df %>%
+    filter(CID == x & `Category Code` != 0) %>%
+    group_by(Budget_title, CID) %>% 
+    mutate(tmp1 = sum(`Exp Dev`, na.rm = TRUE),
+           tmp2 = sum(`ASBADev`, na.rm = TRUE),
+           sort_var = tmp1/tmp2) %>% 
+    ungroup() %>% 
+    mutate(Budget_title = fct_reorder(Budget_title, sort_var, .desc = TRUE)) %>% 
+    select(budget_year, Absorption_dev, County, `Category Code`, Budget_title, exp_dev_share) %>%
+    ggplot(aes(x = budget_year, y = !!yvar)) +
+    geom_area(fill = grey10K, alpha = 0.50) +
+    geom_line(colour = "grey") +
+    geom_point(aes(fill = !!yvar), size = 3.5, shape = 21, colour = "white", stroke = 2) +
+    scale_fill_viridis_c(direction = -1, option = "D") +
+    facet_wrap(~Budget_title, ncol = 3) +
+    theme_minimal() +
+    theme(
+      axis.title.x = element_text(size = 8),
+      legend.position = "none",
+      panel.spacing = unit(1.5, "lines"),
+      panel.grid.minor = element_blank(),
+      strip.text = element_text(hjust = 0)
+    ) +
+    scale_y_continuous(
+      labels = scales::percent_format(accuracy = 1)
+      # breaks = seq(0, 1, by = 0.25)
+    ) +
+    scale_x_continuous(breaks = seq(2015, 2018, by = 1)) +
+    labs(title = str_c(ptitle, " development absorption rate summary by budget category"),
+      y = "absorption rate", x = "",
+      subtitle = "Development absorption rate is the share of actual development expenditure out of the budgeted expenditure.",
+      caption = "Source: USAID GeoCenter Calculations from County Government Budget Implementation Review Reports 2015/16, 2016/17, 2017/18"
+     ) +
+    ggsave(file.path(imagepath, str_c(ptitle, " Absorption Rate Summary.pdf")),
+            plot = last_plot(),
+            height = 8.5, width = 11, dpi = 300, useDingbats = FALSE
+    )
+}
+
+map(c_list, ~ c_plot(budget, .))
+c_plot(budget, 42)
+
+
 
 
 # Exporting budget data ---------------------------------------------------

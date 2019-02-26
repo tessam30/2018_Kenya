@@ -98,6 +98,7 @@ budget_raw <-
          budget_type = `Category.x`, 
          `ASBA Rec`:`Abs Rate Dev`,
          ASAL = `Category.y`,
+         ASAL_CODE = Category_num,
          everything()) %>% 
   arrange(CID, budget_type, budget_year) %>% 
   group_by(CID, budget_year, `Category Code`) %>% 
@@ -141,7 +142,9 @@ remove(list = ls(pattern = "^budget_[0-9]"))
 #                                                          #
 ##%######################################################%##
 
-
+# Set ASAL colors an recode it
+  
+  
 # Who planned the most, expended the most? Generalize into a function
   county_look <- function(df, x, barcolor = grey70K) {
     xvar <- enquo(x)
@@ -150,14 +153,22 @@ remove(list = ls(pattern = "^budget_[0-9]"))
       group_by(County) %>% 
       mutate(tmp = sum(!!xvar, na.rm = TRUE)) %>% 
       ungroup() %>% 
+      #mutate(c_sort = County) %>% 
       mutate(c_sort = fct_reorder(County, tmp, .desc = TRUE)) %>% 
       ggplot(aes(x = budget_year, y = !!xvar)) +
       geom_col(fill = barcolor) +
       coord_flip() +
       theme_minimal() +
-      facet_wrap(~c_sort) +
-      labs(x = "", y = "") 
-  }
+      theme(panel.grid.minor = element_blank(),
+            strip.text = element_text(hjust = 0, size = 12)) +
+      facet_wrap(~ASAL_CODE + c_sort, 
+                 labeller = label_wrap_gen(multi_line=FALSE)) +
+      labs(x = "", y = "") #+
+      #scale_fill_manual(values = c("#cc4c02", 
+      #                             "#fe9929",
+      #                             "#fed98e",
+      #                             "#ffffd4"))
+    }
   
   county_look(budget_totals_pdf, `ASBADev`)
   county_look(budget_totals_pdf, `Exp Dev`) # Kisumu numbers are wrong in 2017; Use manual calculations.
@@ -228,7 +239,7 @@ budg_map(budget_totals_pdf, Exp_dev_pc, leg_text = "Development spending per cap
   budget <- 
     budget_raw %>% 
       filter(`Category Code` != 13) %>% 
-      group_by(CID, `Category Code`, budget_year, Budget_title, County, ASAL) %>% 
+      group_by(CID, `Category Code`, budget_year, Budget_title, County, ASAL, ASAL_CODE) %>% 
       summarise_at(vars(`ASBA Rec`:`Exp Dev`), funs(sum(., na.rm = TRUE))) %>% 
     mutate(Expend_excheq_rec = bs_calc(`Exp Rec`, `Exq Rec`),#  bs_calc function to calculate relative shares
              Expend_excheq_dev = bs_calc(`Exp Dev`, `Exq Dev`),
@@ -364,7 +375,7 @@ budg_map(budget_totals_pdf, Exp_dev_pc, leg_text = "Development spending per cap
 # Create a new dataset of key budget categories for mapping
   budget_summary <- 
     budget %>% 
-    group_by(CID, budget_year, County, ASAL, AHADI) %>% 
+    group_by(CID, budget_year, County, ASAL, ASAL_CODE, AHADI) %>% 
     summarise_at(vars(CID_absorption_rec, 
                       CID_absorption_dev,
                       total_exp_dev,
@@ -385,19 +396,21 @@ budg_map(budget_totals_pdf, Exp_dev_pc, leg_text = "Development spending per cap
            CID_absorption_dev_all_years = (tot_exp_dev_all_years/tot_ASBADev_tot_all_years)) %>% 
     ungroup() 
   
-  
-  county_look(budget_summary %>% filter(AHADI == 1), tot_dev_exp_pc, "#63a6a0") + 
+ 
+# County budget per capita expenditures graphic   
+  county_look(budget_summary %>% filter(AHADI %in% c(0, 1)), tot_dev_exp_pc, "#68abb8") + 
     labs(caption = GC_caption, 
          title = "PER CAPITA DEVELOPMENT EXPENDITURES") +
     theme(panel.grid.minor.x = element_blank(),
           panel.grid.minor.y = element_blank(),
-          panel.grid.major.y = element_blank(),
-          strip.text = element_text(hjust = 0))
+          #panel.grid.major.y = element_blank(),
+          strip.text = element_text(hjust = 0, size = 12))
   
   ggsave(file.path(imagepath, "KEN_PC_Dev_Expend_graph.pdf"),
          plot = last_plot(),
          height = 17, width = 16, units = c("in"), dpi = "retina")
-  
+ 
+  #d1eeea,#a8dbd9,#85c4c9,#68abb8,#4f90a6,#3b738f,#2a5674 
     
   # export for maps
 
@@ -432,14 +445,14 @@ budget_map(budget_summary, tot_dev_exp_pc) +
   budget_summary %>% 
     filter(AHADI %in% c(0, 1)) %>% 
     #filter(ASAL %in% c("Arid - 85-100% Aridity")) %>% 
-    #mutate(csort = fct_reorder(County, County)) %>% 
-    mutate(csort = County) %>% 
+    mutate(csort = fct_reorder(County, CID_absorption_dev, .desc = TRUE)) %>% 
+    #mutate(csort = County) %>% 
     ggplot(aes(x = budget_year, y = CID_absorption_dev)) +
     geom_area(fill = grey10K, alpha = 0.50) +
     geom_line(colour = grey50K) +
     geom_point(aes(fill = CID_absorption_dev), 
                size = 3.5, shape = 21, colour = "white", stroke = 2) + 
-    facet_wrap(~csort) +
+    facet_wrap(ASAL_CODE ~ csort, labeller = label_wrap_gen(multi_line = FALSE)) +
     theme_minimal() +
     scale_fill_viridis_c(direction = -1, option = "D") +
     theme(legend.position = "none",
