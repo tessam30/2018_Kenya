@@ -387,13 +387,14 @@ budg_map(budget_totals_pdf, Exp_dev_pc, leg_text = "Development spending per cap
     ungroup() 
   
   
-  county_look(budget_summary, tot_dev_exp_pc, "#63a6a0") + 
+  county_look(budget_summary %>% filter(AHADI == 1), tot_dev_exp_pc, "#63a6a0") + 
     labs(caption = GC_caption, 
          title = "PER CAPITA DEVELOPMENT EXPENDITURES") +
     theme(panel.grid.minor.x = element_blank(),
           panel.grid.minor.y = element_blank(),
           panel.grid.major.y = element_blank(),
           strip.text = element_text(hjust = 0))
+  
   ggsave(file.path(imagepath, "KEN_PC_Dev_Expend_graph.pdf"),
          plot = last_plot(),
          height = 17, width = 16, units = c("in"), dpi = "retina")
@@ -419,21 +420,29 @@ budg_map(budget_totals_pdf, Exp_dev_pc, leg_text = "Development spending per cap
   }
   
 budget_map(budget_summary, tot_dev_exp_pc) +
-  scale_fill_viridis_c(option = "A", direction = -1, alpha = 0.75,
-                       label = percent_format(accuracy = 2)) +
-  ggtitle("Garissa and Bomet had the largest average development absorption rates") +
+  scale_fill_viridis_c(option = "A", direction = -1, alpha = 0.75) +
+                       #label = percent_format(accuracy = 2)) +
+  labs(title = "Counties in the north had the highest per capita development budget expenditures",
+          fill = "Development expenditures per capita") 
++
   ggsave(file.path(imagepath, "KEN_develompent_absorption_rates_map.pdf"),
          height = 12, width = 36)
   
   
   budget_summary %>% 
-    mutate(csort = fct_reorder(County, CID_absorption_dev_rank)) %>% 
-    ggplot(aes(x = csort, y = budget_year)) +
-    geom_line(aes(group = County )) +
-    geom_point(aes(size = CID_absorption_dev, colour = CID_absorption_dev_rank)) + 
-    coord_flip() + theme_minimal() + 
-    labs(caption = GC_caption, x = "", y = "") +
-    scale_color_viridis_c()
+    filter(AHADI == 1) %>% 
+    mutate(csort = fct_reorder(County, CID_absorption_dev_rank, .desc = TRUE)) %>% 
+    ggplot(aes(x = budget_year, y = CID_absorption_dev)) +
+    geom_line(colour = grey50K) +
+    geom_point(fill = grey80K, size = 3.5, shape = 21, colour = "white", stroke = 2) + 
+    facet_wrap(~csort, ncol = 4) +
+    theme_minimal() + 
+    theme(legend.position = "top") +
+    labs(caption = GC_caption, x = "", y = "",
+         title = "Boment, Wajir, and Isiolo had the highest, average absorption rate for development expenditures") +
+    scale_y_continuous(labels = scales::percent_format(),
+                       limits = c(0, 1),
+                       breaks = c(0, 0.25, 0.50, 0.75, 1))
   
   
 # Try a 10 X 10 waffle chart to show budget composition by categories
