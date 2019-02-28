@@ -142,7 +142,8 @@ budget %>%
   )  +
   ggtitle("Development expenditures on Transport and Infrastructure formed the largest budget share") +
   ggsave(file.path(imagepath, "KEN_budget_shares_heatmap.pdf"),
-    height = 17, width = 16, dpi = "retina"
+    height = 17, width = 16, dpi = "retina", 
+    useDingbats = FALSE
   )
 
 

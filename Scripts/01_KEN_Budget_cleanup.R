@@ -398,6 +398,7 @@ budg_map(budget_totals_pdf, Exp_dev_pc, leg_text = "Development spending per cap
   
  
 # County budget per capita expenditures graphic   
+
   county_look(budget_summary %>% filter(AHADI %in% c(0, 1)), tot_dev_exp_pc, "#68abb8") + 
     labs(caption = GC_caption, 
          title = "PER CAPITA DEVELOPMENT EXPENDITURES") +
@@ -408,12 +409,34 @@ budg_map(budget_totals_pdf, Exp_dev_pc, leg_text = "Development spending per cap
   
   ggsave(file.path(imagepath, "KEN_PC_Dev_Expend_graph.pdf"),
          plot = last_plot(),
-         height = 17, width = 16, units = c("in"), dpi = "retina")
+         height = 17, width = 16, units = c("in"), dpi = "retina",
+         useDingbats = FALSE)
  
   #d1eeea,#a8dbd9,#85c4c9,#68abb8,#4f90a6,#3b738f,#2a5674 
+  
+  # One cut of data for per capita expenditures
+budget_summary %>% 
+    group_by(CID) %>% 
+    mutate(tot_dev_exp_pc_ave = (sum(tot_dev_exp_pc)/4)) %>% 
+    ungroup() %>% 
+    select(CID, budget_year, County, tot_dev_exp_pc, tot_dev_exp_pc_ave) %>% 
+    spread(budget_year, tot_dev_exp_pc) %>% 
+    rename(tot_dev_exp_pc_2014 = `2014`,
+           tot_dev_exp_pc_2015 = `2015`,
+           tot_dev_exp_pc_2016 = `2016`,
+           tot_dev_exp_pc_2017 = `2017`) %>% 
+  write_csv(., file.path(budgetpath, "KEN_budget_dev_exp_pc_ave.csv"))
+  
+  # left_join(asal_geo, by = c("CID")) %>% 
+  # ggplot() + geom_sf(aes(fill = tot_dev_exp_pc_ave), colour = "white", size = .5) +
+  # scale_fill_viridis_c(direction = -1, option = "A", alpha = 0.85) +
+  # theme_minimal()
+  
     
   # export for maps
 
+  
+  
     write_csv(budget_summary, file.path(budgetpath, "KEN_budget_summary.csv"))
   
   
@@ -467,7 +490,21 @@ budget_map(budget_summary, tot_dev_exp_pc) +
   ggsave(file.path(imagepath, "KEN_Dev_absorption_rate_timeseries.pdf"),
          plot = last_plot(), dpi = "retina", 
          height = 17, width = 16)
+ 
+#  Check the numbers on the 14 - 17 change map  
+tmp <-   budget_summary %>% 
+    group_by(CID) %>% 
+    mutate(absorp_lag = lag(CID_absorption_dev, n = 3, order_by = budget_year),
+           absorb_chg = CID_absorption_dev - absorp_lag) %>% 
+  ungroup()
+
+absorp_chg_max = unlist(tmp %>% summarise(max_dev = max(abs(absorb_chg), na.rm = TRUE)))
   
+budget_map(tmp %>% filter(budget_year == 2017), absorb_chg) +
+  scale_fill_gradientn(colours = RColorBrewer::brewer.pal(11, 'BrBG'),
+                       limits = c(-1 * absorp_chg_max, absorp_chg_max), 
+                       labels = scales::percent)
+
   
 # Try a 10 X 10 waffle chart to show budget composition by categories
   nrows <- 10
