@@ -161,8 +161,8 @@ remove(list = ls(pattern = "^budget_[0-9]"))
       theme_minimal() +
       theme(panel.grid.minor = element_blank(),
             strip.text = element_text(hjust = 0, size = 12)) +
-      facet_wrap(~ASAL_CODE + c_sort, 
-                 labeller = label_wrap_gen(multi_line=FALSE)) +
+     facet_wrap(~ASAL_CODE + c_sort, 
+                 labeller = label_wrap_gen(multi_line = FALSE)) +
       labs(x = "", y = "") #+
       #scale_fill_manual(values = c("#cc4c02", 
       #                             "#fe9929",
@@ -399,11 +399,17 @@ budg_map(budget_totals_pdf, Exp_dev_pc, leg_text = "Development spending per cap
  
 # County budget per capita expenditures graphic   
 
+# budget per capita graph -------------------------------------------------
+
+
   county_look(budget_summary %>% filter(AHADI %in% c(0, 1)), tot_dev_exp_pc, "#68abb8") + 
     labs(caption = GC_caption, 
          title = "PER CAPITA DEVELOPMENT EXPENDITURES") +
     theme(panel.grid.minor.x = element_blank(),
           panel.grid.minor.y = element_blank(),
+          axis.line.y = element_line(colour = grey20K,
+                                    lineend = "square",
+                                    size = 0.75),
           #panel.grid.major.y = element_blank(),
           strip.text = element_text(hjust = 0, size = 12))
   
