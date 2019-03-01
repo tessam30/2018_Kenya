@@ -122,7 +122,7 @@ budget %>%
   ggplot(aes(x = County, y = budget_year)) +
   geom_tile(aes(fill = exp_dev_share), color = grey80K) +
   scale_fill_viridis_c(
-    direction = -1, alpha = 0.90,
+    direction = -1, alpha = 1,
     option = "A", label = percent_format(accuracy = 2)
   ) + # format labels in legend
   theme_minimal() +
