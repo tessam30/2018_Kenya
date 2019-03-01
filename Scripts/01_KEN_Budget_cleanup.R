@@ -9,7 +9,8 @@ source(file.path(rpath, "budget_cw.R"))
 source(file.path(rpath, "AHADI_focus_df.R"))
 
 # Reading these in separately to check insheeting carefully. Data have been scraped from PDFs
-  file_name = c("County Budget Database_TE_Edits.xlsx")
+  #file_name = c("County Budget Database_TE_Edits.xlsx")
+  file_name = c("County Budget Database_TE_Edits_HomaBay_Version.xlsx")
   excel_sheets(file.path(budgetpath, file_name))
   
   budget_2014_in <- read_excel(file.path(budgetpath, file_name),
@@ -200,7 +201,7 @@ remove(list = ls(pattern = "^budget_[0-9]"))
       )
   }
   
-budg_map(budget_totals_pdf, poor_pop_mil, leg_text = "absorption rate")
+budg_map(budget_totals_pdf, Absorption_dev, leg_text = "absorption rate")
 budg_map(budget_totals_pdf, Exp_dev_pc, leg_text = "Development spending per capita")
 
 

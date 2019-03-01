@@ -126,13 +126,13 @@ budget %>%
     option = "A", label = percent_format(accuracy = 2)
   ) + # format labels in legend
   theme_minimal() +
-  coord_fixed(ratio = 1.5) + # Fix the size of the squares
+  #coord_fixed(ratio = 1.5) + # Fix the size of the squares
   facet_wrap(~budget_sort, ncol = 2) +
   theme(
     legend.position = "top",
     axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.05),
-    axis.title = element_text(size = 8, hjust = 0), # making the x-axis title smaller
-    panel.spacing = unit(1.5, "lines"),
+    axis.title = element_text(size = 6, hjust = 0), # making the x-axis title smaller
+    panel.spacing = unit(0.5, "lines"),
     panel.grid.minor.x = element_blank()
   ) + # adding more spaced between panels
   labs(
@@ -140,9 +140,9 @@ budget %>%
     y = "", x = "",
     caption = GC_caption
   )  +
-  ggtitle("Development expenditures on Transport and Infrastructure formed the largest budget share") +
+  ggtitle("Development expenditures on transport and infrastructure formed the largest budget share") +
   ggsave(file.path(imagepath, "KEN_budget_shares_heatmap.pdf"),
-    height = 17, width = 16, dpi = "retina", 
+    height = 8.5, width = 11, dpi = "retina", 
     useDingbats = FALSE
   )
 
@@ -221,7 +221,7 @@ county_plot <- function(df, x) {
     )
 }
 
-county_plot(budget, 47) # Test function
+county_plot(budget, 43) # Test function
 
 c_list <- (seq(1, 47, by = 1))
 map(c_list, ~ county_plot(budget, .)) # Writing all 47 products to pdf
@@ -269,7 +269,7 @@ b_plot <- function(df, x, y = exp_dev_share) {
     )
 }
 
-b_plot(budget, x = 4, Absorption_dev)
+b_plot(budget, x = 3, Absorption_dev)
 map(b_list, ~ b_plot(budget, ., Absorption_dev))
 
 
@@ -322,7 +322,7 @@ c_plot <- function(df, x, y = Absorption_dev) {
 }
 
 map(c_list, ~ c_plot(budget, .))
-c_plot(budget, 42)
+c_plot(budget, 43)
 
 
 
