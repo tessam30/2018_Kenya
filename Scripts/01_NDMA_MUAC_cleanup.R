@@ -107,7 +107,7 @@ muac_malnut %>%
   mutate(mean = mean(value, na.rm = TRUE)) %>% 
   ungroup() %>% 
   mutate(county_sort = fct_reorder(county, mean, .desc = TRUE)) %>%
-  ggplot(aes(x = date, y = value)) +
+  ggplot(aes(x = date, y = monthly_dev)) +
   geom_smooth(colour = "#d6604d", span = span, alpha = 0.5) +
   geom_line(colour = grey70K) +
   facet_wrap(~county_sort) +
@@ -116,10 +116,32 @@ muac_malnut %>%
   theme(legend.position = "none") +
   labs(x = "", y = "",
        caption = "Source: GeoCenter Caculations based on National Drought Management Authority MUAC data 2008-2018") +
-  ggtitle("DRAFT: Acute malnutrition trends",
-          subtitle = "Percent of under-5 children at risk of malnutrition (MUAC < 135 mm") +
+  ggtitle("DRAFT: Acute malnutrition trends for select counties. General trendline in red.",
+          subtitle = "Percent of under-5 children at risk of malnutrition (MUAC < 135 mm)") +
   ggsave(file.path(imagepath, "KEN_acute_malnutrition_trends_2008_2018.pdf"), 
          height = 8.5, width = 11.5, units = "in")
+
+muac_malnut %>% 
+  group_by(county, year, CID) %>% 
+  summarise(ave = mean(value, na.rm = TRUE)) %>% 
+  left_join(., asal_geo, by = c("CID")) %>% 
+  ggplot() +
+  geom_sf(data = asal_geo, fill = "#f0f0f0", colour = "#969696", size = 0.25) +
+  geom_sf(aes(fill = ave), colour = "white", size = 0.5) +
+  facet_wrap(~year, nrow = 2) + theme_minimal() +
+  scale_fill_viridis_c(option = "B", direction = -1,
+                       labels = scales::percent_format(accuracy = 1)) +
+  labs(fill = "DRAFT: Average acute malnutrition rate",
+       title = "Annual acute malnutrition rate averages by county.",
+       subtitle = "County averages based on monthly averages -- need to be recalculated with raw numbers",
+       caption = "Source: GeoCenter Caculations based on National Drought Management Authority MUAC data 2008-2018") +
+  theme(legend.position = "top",
+        strip.text = element_text(hjust = 0)) +
+  ggsave(file.path(imagepath, "KEN_acute_malnutrition_trends_map_2008_2018.pdf"), 
+         height = 8.5, width = 11.5, units = "in")
+
+
+
 
 prices %>% 
   filter(commodity == "Maize") %>% 
