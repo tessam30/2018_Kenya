@@ -107,7 +107,11 @@ muac_malnut %>%
   mutate(mean = mean(value, na.rm = TRUE)) %>% 
   ungroup() %>% 
   mutate(county_sort = fct_reorder(county, mean, .desc = TRUE)) %>%
-  ggplot(aes(x = date, y = monthly_dev)) +
+  ggplot(aes(x = date, y = value)) +
+  geom_ribbon(aes(ymin = 0.15, ymax = 0.4), 
+              data = , fill = "#d6604d", alpha = 0.25) +
+  geom_ribbon(aes(ymin = 0, ymax = 0.15), 
+              data = , fill = "#4393c3" , alpha = 0.25) +
   geom_smooth(colour = "#d6604d", span = span, alpha = 0.5) +
   geom_line(colour = grey70K) +
   facet_wrap(~county_sort) +
@@ -117,7 +121,7 @@ muac_malnut %>%
   labs(x = "", y = "",
        caption = "Source: GeoCenter Caculations based on National Drought Management Authority MUAC data 2008-2018") +
   ggtitle("DRAFT: Acute malnutrition trends for select counties. General trendline in red.",
-          subtitle = "Percent of under-5 children at risk of malnutrition (MUAC < 135 mm)") +
+          subtitle = "Percent of under-5 children at risk of malnutrition (MUAC < 135 mm)") + 
   ggsave(file.path(imagepath, "KEN_acute_malnutrition_trends_2008_2018.pdf"), 
          height = 8.5, width = 11.5, units = "in")
 
