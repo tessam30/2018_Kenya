@@ -120,7 +120,7 @@ muac_malnut %>%
   theme(legend.position = "none") +
   labs(x = "", y = "",
        caption = "Source: GeoCenter Caculations based on National Drought Management Authority MUAC data 2008-2018") +
-  ggtitle("DRAFT: Acute malnutrition trends for select counties. General trendline in red.",
+  ggtitle("DRAFT: Acute malnutrition trends for select counties. Areas in red represent data points above 15% threshold.",
           subtitle = "Percent of under-5 children at risk of malnutrition (MUAC < 135 mm)") + 
   ggsave(file.path(imagepath, "KEN_acute_malnutrition_trends_2008_2018.pdf"), 
          height = 8.5, width = 11.5, units = "in")
