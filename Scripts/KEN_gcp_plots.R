@@ -104,10 +104,6 @@ gcp_export <- gcp_long_geo %>% select(-geometry)
 write_csv(gcp_export, file.path(dataout, "KEN_GCP_long_2019.csv"))  
   
 
-
-
-
-
 # GDP scraped -------------------------------------------------------------
 
 gdp <- read_excel(file.path(datapath, "KEN_GDP_county.xlsx"))
@@ -121,7 +117,7 @@ gdp_long <-
 gdp_long %>% 
   filter(County != "Nairobi") %>% 
   ggplot(aes(year, County, group = CID)) +
-  geom_tile(aes(fill = gdp), colour = "white")+
+  geom_tile(aes(fill = gdp), colour = "white") +
   scale_fill_viridis_c()
 
 gdp_long %>% 
