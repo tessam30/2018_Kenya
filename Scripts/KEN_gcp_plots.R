@@ -28,7 +28,11 @@ gcp_long_geo <-
     sector_id == 10 ~ "Information and communication",
     sector_id == 14 ~ "Public administration and defence",
     TRUE ~ sector)
-    )
+    ) %>% 
+  group_by(sector) %>% 
+  mutate(sect_tot = sum(gcp, na.rm = TRUE)) %>% 
+  ungroup() %>% 
+  mutate(sect_tot = fct_reorder(sector, sect_tot, .desc = TRUE))
 
 
 
@@ -79,27 +83,25 @@ sector_list  <- (seq(1, 17, by = 1))
 map(sector_list, ~ gcp_plot(gcp_long_geo, Counties, share, .))
 
 gcp_long_geo %>% 
-  group_by(sector) %>% 
-  mutate(sect_tot = sum(Total)) %>% 
-  ungroup() %>% 
-  mutate(facet_sort = fct_reorder(sector, Total)) %>% 
   ggplot() +
   geom_sf(aes(fill = share), colour = "white", size = 0.25) +
   theme_minimal() +
-  facet_wrap(~facet_sort) +
+  facet_wrap(~sect_tot, nrow = 3,
+             labeller = label_wrap_gen()) +
   scale_fill_viridis_c(direction = -1, alpha = 0.90, option = "A", label = percent_format(accuracy = 2)) +
-  labs(fill = "share of gcp") +
-  theme(legend.position = "top") 
-  
-
-
-
-
-
-
-
-gcp_long <- gcp_long_geo %>% select(-geometry)
-write_csv(gcp_long, file.path(dataout, "KEN_GCP_long_2019.csv"))  
+  labs(fill = "share of gcp",
+       title = "Agriculture, forestry and fisheries contribute the largest share of gcp",
+       caption = "GeoCenter calcuations based on Kenya GCP Report 2019") +
+  theme(legend.position = "top",
+        strip.text = element_text(hjust = 0, size = 8)) +
+  ggsave(file.path(imagepath, "KEN_county_gcp_shares.pdf"), 
+         plot = last_plot(),
+         device = "pdf",
+         height = 8.5, width = 11, dpi = 300, 
+         useDingbats = FALSE)
+        
+gcp_export <- gcp_long_geo %>% select(-geometry)
+write_csv(gcp_export, file.path(dataout, "KEN_GCP_long_2019.csv"))  
   
 
 
