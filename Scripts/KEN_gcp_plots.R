@@ -82,7 +82,7 @@ gcp_long_geo %>%
   group_by(sector) %>% 
   mutate(sect_tot = sum(Total)) %>% 
   ungroup() %>% 
-  mutate(facet_sort = fct_reorder(sector, Total)) %>% glimpse()%>% 
+  mutate(facet_sort = fct_reorder(sector, Total)) %>% 
   ggplot() +
   geom_sf(aes(fill = share), colour = "white", size = 0.25) +
   theme_minimal() +
