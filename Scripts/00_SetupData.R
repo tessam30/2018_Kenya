@@ -22,6 +22,7 @@ budgetpath <- "Data/Budget"
 washpath <- "Data/Wash"
 imagepath <- "Images"
 rpath <- "Scripts"
+ipcpath <- "Data/IPC"
 
 #Source helper functions
 file_list <- list("strip_geom.R", 
