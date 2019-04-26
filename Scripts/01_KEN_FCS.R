@@ -1,4 +1,4 @@
-# Purpose: Read in County-level FCS data to provide input to J2SR index
+# Purpose: Read in County-level NVDI data to provide input to J2SR index
 # Author: Tim Essam, Ph.D | USAID GeoCenter
 # Date: 2019_04_24
 # Audience: Kenya Mission

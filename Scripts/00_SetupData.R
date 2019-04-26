@@ -23,6 +23,7 @@ washpath <- "Data/Wash"
 imagepath <- "Images"
 rpath <- "Scripts"
 ipcpath <- "Data/IPC"
+fcspath <- "Data/Household Food Consumption score"
 
 #Source helper functions
 file_list <- list("strip_geom.R", 
