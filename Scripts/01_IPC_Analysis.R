@@ -28,14 +28,18 @@ ipc_long <-
          id = FID,
          famine = if_else(ipc_class == 5, 1, 0),
          emergency = if_else(ipc_class == 4, 1, 0),
-         stressed = if_else(ipc_class == 3, 1, 0))
+         stressed = if_else(ipc_class == 3, 1, 0), 
+         dates_of_interest = year(ipc_date) %in% c(2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017)) 
 
 ipc <- 
   ipc_long %>% 
   left_join(., ipc_geo, by = c("FID" = "JOINID"))
 
-ipc %>% filter(ipc_class %in% c(3, 4, 5)) %>% 
+ipc %>% 
+  #filter(ipc_class %in% c(3, 4, 5)) %>% 
+  filter(dates_of_interest == "TRUE") %>% 
   ggplot() +
   geom_sf(aes(fill = factor(ipc_class)), colour = "white", size = 0.25) + 
-  facet_wrap(~ipc_date)
+  facet_wrap(~ipc_date) +
+  scale_fill_viridis_d()
 

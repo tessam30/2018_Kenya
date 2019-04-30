@@ -11,7 +11,7 @@ shk_df <- read_dta(file.path(kihbspath, "Recent_Shocks.dta"))
 hh_inf <- read_dta(file.path(kihbspath, "HH_Information.dta"))
 source(file.path(rpath, "shocks_cw.R"))
 
-theme_set(theme_light())
+theme_set(theme_minimal())
 
 
 # --Investigate data to see what we are working with ------------------------

@@ -84,6 +84,7 @@ library(srvyr)
 # Check just the core shocks now
 # Can toggle between data frames
 # shocks_geo and shocks_geo_severe
+  
   shocks_geo_severe %>% 
     select(ag_shock:other_shock, county_name) %>% 
     group_by(county_name) %>% 
@@ -95,9 +96,10 @@ library(srvyr)
     mutate_at(vars(shock1, shock2), ~gsub("_shock", "", .)) %>% 
     ggplot(., aes(x = shock1, y = shock2, fill = correlation)) +
     geom_tile(color = "#ffffff") +
-    scale_fill_viridis_c(direction = -1, option = "A") +
+    scale_fill_gradientn(colours = RColorBrewer::brewer.pal(11, 'BrBG'),
+                         limits = c(-1 * 0.5, 0.5)) +
     theme(legend.position =  "top") +
-    ggtitle("Shock correlations within counties")+
+    ggtitle("Shock correlations within counties") +
     ylab("") +
     xlab("") +
     facet_wrap(~county_name)
@@ -140,11 +142,11 @@ library(srvyr)
 
 shock_stats_county <- 
     shocks_geo_asal_svy %>% 
-    select(contains("_shock"), - total_shocks, anyshock, county_name, county_id) %>% 
+    select(contains("_shock"), -total_shocks, anyshock, county_name, county_id) %>% 
     group_by(county_name, county_id) %>% 
-    summarise_all(survey_mean)%>% 
-    select(-contains("_se"))%>% 
-    gather(., key = shock, value = value, ag_shock:anyshock)%>% 
+    summarise_all(survey_mean) %>% 
+    select(-contains("_se")) %>% 
+    gather(., key = shock, value = value, ag_shock:anyshock) %>% 
     mutate(shock = as_factor(gsub("_shock", "", shock))) %>% 
     left_join(shocks_stats_natl, by = c("shock" = "shock_natl")) %>%
     rename(value_county = value.x, value_natl = value.y) %>% 
@@ -184,7 +186,9 @@ shock_dev_max = unlist(shock_stats_county %>% summarise(max_dev = max(abs(shock_
     ggplot(aes(x = county_name, y = shock_dev, fill = shock)) +
     geom_col() +
     coord_flip() +
-    scale_fill_brewer(palette = "Pastel1")
+    scale_fill_brewer(palette = "Pastel1") +
+    facet_wrap(~shock) +
+    theme_minimal()
     #scale_fill_viridis_d(option = "D", direction = -1) 
   
 

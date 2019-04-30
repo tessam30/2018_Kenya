@@ -10,7 +10,22 @@ gcp_long <-
   gcp %>% 
   gather(key = "sector", value = "gcp", 
          `Agriculture, forestry and fishing`:`Other service activities`) %>% 
-  mutate(share = gcp / Total) 
+  mutate(share = gcp / Total,
+         overall = Total / 7524710) 
+
+gcp_long_totals <- 
+  gcp_long %>% filter(`County Name` == "Total")
+
+gcp_long_totals %>% 
+  mutate(sector = fct_reorder(sector, share)) %>% 
+  ggplot(aes(x = sector, y = share, fill = share)) + 
+  geom_col() + 
+  coord_flip() +
+  theme_minimal() +
+  labs(x = "", y = "", 
+       title = "Agriculture, forestry and fishing are the most important components of county GDP") +
+  scale_fill_viridis_c(direction = -1, alpha = 0.90, option = "A", label = percent_format(accuracy = 2))
+
 
 
 gcp_long_geo <- 
@@ -32,7 +47,9 @@ gcp_long_geo <-
   group_by(sector) %>% 
   mutate(sect_tot = sum(gcp, na.rm = TRUE)) %>% 
   ungroup() %>% 
-  mutate(sect_tot = fct_reorder(sector, sect_tot, .desc = TRUE))
+  mutate(sect_tot = fct_reorder(sector, sect_tot, .desc = TRUE),
+         overall_share =  /7524710) %>% 
+
 
 
 
