@@ -114,6 +114,8 @@ library(srvyr)
 # Check the sample design  
   sample_design <-  svydesign(id = ~clid, strata = ~strat,  weights = ~weight, data = shocks)
   summary(sample_design)
+  
+  sample_design %>% summarize(elect_conn)
 
 # -- Can also use the srvyr package which takes pipes
 # -- Create two data frames

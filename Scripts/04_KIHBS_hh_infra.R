@@ -16,7 +16,7 @@ hh_inf_meta <- add_metadata(hh_info)
 
 # First calculate improved water
 hh_info %>% select(j01_dr) %>% group_by(j01_dr) %>% tally()
-get_labels(hh_info$j01_dr)
+#get_labels(hh_info$j01_dr)
 
 # Improved codes for sanitation and water
 # -- For water, there may be a 30 min threshold needed as well
