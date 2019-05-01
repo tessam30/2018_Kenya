@@ -100,17 +100,29 @@ hh_chars %>% select_if(~is.numeric(.) & max(., na.rm=TRUE) == 1) %>%
   names()
 
 
+# Join time ---------------------------------------------------------------
+
+# When it's time to join
+#right_join(hh_base, by = c("clid" = "clid", "hhid" = "hhid"))  
+
+
+
+# Validate Statistics -----------------------------------------------------
+
 
 # Check the sample design  
 housing_svy <- hh_chars %>% 
   as_survey_design(id = clid, strata = strat, weights = weight)
 
 housing_svy %>% 
-  select(contains("food_")) %>% 
+  select(contains("food_"), county) %>% 
+  group_by(county) %>% 
   summarise_all(survey_mean, na.rm = TRUE) %>% 
   select(-contains("_se")) %>% 
-  gather(var, value)
-                             
+  gather(var, value, -county) %>%  arrange(desc(value))
+
+                            
+
 
          
          
