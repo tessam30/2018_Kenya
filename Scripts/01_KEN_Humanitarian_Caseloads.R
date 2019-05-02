@@ -4,6 +4,9 @@
 # Date: 2018_08_03
 # Audience: Kenya Mission
 
+library(gridExtra)
+library(ggpubr)
+
 # Load two spreadsheets with figures --------------------------------------
 # What am I looking at?
 # Food Assistance are the raw numbers used to "derive" the humanitarian caseloads I guess?
@@ -11,8 +14,8 @@
 # the way data was tracked changed in 14 and things need to be combined into the county level
 
 food_assist_4_14 <- read_excel(file.path(datapath, "Beneficiary numbers_2004 - 2014_by division.xlsx"),
-                            skip = 1, sheet = "Raw Data") %>% 
-  mutate_at(vars(`Phase VIMar 07 - Sep 07`:`Phase X Mar 09 to Aug 09`), as.numeric)
+                            skip = 1, sheet = "Raw Data")%>% 
+  mutate_at(vars(`Phase VI Mar 07 - Sep 07`:`Phase X Mar 09 to Aug 09`), as.numeric)
 
 hum_case_4_14 <- read_excel(file.path(datapath, "Beneficiary numbers_2004 - 2014_by division.xlsx"),
                             sheet = "CaseLoad")
@@ -43,26 +46,17 @@ hc1 <-
   separate(phase, sep = "-", into = c("start_date", "end_date")) %>% 
   
   # Compress down to County level 
-  group_by(CID, County, District, start_date, end_date) %>% 
+  group_by(CID, County, start_date, end_date) %>% 
   summarise(caseloads = sum(caseloads, na.rm = TRUE),
-            Pop_est = mean(Pop_est)) %>% 
+            Pop_est = sum(Pop_est)) %>% 
   ungroup() %>% 
-  
   mutate(start_date = lubridate::myd(str_c(start_date, " ", 1)),
          end_date = lubridate::myd(str_c(end_date, " ", 1))) %>% 
-  group_by(CID) %>% 
-  mutate(total_caseloads = sum(caseloads, na.rm = TRUE)) %>% 
-  ungroup() %>% 
-  mutate(county_sort = fct_reorder(County, total_caseloads, .desc = TRUE)) %>% 
-  arrange(CID, start_date) %>% 
   group_by(start_date) %>% 
   mutate(phase = group_indices()) %>% 
   ungroup()
 
-hc1 %>% 
-  ggplot(aes(x = phase, y = caseloads)) +
-  geom_col() + 
-  facet_wrap(~ county_sort)
+
 
 # Now for the second half of the data
 hc2 <- 
@@ -73,23 +67,55 @@ hc2 <-
   # Compress down to County level 
   group_by(CID, County, start_date, end_date) %>% 
   summarise(caseloads = sum(caseloads, na.rm = TRUE),
-            Pop_est = mean(Pop_est)) %>% 
+            Pop_est = sum(Pop_est)) %>% 
   ungroup() %>% 
-  
   mutate(start_date = lubridate::myd(str_c(start_date, " ", 1)),
          end_date = lubridate::myd(str_c(end_date, " ", 1))) %>% 
+  arrange(CID, start_date) %>% 
+  group_by(start_date) %>% 
+  mutate(phase = group_indices() + 20) %>% 
+  ungroup() 
+
+
+map(list(hc1, hc2), names)
+map(list(hc1$start_date, hc2$start_date), table)
+
+human_caseloads <- rbind(hc1, hc2) %>% 
   group_by(CID) %>% 
   mutate(total_caseloads = sum(caseloads, na.rm = TRUE)) %>% 
   ungroup() %>% 
-  mutate(county_sort = fct_reorder(County, total_caseloads, .desc = TRUE)) %>% 
-  arrange(CID, start_date) %>% 
-  group_by(start_date) %>% 
-  mutate(phase = group_indices()) %>% 
-  ungroup()
-  
-setdiff(hc1, hc2)
-  
-# Create real dates and phases to go w/ them
-  
-  
+  mutate(county_sort = fct_reorder(County, total_caseloads, .desc = TRUE)) 
 
+
+
+# Create real dates and phases to go w/ them
+bar <- human_caseloads %>% 
+  ggplot(aes(x = phase, y = (caseloads), fill = caseloads)) +
+  geom_col() + 
+  facet_wrap(~ county_sort) +
+  scale_fill_viridis_c(option = "A", alpha = 0.85, direction = -1,
+                       labels = scales::comma) +
+  scale_y_continuous(labels = scales::comma) +
+  labs(x = "", y = "") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+hc_map <- human_caseloads %>% 
+  group_by(CID, start_date) %>% 
+  summarise(total = sum(caseloads)) %>% 
+  right_join(asal_geo, by = c("CID")) %>% 
+  ggplot() +
+  geom_sf(aes(fill = total), colour = "white", size = 0.25) +
+  scale_fill_viridis_c(option = "A", alpha = 0.85, direction = -1,
+                       labels = scales::comma) +
+  facet_wrap(~start_date) +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+ggarrange(hc_map, bar) 
+
+  ggsave(file.path(imagepath, "KEN_caseloads.pdf"),
+         plot = last_plot(),
+         device = "pdf",
+         height = 8.5, width = 11, dpi = 300, 
+         useDingbats = FALSE)
