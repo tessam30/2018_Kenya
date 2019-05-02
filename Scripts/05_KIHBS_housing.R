@@ -45,8 +45,8 @@ hh_chars <-
         transfers_amt = o02_h,
         
         # Food security --> Section QA pg 24
-        food_worry = qa1,
-        food_pref_money = qa2,
+        food_worries = qa1,
+        food_pref_change_money = qa2,
         food_fewer_money = qa3,
         food_miss_meal = qa4,
         food_eat_less = qa5,
@@ -58,7 +58,7 @@ hh_chars <-
         # ICT --> Section S pg 29
         computer = s01,
         tv = s02,
-        internet = s09,
+        web_connect = s09,
         internet_phone = s10_1
         ) %>%
   
@@ -88,12 +88,14 @@ hh_chars <-
     
     elect_conn = ifelse(energy_light == 1, 1, 0),
     
-    transfers = ifelse(hh_support == 1, 1, 0)
+    transfers = ifelse(hh_support == 1, 1, 0),
+    mobile_internet = ifelse(internet_phone == "D", 1, 0),
+    mobile_broadband = ifelse(internet_phone == "C", 1, 0)
     ) %>% 
   
   # Convert questions where 2 = no to 0s -- applying to food security questions
   mutate_at(vars(contains("food_")), twoToZero) %>% 
-  mutate_at(vars(c("computer", "internet", "tv")), twoToZero)
+  mutate_at(vars(c("computer", "web_connect", "tv")), twoToZero)
 
 # Test that all binary variables are really binary
 hh_chars %>% select_if(~is.numeric(.) & max(., na.rm=TRUE) == 1) %>% 
@@ -104,25 +106,37 @@ hh_chars %>% select_if(~is.numeric(.) & max(., na.rm=TRUE) == 1) %>%
 
 # When it's time to join
 #right_join(hh_base, by = c("clid" = "clid", "hhid" = "hhid"))  
-
-
+tmp <- 
+  hh_chars %>% select(-c("county", "strat", "resid", "eatype", 
+                         "hhsize", "weight", "iday")) %>% 
+  left_join(hh_base, by = c("clid" = "clid", "hhid" = "hhid")) 
+str(tmp)
 
 # Validate Statistics -----------------------------------------------------
 
 
 # Check the sample design  
-housing_svy <- hh_chars %>% 
+housing_svy <- tmp %>% 
   as_survey_design(id = clid, strata = strat, weights = weight)
 
+# Looking at food security, it is not just an issue in the North!
 housing_svy %>% 
-  select(contains("food_"), county) %>% 
-  group_by(county) %>% 
+  select(contains("food_"), county_id) %>% 
+  group_by(county_id) %>% 
   summarise_all(survey_mean, na.rm = TRUE) %>% 
   select(-contains("_se")) %>% 
-  gather(var, value, -county) %>%  arrange(desc(value))
+  gather(var, value, -county_id) %>%
+  arrange(desc(value)) %>% 
+  filter(value > 0.50) %>% 
+  mutate(food_security = fct_reorder(var, value, .desc = TRUE)) %>% 
+  left_join(asal_geo, by = c("county_id" = "CID")) %>% 
+  ggplot() +
+  geom_sf(aes(fill = value), colour = "white", size = 0.25) +
+  facet_wrap(~ food_security) +
+  scale_fill_viridis_c(option = "B", direction = -1, alpha = 0.75)
 
-                            
 
+hh_chars %>% tabyl(mobile_broadband)
 
          
          
