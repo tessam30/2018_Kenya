@@ -1,0 +1,95 @@
+# Purpose: Load and consolidate humanitarian caseloads across two datasets
+# Everything to be aggregated up to the County level
+# Author: Tim Essam, Ph.D | USAID GeoCenter
+# Date: 2018_08_03
+# Audience: Kenya Mission
+
+# Load two spreadsheets with figures --------------------------------------
+# What am I looking at?
+# Food Assistance are the raw numbers used to "derive" the humanitarian caseloads I guess?
+# Humanitarian caseloads should be the number of caseloads by each county. The catch is that
+# the way data was tracked changed in 14 and things need to be combined into the county level
+
+food_assist_4_14 <- read_excel(file.path(datapath, "Beneficiary numbers_2004 - 2014_by division.xlsx"),
+                            skip = 1, sheet = "Raw Data") %>% 
+  mutate_at(vars(`Phase VIMar 07 - Sep 07`:`Phase X Mar 09 to Aug 09`), as.numeric)
+
+hum_case_4_14 <- read_excel(file.path(datapath, "Beneficiary numbers_2004 - 2014_by division.xlsx"),
+                            sheet = "CaseLoad")
+
+hum_case_14_19 <- read_excel(file.path(datapath, "Beneficiary numbers_2014 - 2019 by sub county.xlsx"))
+
+# Looking for characters instead of numbers; need to fix these
+list(food_assist_4_14, hum_case_4_14, hum_case_14_19) %>% 
+  map(., str)
+
+
+# Reshaping, date-ifying, temp plotting -----------------------------------
+
+
+# Step 1, need to reshape the data and get the column names into dates. 
+# Then we need to collapse everything down to the county level
+
+hc1 <- 
+  hum_case_4_14 %>% 
+  # Fix county names so they merge
+  mutate(County = ifelse(County == "kwale", "Kwale", County)) %>% 
+  gather(phase, caseloads, `Sep 04_Feb 05`:`Mar 14-Aug 14`) %>% 
+  
+  rename(Pop_est = `2009 Census Pop`) %>% 
+  
+  # Split up the phase into parsable dates
+  mutate(phase = str_replace(phase, c("_"), "-")) %>% 
+  separate(phase, sep = "-", into = c("start_date", "end_date")) %>% 
+  
+  # Compress down to County level 
+  group_by(CID, County, District, start_date, end_date) %>% 
+  summarise(caseloads = sum(caseloads, na.rm = TRUE),
+            Pop_est = mean(Pop_est)) %>% 
+  ungroup() %>% 
+  
+  mutate(start_date = lubridate::myd(str_c(start_date, " ", 1)),
+         end_date = lubridate::myd(str_c(end_date, " ", 1))) %>% 
+  group_by(CID) %>% 
+  mutate(total_caseloads = sum(caseloads, na.rm = TRUE)) %>% 
+  ungroup() %>% 
+  mutate(county_sort = fct_reorder(County, total_caseloads, .desc = TRUE)) %>% 
+  arrange(CID, start_date) %>% 
+  group_by(start_date) %>% 
+  mutate(phase = group_indices()) %>% 
+  ungroup()
+
+hc1 %>% 
+  ggplot(aes(x = phase, y = caseloads)) +
+  geom_col() + 
+  facet_wrap(~ county_sort)
+
+# Now for the second half of the data
+hc2 <- 
+  hum_case_14_19 %>% 
+  gather(phase, caseloads, `Sep 14-Feb 15`:`Sep 18-Feb 19`) %>% 
+  rename(Pop_est = `2009 Census Pop`) %>% 
+  separate(phase, sep = "-", into = c("start_date", "end_date")) %>% 
+  # Compress down to County level 
+  group_by(CID, County, start_date, end_date) %>% 
+  summarise(caseloads = sum(caseloads, na.rm = TRUE),
+            Pop_est = mean(Pop_est)) %>% 
+  ungroup() %>% 
+  
+  mutate(start_date = lubridate::myd(str_c(start_date, " ", 1)),
+         end_date = lubridate::myd(str_c(end_date, " ", 1))) %>% 
+  group_by(CID) %>% 
+  mutate(total_caseloads = sum(caseloads, na.rm = TRUE)) %>% 
+  ungroup() %>% 
+  mutate(county_sort = fct_reorder(County, total_caseloads, .desc = TRUE)) %>% 
+  arrange(CID, start_date) %>% 
+  group_by(start_date) %>% 
+  mutate(phase = group_indices()) %>% 
+  ungroup()
+  
+setdiff(hc1, hc2)
+  
+# Create real dates and phases to go w/ them
+  
+  
+
