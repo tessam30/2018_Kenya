@@ -7,6 +7,7 @@
 library(gridExtra)
 library(ggpubr)
 
+Data_caption = c("Source: GeoCenter calculations based on Kenya National Drought Management Authority")
 # Load two spreadsheets with figures --------------------------------------
 # What am I looking at?
 # Food Assistance are the raw numbers used to "derive" the humanitarian caseloads I guess?
@@ -61,6 +62,7 @@ hc1 <-
 # Now for the second half of the data
 hc2 <- 
   hum_case_14_19 %>% 
+  mutate(County = ifelse(County == "Tharaka", "Tharaka Nithi", County)) %>% 
   gather(phase, caseloads, `Sep 14-Feb 15`:`Sep 18-Feb 19`) %>% 
   rename(Pop_est = `2009 Census Pop`) %>% 
   separate(phase, sep = "-", into = c("start_date", "end_date")) %>% 
@@ -79,6 +81,7 @@ hc2 <-
 
 map(list(hc1, hc2), names)
 map(list(hc1$start_date, hc2$start_date), table)
+map(list(hc1$County, hc2$County), table)
 
 human_caseloads <- rbind(hc1, hc2) %>% 
   group_by(CID) %>% 
@@ -89,32 +92,71 @@ human_caseloads <- rbind(hc1, hc2) %>%
 
 
 # Create real dates and phases to go w/ them
+droughts <- c("2011-01-01", "2017-01-01") %>% as.Date()
 bar <- human_caseloads %>% 
-  ggplot(aes(x = phase, y = (caseloads), fill = caseloads)) +
+  ggplot(aes(x = start_date, y = (caseloads), fill = caseloads)) +
+  geom_rect(ymin = 0, ymax = Inf,
+            xmin = as.Date("2006-01-01"), xmax = as.Date("2007-01-01"),
+            fill = "#fdfbec", alpha = 0.75) +
+  geom_rect(ymin = 0, ymax = Inf,
+            xmin = as.Date("2004-01-01"), xmax = as.Date("2005-01-01"),
+            fill = "#fdfbec", alpha = 0.75) +
+  geom_rect(ymin = 0, ymax = Inf,
+            xmin = as.Date("2009-01-01"), xmax = as.Date("2010-01-01"),
+            fill = "#fdfbec", alpha = 0.75) +
+  geom_rect(ymin = 0, ymax = Inf,
+            xmin = as.Date("2011-01-01"), xmax = as.Date("2012-01-01"),
+            fill = "#fdfbec", alpha = 0.75) +
+  geom_rect(ymin = 0, ymax = Inf,
+            xmin = as.Date("2017-01-01"), xmax = as.Date("2018-01-01"),
+            fill = "#fdfbec", alpha = 0.75) +
   geom_col() + 
-  facet_wrap(~ county_sort, nrow = 3) +
+  facet_wrap(~ county_sort) +
   scale_fill_viridis_c(option = "A", alpha = 0.85, direction = -1,
                        labels = scales::comma) +
   scale_y_continuous(labels = scales::comma) +
-  labs(x = "", y = "") +
-  theme_minimal() 
+  labs(x = "", y = "",
+       caption = Data_caption,
+       title = "Turkana and Kitui had the most humanitarian caseloads from 2004-2018",
+       subtitle = "Major drought events shown in light yellow") +
+  theme_minimal() +
+  scale_x_date() +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        axis.ticks.x.bottom = element_line(size = 0.5, colour = grey30K),
+        legend.position = "none")
 
 hc_map <- human_caseloads %>% 
-  group_by(CID, start_date) %>% 
+  group_by(CID) %>% 
   summarise(total = sum(caseloads)) %>% 
-  right_join(asal_geo, by = c("CID")) %>% 
+  right_join(asal_geo, by = c("CID")) %>%
+  mutate(total = ifelse(is.na(total), 0, total)) %>% 
   ggplot() +
   geom_sf(aes(fill = total), colour = "white", size = 0.25) +
   scale_fill_viridis_c(option = "A", alpha = 0.85, direction = -1,
                        labels = scales::comma) +
-  facet_wrap(~start_date, nrow = 3) +
-  theme_minimal() 
+  #facet_wrap(~start_date, nrow = 3) +
+  theme_minimal()
 
-ggarrange(hc_map, bar, nrow = 2, align = "hv", common.legend = TRUE, legend = "top") %>% 
-  annotate_figure(., fig.lab = "Turkana and Kitui had the most humanitarian caseloads from 2004 - 2018")
+# ggarrange(hc_map, bar, ncol = 2) %>% 
+#   annotate_figure(., fig.lab = "Turkana and Kitui had the most humanitarian caseloads from 2004 - 2018")
 
   ggsave(file.path(imagepath, "KEN_caseloads.pdf"),
          plot = last_plot(),
          device = "pdf",
-         height = 34, width = 32, dpi = 300, 
+         height = 17, width = 16, dpi = 300, 
          useDingbats = FALSE)
+  
+
+# Data export for .AI'ing -------------------------------------------------
+
+hc_totals <- human_caseloads %>% 
+    group_by(CID, County) %>% 
+    summarise(total = sum(caseloads)) %>% 
+    ungroup() %>% 
+    right_join(asal_geo, by = c("CID")) %>%
+    mutate(total = ifelse(is.na(total), 0, total))
+  
+st_write(hc_totals, file.path(gispath, "KEN_humanitarian_caseloads_totals.shp"), delete_layer = TRUE)
+write_csv(hc_totals, file.path(datapath, "KEN_humanitarian_caseloads.totals.csv"))
