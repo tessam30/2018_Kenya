@@ -92,13 +92,12 @@ human_caseloads <- rbind(hc1, hc2) %>%
 bar <- human_caseloads %>% 
   ggplot(aes(x = phase, y = (caseloads), fill = caseloads)) +
   geom_col() + 
-  facet_wrap(~ county_sort) +
+  facet_wrap(~ county_sort, nrow = 3) +
   scale_fill_viridis_c(option = "A", alpha = 0.85, direction = -1,
                        labels = scales::comma) +
   scale_y_continuous(labels = scales::comma) +
   labs(x = "", y = "") +
-  theme_minimal() +
-  theme(legend.position = "none")
+  theme_minimal() 
 
 hc_map <- human_caseloads %>% 
   group_by(CID, start_date) %>% 
@@ -108,14 +107,14 @@ hc_map <- human_caseloads %>%
   geom_sf(aes(fill = total), colour = "white", size = 0.25) +
   scale_fill_viridis_c(option = "A", alpha = 0.85, direction = -1,
                        labels = scales::comma) +
-  facet_wrap(~start_date) +
-  theme_minimal() +
-  theme(legend.position = "none")
+  facet_wrap(~start_date, nrow = 3) +
+  theme_minimal() 
 
-ggarrange(hc_map, bar) 
+ggarrange(hc_map, bar, nrow = 2, align = "hv", common.legend = TRUE, legend = "top") %>% 
+  annotate_figure(., fig.lab = "Turkana and Kitui had the most humanitarian caseloads from 2004 - 2018")
 
   ggsave(file.path(imagepath, "KEN_caseloads.pdf"),
          plot = last_plot(),
          device = "pdf",
-         height = 8.5, width = 11, dpi = 300, 
+         height = 34, width = 32, dpi = 300, 
          useDingbats = FALSE)
