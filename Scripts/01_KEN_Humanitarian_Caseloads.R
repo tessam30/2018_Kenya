@@ -15,7 +15,7 @@ Data_caption = c("Source: GeoCenter calculations based on Kenya National Drought
 # the way data was tracked changed in 14 and things need to be combined into the county level
 
 food_assist_4_14 <- read_excel(file.path(datapath, "Beneficiary numbers_2004 - 2014_by division.xlsx"),
-                            skip = 1, sheet = "Raw Data")%>% 
+                            skip = 1, sheet = "Raw Data") %>% 
   mutate_at(vars(`Phase VI Mar 07 - Sep 07`:`Phase X Mar 09 to Aug 09`), as.numeric)
 
 hum_case_4_14 <- read_excel(file.path(datapath, "Beneficiary numbers_2004 - 2014_by division.xlsx"),
@@ -86,15 +86,17 @@ map(list(hc1$County, hc2$County), table)
 human_caseloads <- rbind(hc1, hc2) %>% 
   group_by(CID) %>% 
   mutate(total_caseloads = sum(caseloads, na.rm = TRUE)) %>% 
+  mutate(caseload_pct_total = mean(caseloads/sum(Pop_est))) %>% 
   ungroup() %>% 
-  mutate(county_sort = fct_reorder(County, total_caseloads, .desc = TRUE)) 
+  mutate(county_sort = fct_reorder(County, total_caseloads, .desc = TRUE),
+         count_sort_pct = fct_reorder(County, caseload_pct_total, .desc = TRUE)) 
 
 
 
 # Create real dates and phases to go w/ them
-droughts <- c("2011-01-01", "2017-01-01") %>% as.Date()
+#droughts <- c("2011-01-01", "2017-01-01") %>% as.Date()
 bar <- human_caseloads %>% 
-  ggplot(aes(x = start_date, y = (caseloads), fill = caseloads)) +
+  ggplot(aes(x = start_date, y = (caseloads/Pop_est), fill = caseloads)) +
   geom_rect(ymin = 0, ymax = Inf,
             xmin = as.Date("2006-01-01"), xmax = as.Date("2007-01-01"),
             fill = "#fdfbec", alpha = 0.75) +
@@ -111,13 +113,14 @@ bar <- human_caseloads %>%
             xmin = as.Date("2017-01-01"), xmax = as.Date("2018-01-01"),
             fill = "#fdfbec", alpha = 0.75) +
   geom_col() + 
-  facet_wrap(~ county_sort) +
+  facet_wrap(~ count_sort_pct) +
   scale_fill_viridis_c(option = "A", alpha = 0.85, direction = -1,
                        labels = scales::comma) +
-  scale_y_continuous(labels = scales::comma) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1) ) +
   labs(x = "", y = "",
        caption = Data_caption,
-       title = "Turkana and Kitui had the most humanitarian caseloads from 2004-2018",
+       #title = "Turkana and Kitui had the higest percent of humanitarian caseloads from 2004-2018"
+       #title = "In terms of the percent of population affected, Mandera and Isiolo had the highest levels from 2004-2018",
        subtitle = "Major drought events shown in light yellow") +
   theme_minimal() +
   scale_x_date() +
@@ -129,20 +132,22 @@ bar <- human_caseloads %>%
 
 hc_map <- human_caseloads %>% 
   group_by(CID) %>% 
-  summarise(total = sum(caseloads)) %>% 
+  summarise(total = mean(caseloads/Pop_est)) %>% 
   right_join(asal_geo, by = c("CID")) %>%
   mutate(total = ifelse(is.na(total), 0, total)) %>% 
   ggplot() +
   geom_sf(aes(fill = total), colour = "white", size = 0.25) +
   scale_fill_viridis_c(option = "A", alpha = 0.85, direction = -1,
-                       labels = scales::comma) +
+                       labels = scales::percent_format(accuracy = 1)) +
   #facet_wrap(~start_date, nrow = 3) +
   theme_minimal()
 
-# ggarrange(hc_map, bar, ncol = 2) %>% 
-#   annotate_figure(., fig.lab = "Turkana and Kitui had the most humanitarian caseloads from 2004 - 2018")
+ggarrange(hc_map, bar, ncol = 2) %>% 
+ #annotate_figure(., fig.lab = "Turkana and Kitui, on average, had the most humanitarian caseloads from 2004 - 2018")
+  annotate_figure(., fig.lab = "In terms of the percent of population affected, Mandera and Isiolo had the highest levels from 2004-2018")
+  
 
-  ggsave(file.path(imagepath, "KEN_caseloads.pdf"),
+  ggsave(file.path(imagepath, "KEN_caseloads_pct.pdf"),
          plot = last_plot(),
          device = "pdf",
          height = 17, width = 16, dpi = 300, 
@@ -153,7 +158,7 @@ hc_map <- human_caseloads %>%
 
 hc_totals <- human_caseloads %>% 
     group_by(CID, County) %>% 
-    summarise(total = sum(caseloads)) %>% 
+    summarise(total = mean(caseloads)) %>% 
     ungroup() %>% 
     right_join(asal_geo, by = c("CID")) %>%
     mutate(total = ifelse(is.na(total), 0, total))
