@@ -161,7 +161,9 @@ hc_totals <- human_caseloads %>%
     summarise(total = mean(caseloads)) %>% 
     ungroup() %>% 
     right_join(asal_geo, by = c("CID")) %>%
-    mutate(total = ifelse(is.na(total), 0, total))
+    mutate(total = ifelse(is.na(total), 0, total)) 
+  
   
 st_write(hc_totals, file.path(gispath, "KEN_humanitarian_caseloads_totals.shp"), delete_layer = TRUE)
-write_csv(hc_totals, file.path(datapath, "KEN_humanitarian_caseloads.totals.csv"))
+write_csv(hc_totals %>% select(-geometry), file.path(datapath, "KEN_humanitarian_caseloads_totals.csv"))
+write_csv(human_caseloads, file.path(datapath, "KEN_humanitarian_caseloads.csv"))
