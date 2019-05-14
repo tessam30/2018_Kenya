@@ -9,6 +9,8 @@
 # https://www.rstudio.com/resources/videos/the-future-of-time-series-and-financial-analysis-in-the-tidyverse/
 # https://cran.r-project.org/web/packages/tidyquant/vignettes/TQ00-introduction-to-tidyquant.html
 
+library(gghighlight)
+
 # Determine universe of files to use --------------------------------------
 
 muac_files <- list.files(file.path(datapath, "malnutrition"), pattern = "MUAC")
@@ -23,19 +25,19 @@ muac_raw <- tibble(filename = muac_files) %>%
 # Process the raw data into a usable format
 muac <- 
   muac_raw %>% 
-  rename(varinfo = "..1",
-         Jan = "..2",
-         Feb = "..3",
-         Mar = "..4",
-         Apr = "..5",
-         May = "..6",
-         Jun = "..7",
-         Jul = "..8",
-         Aug = "..9",
-         Sep = "..10",
-         Oct = "..11",
-         Nov = "..12",
-         Dec = "..13", 
+  rename(varinfo = "...1",
+         Jan = "...2",
+         Feb = "...3",
+         Mar = "...4",
+         Apr = "...5",
+         May = "...6",
+         Jun = "...7",
+         Jul = "...8",
+         Aug = "...9",
+         Sep = "...10",
+         Oct = "...11",
+         Nov = "...12",
+         Dec = "...13", 
          county = filename) %>% 
   filter(!is.na(varinfo)) %>% 
   
@@ -101,7 +103,7 @@ muac_malnut <- muac_long %>% filter(commodity == "Malnutrition Risk") %>% rename
 prices <- muac_long %>% filter(commodity != "Malnutrition Risk")
 
 # Set span for fitting loess
-span = 0.5
+span = 0.33
 muac_malnut %>% 
   group_by(county) %>% 
   mutate(mean = mean(value, na.rm = TRUE)) %>% 
@@ -112,7 +114,7 @@ muac_malnut %>%
               data = , fill = "#d6604d", alpha = 0.25) +
   geom_ribbon(aes(ymin = 0, ymax = 0.15), 
               data = , fill = "#4393c3" , alpha = 0.25) +
-  geom_smooth(colour = "#d6604d", span = span, alpha = 0.5) +
+  geom_smooth(colour = "#d6604d", span = span, alpha = 0.5, size = 0.25) +
   geom_line(colour = grey70K) +
   facet_wrap(~county_sort) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
@@ -124,6 +126,43 @@ muac_malnut %>%
           subtitle = "Percent of under-5 children at risk of malnutrition (MUAC < 135 mm)") + 
   ggsave(file.path(imagepath, "KEN_acute_malnutrition_trends_2008_2018.pdf"), 
          height = 8.5, width = 11.5, units = "in")
+
+# Run same chunk but just for select counties of Turkana, Marsabit, Isiolo and Samburu.
+# NOTE: https://stackoverflow.com/questions/17521438/geom-rect-and-alpha-does-this-work-with-hard-coded-values; 
+# TLDR: geom_rect draws a rectangle for each row in the data frame, limit how many rectangles are drawn.
+muac_malnut %>% 
+  filter(county %in% c("Turkana", "Marsabit", "Isiolo", "Samburu")) %>% 
+  group_by(county) %>% 
+  mutate(mean = mean(value, na.rm = TRUE)) %>% 
+  ungroup() %>% 
+  mutate(county_sort = fct_reorder(county, mean, .desc = TRUE)) %>%
+  ggplot(aes(x = date, y = value)) +
+  geom_ribbon(aes(ymin = 0.15, ymax = 0.4), 
+              data = , fill = "#d6604d", alpha = 0.20) +
+  geom_ribbon(aes(ymin = 0, ymax = 0.15), 
+              data = , fill = "#4393c3" , alpha = 0.20) +
+  geom_rect(data = muac_malnut[1, ], ymin = 0, ymax = .4,
+            xmin = as.Date("2009-01-01"), xmax = as.Date("2010-01-01"),
+            fill = "#fdfbec", alpha = 0.33) +
+  geom_rect(data = muac_malnut[1, ], ymin = 0, ymax = .4,
+            xmin = as.Date("2011-01-01"), xmax = as.Date("2012-01-01"),
+            fill = "#fdfbec", alpha = 0.33) +
+  geom_rect(data = muac_malnut[1, ], ymin = 0, ymax = .4,
+            xmin = as.Date("2017-01-01"), xmax = as.Date("2018-01-01"),
+            fill = "#", alpha = 0.33) +
+  geom_smooth(colour = "#", span = span, alpha = 0.5, size = 0.25) +
+  geom_line(colour = grey70K) +
+  facet_wrap(~county_sort) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  labs(x = "", y = "",
+       caption = "Source: GeoCenter Caculations based on National Drought Management Authority MUAC data 2008-2018") +
+  ggtitle("DRAFT: Acute malnutrition trends for select counties. Areas in red represent months above 15% threshold.",
+          subtitle = "Percent of under-5 children at risk of malnutrition (MUAC < 135 mm)")+ 
+  ggsave(file.path(imagepath, "KEN_acute_malnutrition_trends_PR_Counties_2008_2018.pdf"), 
+         height = 8.5, width = 11.5, units = "in")
+
 
 muac_malnut %>% 
   group_by(county, year, CID) %>% 

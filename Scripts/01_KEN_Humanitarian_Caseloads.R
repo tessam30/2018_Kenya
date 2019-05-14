@@ -95,31 +95,35 @@ human_caseloads <- rbind(hc1, hc2) %>%
 
 # Create real dates and phases to go w/ them
 #droughts <- c("2011-01-01", "2017-01-01") %>% as.Date()
+yinf = 4e5
 bar <- human_caseloads %>% 
-  ggplot(aes(x = start_date, y = (caseloads/Pop_est), fill = caseloads)) +
-  geom_rect(ymin = 0, ymax = Inf,
+  filter(County %in% c("Turkana", "Marsabit", "Isiolo", "Samburu")) %>% 
+  filter(start_date > "2007-10-01") %>% 
+  ggplot(aes(x = start_date, y = (caseloads), fill = caseloads)) +
+  geom_rect(ymin = 0, ymax = yinf,
             xmin = as.Date("2006-01-01"), xmax = as.Date("2007-01-01"),
             fill = "#fdfbec", alpha = 0.75) +
-  geom_rect(ymin = 0, ymax = Inf,
+  geom_rect(ymin = 0, ymax = yinf,
             xmin = as.Date("2004-01-01"), xmax = as.Date("2005-01-01"),
             fill = "#fdfbec", alpha = 0.75) +
-  geom_rect(ymin = 0, ymax = Inf,
+  geom_rect(ymin = 0, ymax = yinf,
             xmin = as.Date("2009-01-01"), xmax = as.Date("2010-01-01"),
             fill = "#fdfbec", alpha = 0.75) +
-  geom_rect(ymin = 0, ymax = Inf,
+  geom_rect(ymin = 0, ymax = yinf,
             xmin = as.Date("2011-01-01"), xmax = as.Date("2012-01-01"),
             fill = "#fdfbec", alpha = 0.75) +
-  geom_rect(ymin = 0, ymax = Inf,
+  geom_rect(ymin = 0, ymax = yinf,
             xmin = as.Date("2017-01-01"), xmax = as.Date("2018-01-01"),
             fill = "#fdfbec", alpha = 0.75) +
   geom_col() + 
-  facet_wrap(~ count_sort_pct) +
+  facet_wrap(~ county_sort) +
   scale_fill_viridis_c(option = "A", alpha = 0.85, direction = -1,
                        labels = scales::comma) +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1) ) +
+  #scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  scale_y_continuous(labels = scales::comma) +
   labs(x = "", y = "",
        caption = Data_caption,
-       #title = "Turkana and Kitui had the higest percent of humanitarian caseloads from 2004-2018"
+       title = "Turkana and Kitui had the higest percent of humanitarian caseloads from 2008-2018",
        #title = "In terms of the percent of population affected, Mandera and Isiolo had the highest levels from 2004-2018",
        subtitle = "Major drought events shown in light yellow") +
   theme_minimal() +
@@ -131,26 +135,29 @@ bar <- human_caseloads %>%
         legend.position = "none")
 
 hc_map <- human_caseloads %>% 
+  filter(start_date >= "2007-10-01") %>% 
   group_by(CID) %>% 
-  summarise(total = mean(caseloads/Pop_est)) %>% 
+  summarise(total = mean(caseloads)) %>% 
   right_join(asal_geo, by = c("CID")) %>%
   mutate(total = ifelse(is.na(total), 0, total)) %>% 
   ggplot() +
   geom_sf(aes(fill = total), colour = "white", size = 0.25) +
-  scale_fill_viridis_c(option = "A", alpha = 0.85, direction = -1,
-                       labels = scales::percent_format(accuracy = 1)) +
+  scale_fill_viridis_c(option = "A", alpha = 1, direction = -1,
+                       #labels = scales::percent_format(accuracy = 1),
+                       labels = scales::comma) +
   #facet_wrap(~start_date, nrow = 3) +
-  theme_minimal()
+  theme_minimal() +
+  theme(legend.position = "top")
 
 ggarrange(hc_map, bar, ncol = 2) %>% 
  #annotate_figure(., fig.lab = "Turkana and Kitui, on average, had the most humanitarian caseloads from 2004 - 2018")
-  annotate_figure(., fig.lab = "In terms of the percent of population affected, Mandera and Isiolo had the highest levels from 2004-2018")
+  annotate_figure(., fig.lab = "In terms of the percent of population affected, Mandera and Isiolo had the highest levels from 2007-2018")
   
 
-  ggsave(file.path(imagepath, "KEN_caseloads_pct.pdf"),
+  ggsave(file.path(imagepath, "KEN_caseloads_PR_counties.pdf"),
          plot = last_plot(),
          device = "pdf",
-         height = 17, width = 16, dpi = 300, 
+         height = 8.5, width = 11, dpi = 300, 
          useDingbats = FALSE)
   
 
