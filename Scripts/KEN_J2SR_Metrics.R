@@ -88,6 +88,12 @@ ggsave(file.path(imagepath, "KEN_J2SR_pca_results.pdf"),
        height = 8.5, width = 11, dpi = 300, 
        useDingbats = FALSE)
 
+# What does a potential index look like?
+j2sr_pca[[3]][[1]] %>% 
+  mutate(county_sort = fct_reorder(County, `.fittedPC1`)) %>% 
+  ggplot(aes(x = county_sort, y = .fittedPC1)) + geom_col() +
+  coord_flip()
+
 
 # Cluster analysis of countie ---------------------------------------------
 
@@ -96,9 +102,9 @@ ggsave(file.path(imagepath, "KEN_J2SR_pca_results.pdf"),
 
 j2sr_scaled <- 
   j2sr %>%
-  #select(-omit_vars) %>% 
+  select(-omit_vars) %>% 
   column_to_rownames('County') %>% 
-  select(-CID, -Veg_Ch) %>% 
+  #select(-CID, -Veg_Ch) %>% 
   scale()
 str(j2sr_scaled)  
 summary(j2sr_scaled)
@@ -179,10 +185,26 @@ fviz_gap_stat(gap_stat)
 d <- dist(j2sr_scaled, method = "euclidean")
 
 # Hierarchical clustering using Complete Linkage
-hc1 <- hclust(d, method = "complete" )
+hc1 <- hclust(d, method = "ward.D2")
 
 # Plot the obtained dendrogram
 plot(hc1, cex = 0.6, hang = -1)
+
+
+
+# Assess all the agglomerative methods
+# methods to assess
+m <- c( "average", "single", "complete", "ward")
+names(m) <- c( "average", "single", "complete", "ward")
+
+# function to compute coefficient
+ac <- function(x) {
+  agnes(j2sr_scaled, method = x)$ac
+}
+
+map_dbl(m, ac)
+##   average    single  complete      ward 
+## 0.7379371 0.6276128 0.8531583 0.9346210
 
 
 # DIANA method
@@ -195,3 +217,15 @@ hc4$dc
 # plot dendrogram
 pltree(hc4, cex = 0.6, hang = -1, main = "Dendrogram of diana")
 
+
+# Box clusters
+# Ward's method
+hc5 <- hclust(d, method = "ward.D2" )
+
+# Cut tree into 4 groups
+sub_grp <- cutree(hc5, k = 4)
+
+plot(hc5, cex = 0.6)
+rect.hclust(hc5, k = 4, border = 2:5)
+
+fviz_cluster(list(data = j2sr_scaled, cluster = sub_grp))
