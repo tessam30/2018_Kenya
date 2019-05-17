@@ -38,4 +38,35 @@ youth_cst <-
     coord_flip() +
     scale_fill_viridis_c(alpha = 0.75, option = "B", direction = -1) 
   
+  
+
+# Kenya FinAccess Results -------------------------------------------------
+library(CGPfunctions)
+fin_geo <- st_read(file.path(gispath, "KE_Regions", "KE_Regions.shp")) %>% 
+    select(Region = Reg_Name)
+fin <- read_excel(file.path(datapath, "Finance", "KEN_FinAccess2019_summary.xlsx"))
+
+fin_df <- 
+  fin %>% 
+  left_join(fin_geo, by = c("Region")) %>% 
+  mutate(Year_chr = as.character(Year))
+
+ fin_df %>% 
+  ggplot() +
+  geom_sf(aes(fill = Inclusion), colour = "white", size = 0.25, alpha = 0.75) +
+  scale_fill_gradientn(colours = llamar::RdPu)  +
+  facet_wrap(~ Year)
+
+fin_df %>% 
+  ggplot(aes(x = Year, y = Inclusion, group = Region, fill = Inclusion)) +
+  geom_line(size = 1, colour = grey20K) +
+  geom_point(size = 6, shape = 21, colour = grey90K) +
+  scale_fill_gradientn(colours = llamar::RdPu) +
+  scale_y_continuous(labels = scales::percent, limits = c(0, 1)) +
+  theme_minimal() 
+
+
+
+
+newggslopegraph(fin_df, Year_chr, Inclusion, Region)
 
