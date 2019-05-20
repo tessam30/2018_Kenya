@@ -85,7 +85,8 @@ map(list(hc1$County, hc2$County), table)
 
 human_caseloads <- rbind(hc1, hc2) %>% 
   group_by(CID) %>% 
-  mutate(total_caseloads = sum(caseloads, na.rm = TRUE)) %>% 
+  mutate(total_caseloads = sum(caseloads, na.rm = TRUE),
+         mean_caseloads = mean(caseloads, na.rm = TRUE)) %>% 
   mutate(caseload_pct_total = mean(caseloads/sum(Pop_est))) %>% 
   ungroup() %>% 
   mutate(county_sort = fct_reorder(County, total_caseloads, .desc = TRUE),
@@ -165,12 +166,15 @@ ggarrange(hc_map, bar, ncol = 2) %>%
 
 hc_totals <- human_caseloads %>% 
     group_by(CID, County) %>% 
-    summarise(total = mean(caseloads)) %>% 
+    summarise(mean = mean(caseloads)) %>% 
     ungroup() %>% 
     right_join(asal_geo, by = c("CID")) %>%
-    mutate(total = ifelse(is.na(total), 0, total)) 
+    mutate(mean = ifelse(is.na(mean), 0, mean)) 
   
   
 st_write(hc_totals, file.path(gispath, "KEN_humanitarian_caseloads_totals.shp"), delete_layer = TRUE)
 write_csv(hc_totals %>% select(-geometry), file.path(datapath, "KEN_humanitarian_caseloads_totals.csv"))
+
+write_csv(hc_totals %>% select(-geometry), file.path(datapath, "KEN_humanitarian_caseloads_averages.csv"))
+
 write_csv(human_caseloads, file.path(datapath, "KEN_humanitarian_caseloads.csv"))
