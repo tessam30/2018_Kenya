@@ -24,7 +24,7 @@ library(extrafont) # run font_import() if fist time installing
 
 
 # Theme timeline for plots ------------------------------------------------
-
+# Sets the ggplot background elements for the timeline.
 theme_timeline <- function(base_size = 10, base_family = "Lato Light") {
   ret <- theme_minimal(base_size, base_family) %+replace%
     theme(axis.ticks.x = element_blank(), 
@@ -42,9 +42,6 @@ theme_timeline <- function(base_size = 10, base_family = "Lato Light") {
 
 
 # Load Data ---------------------------------------------------------------
-
-
-
 excel_sheets(file.path(datapath, "Kenya TImelines.xlsx"))
 
 df_bar <- read_excel(file.path(datapath, "Kenya TImelines.xlsx"), sheet = "Bar Data")
@@ -84,11 +81,13 @@ df_line_long <-
 
 df_line_long %>% group_by(Country, Indicator) %>%  count() %>% arrange(Indicator)
 
+dat_min <- c("1960-01-01")
+dat_max <- c("2020-01-01")
 
 # Set break vector and limits so plots can be aligned
-dat_seq <- seq(as.POSIXct("1960-01-01"),
-               as.POSIXct("2020-01-01"), "10 years")
-lims <- as.POSIXct(strptime(c("1960-01-01", "2020-01-01"), 
+dat_seq <- seq(as.POSIXct(dat_min),
+               as.POSIXct(dat_max), "10 years")
+lims <- as.POSIXct(strptime(c(dat_min, dat_max), 
                             format = "%Y-%m-%d"))
 
 # Check w/ a Gantt chart any potential overlap in events
@@ -98,12 +97,12 @@ bar_long <- df_bar %>%
          End = ymd(End)) %>%
   gather(date_node, event_date, -c(Sector:Description2)) %>%
   arrange(date_node, event_date) %>%
-  mutate(Event = fct_reorder(Event, event_date))
+  mutate(Event_abbr = fct_reorder(Event_abbr, event_date))
 
 #Where to put dotted lines
 bar_long %>% 
-  filter(Sector == "WEATHER") %>% # Ag POLICY has 16 overlapping events
-  ggplot(aes(x = Event, y = event_date, colour = Sector)) + 
+  filter(Sector == "AG POLICY") %>% # Ag POLICY has numerous overlapping events
+  ggplot(aes(x = Event_abbr, y = event_date, colour = Sector)) + 
   geom_line(size = 6) + 
   guides(colour = guide_legend(title = NULL)) +
   labs(x = NULL, y = NULL) + 
