@@ -146,7 +146,6 @@ indicator_names <- c(
 
 # Produces the line plot for the timeline ---------------------------------
 
-
 line_p <- df_line_long %>% 
   mutate(Country = fct_rev(Country),
          label = if_else(date == max(date), as.character(Country), NA_character_)) %>% 
@@ -209,9 +208,10 @@ ken_tl <- ggarrange(bar_p, line_p, nrow = 2,
                     align = "v") %>% 
   annotate_figure(., top = text_grob("Kenya: Historical Events Summarized"))  
 
-ggsave(file.path(imagepath, "KEN_timeline_2019_05_22.pdf"), plot = ken_tl,
+ggsave(file.path(imagepath, "KEN_timeline_2019_05_22.pdf"), 
+       plot = ken_tl,
        dpi = 300, width = 18, height = 12, units = "in",
-       device = cairo_pdf, scale = 2)
+       device = cairo_pdf, scale = 1)
 
 write_csv(df_bar, file.path(datapath, "KEN_bar_graphdata.csv"))
 write_csv(df_line_long, file.path(datapath, "KEN_line_graphdata.csv"))
