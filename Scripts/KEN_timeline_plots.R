@@ -1,6 +1,6 @@
 #######################################################%####
 #                                                          #
-####     Malawi Timeline Project                        ####
+####     Kenya Timeline Project                         ####
 #                                                          #
 ##%######################################################%##
 
@@ -44,9 +44,11 @@ theme_timeline <- function(base_size = 10, base_family = "Lato Light") {
 # Load Data ---------------------------------------------------------------
 excel_sheets(file.path(datapath, "Kenya TImelines.xlsx"))
 
+# datapath is the Data directory for the project, modify this as needed;
 df_bar <- read_excel(file.path(datapath, "Kenya TImelines.xlsx"), sheet = "Bar Data")
 df_line <- read_excel(file.path(datapath, "Kenya TImelines.xlsx"), sheet = "Line Data")
 
+# Checking consistency of data and variable names
 map(list(df_bar, df_line), str)
 
 # Turn off scientific notation for now
@@ -64,6 +66,7 @@ group_count <- function(df, ...) {
 
 
 # Mutate and plot ---------------------------------------------------------
+# Transforming the wide data into a long dataset so it can be plotted and facete
 df_line_long <- 
   df_line %>% 
   select(date, KE_pop = k_pop, everything()) %>% 
@@ -79,8 +82,10 @@ df_line_long <-
     TRUE ~ NA_character_),
     flag = ifelse(Country == "Kenya", 1, 0))
 
+# Checking that ouput and reshaped data is consistent
 df_line_long %>% group_by(Country, Indicator) %>%  count() %>% arrange(Indicator)
 
+# Setting the range of the x-axis in the time-series plots; Adjust if you update/add data beyond 2020
 dat_min <- c("1960-01-01")
 dat_max <- c("2020-01-01")
 
@@ -113,6 +118,7 @@ bar_long %>%
 
 # General line plot function ----------------------------------------------
 # General function to make line plots of individual indicators in case they are needed
+
 line_plot <- function(df, ...) {
   F <- quos(...)
   df %>% filter(!!!F) %>% 
@@ -123,15 +129,13 @@ line_plot <- function(df, ...) {
                      labels = date_format("%Y")) +
     theme_minimal()
 }
-# Create plots of each indicator
+
+# Create plots of each indicator to see how they will apear overlaid
 df_line_long %>% split(.$Indicator) %>% 
-  map(., ~line_plot(.))
+  map(., ~line_plot(.) + facet_wrap(~ Country, nrow = 3))
 
 
-# population is just of Malawi, so it will get a separate graph
-line_plot(df_line_long, Indicator == "pop_growth_rate") + facet_wrap(~Country)
-
-# Fix the names so they are in plain english
+# Fix the indicator names so they are in plain english on plots
 indicator_names <- c(
   ag_pct_GDP = 'Agriculture GDP',
   FDI_pct_GDP = 'Foreign Direct Investment, net inflows (% of GDP)',
@@ -140,8 +144,12 @@ indicator_names <- c(
 )
 
 
+# Produces the line plot for the timeline ---------------------------------
+
+
 line_p <- df_line_long %>% 
-  mutate(Country = fct_rev(Country)) %>% # Reversing order to Malawi is plotted last
+  mutate(Country = fct_rev(Country),
+         label = if_else(date == max(date), as.character(Country), NA_character_)) %>% 
   ggplot(., aes(x = date, y = value, group = Country)) +
   geom_line(aes(colour = Country)) +
   scale_x_datetime(
@@ -149,13 +157,20 @@ line_p <- df_line_long %>%
     limits = lims,
     labels = date_format("%Y")
   ) +
-  scale_color_manual(values = c(grey30K, grey30K, grey90K)) +
+  scale_color_manual(values = c(grey30K, grey30K, grey80K)) +
   facet_wrap(~Indicator, nrow = 4, scales = "free",
-             labeller = labeller(Indicator = indicator_names)) +
+             labeller = labeller(Indicator = indicator_names)) + #fixed strip text names
   theme_minimal(base_family = "Lato Light") +
   theme(legend.position = "none",
         panel.grid.minor.y = element_blank(),
-        strip.text.x = element_text(hjust = 0)) +
+        strip.text.x = element_text(hjust = 0, size = 14)) +
+  geom_label_repel(aes(label = label),
+                   nudge_x = 1,
+                   na.rm = TRUE, 
+                   label.size = NA,
+                   fill = NA,
+                   family = "Lato Light",
+                   segment.color = 'transparent') +
   labs(caption = "Source: USAID GeoCenter gathered facts and figures")
 line_p
 
@@ -166,9 +181,9 @@ bar_p <- df_bar %>%
                 xmax = End, 
                 ymin = ymin, 
                 ymax = ymax, 
-                fill = Sector), 
+                fill = Sector_full), 
             colour = "white") + 
-  facet_wrap(~Sector, nrow = 6) +
+  facet_wrap(~Sector_full, nrow = 6) +
   geom_text_repel(aes(x = Start + (End - Start)/2, 
                       y = ymin + (ymax - ymin)/2, 
                       label = Event_abbr), 
@@ -176,11 +191,11 @@ bar_p <- df_bar %>%
                   point.padding = NA,
                   family = "Lato Light") +
   theme_timeline() +
-  theme(strip.text.x = element_text(hjust = 0)) +
+  theme(strip.text.x = element_text(hjust = 0, size = 14)) +
   scale_fill_viridis_d(alpha = 0.45) +
   scale_x_datetime(
-    breaks = seq(as.POSIXct("1960-01-01"),
-                 as.POSIXct("2020-01-01"), "10 years"),
+    breaks = seq(as.POSIXct(dat_min),
+                 as.POSIXct(dat_max), "10 years"),
     labels = date_format("%Y"),
     expand = c(0.05, 0.05),
     limits = lims) 
@@ -188,7 +203,8 @@ bar_p
 
 
 
-# First iteration
+# Combine plots, align to a common scale and export with embedded  --------
+
 ken_tl <- ggarrange(bar_p, line_p, nrow = 2,
                     align = "v") %>% 
   annotate_figure(., top = text_grob("Kenya: Historical Events Summarized"))  
