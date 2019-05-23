@@ -216,3 +216,7 @@ ggsave(file.path(imagepath, "KEN_timeline_2019_05_22.pdf"),
 write_csv(df_bar, file.path(datapath, "KEN_bar_graphdata.csv"))
 write_csv(df_line_long, file.path(datapath, "KEN_line_graphdata.csv"))
 
+write_rds(df_line, file.path(datapath, "KEN_line.rds"))
+write_rds(df_bar, file.path(datapath, "KEN_bar.rds"))
+write_rds(df_line_long, file.path("KEN_line_long.rds"))
+

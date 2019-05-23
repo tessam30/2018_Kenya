@@ -12,6 +12,7 @@ Data
 *.csv
 *.xls
 *.dta
+*.rds
 
 Documents
 Images
