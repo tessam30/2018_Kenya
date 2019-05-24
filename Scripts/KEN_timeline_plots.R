@@ -208,7 +208,7 @@ ken_tl <- ggarrange(bar_p, line_p, nrow = 2,
                     align = "v") %>% 
   annotate_figure(., top = text_grob("Kenya: Historical Events Summarized"))  
 
-ggsave(file.path(imagepath, "KEN_timeline_2019_05_22.pdf"), 
+ggsave(file.path(imagepath, "KEN_timeline_2019_05_23.pdf"), 
        plot = ken_tl,
        dpi = 300, width = 18, height = 12, units = "in",
        device = cairo_pdf, scale = 1)
@@ -216,7 +216,5 @@ ggsave(file.path(imagepath, "KEN_timeline_2019_05_22.pdf"),
 write_csv(df_bar, file.path(datapath, "KEN_bar_graphdata.csv"))
 write_csv(df_line_long, file.path(datapath, "KEN_line_graphdata.csv"))
 
-write_rds(df_line, file.path(datapath, "KEN_line.rds"))
-write_rds(df_bar, file.path(datapath, "KEN_bar.rds"))
-write_rds(df_line_long, file.path("KEN_line_long.rds"))
+
 
