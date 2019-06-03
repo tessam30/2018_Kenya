@@ -131,6 +131,12 @@ ggsave(file.path(imagepath, "KEN_pca_index_j2SR_R.pdf"),
        height = 8.5, width = 11, dpi = 300, 
        useDingbats = FALSE)
 
+# Extract data for plotting in Tableau
+pca_data <- j2sr_pca[[3]][[1]] %>% 
+  mutate(index = (-1) * `.fittedPC1`, 
+         county_sort = fct_reorder(County, index))
+write_csv(pca_data, file.path(datapath, "KEN_j2sr_PCA.csv"))
+
 # Cluster analysis of countied ---------------------------------------------
 
 
