@@ -19,6 +19,10 @@ library(sparcl) # add color to dendograms
 
 # PCA code modified from https://tbradley1013.github.io/2018/02/01/pca-in-a-tidy-verse-framework/
 
+# Set a seed for reproducibility for anything that involves some randomization / sampling
+set.seed(20190514)
+
+
 j2sr <- read_excel(file.path(datapath, "J2SR_draft.xlsx"), sheet = "Raw Data")
 
 omit_vars <- c("CID", "Change14-17", "Any_Shock", "Ag_shocks",
@@ -152,6 +156,7 @@ str(j2sr_scaled)
 summary(j2sr_scaled)
 
 distance <- get_dist(j2sr_scaled)
+
 fviz_dist(distance, gradient = list(low = "#3288bd", mid = "white", high = "#d53e4f"))
 
 # The package has spoken, 3 is the best number of clusters
@@ -169,6 +174,25 @@ cluster_scatter <- fviz_cluster(k3, data = j2sr_scaled, repel = TRUE) + theme_mi
        #subtitle = "Nairobi City is essentially in a class of its own",
        #caption = "GeoCenter calcuations of  based on K-means clustering algorithm")
 
+# Creating a cluster plot with no axes and just labels to import into Tableua as a 
+# spatially referenced image -- making cluster analysis interactive.
+cluster_tableau <- fviz_cluster(k3, data = j2sr_scaled, labelsize = 0, pointsize = 2) + 
+  scale_colour_manual(values = c("#8dd3c7", "#fb8072", "#80b1d3")) +
+  scale_fill_manual(values = c("#8dd3c7", "#fb8072", "#80b1d3")) +
+  scale_x_continuous(limits = c(-9, 9)) +
+  scale_y_continuous(limits = c(-6, 6)) +
+  theme_void() +
+  theme(legend.position = "none") +
+  labs(title = "")
+
+ggsave(file.path(imagepath, "cluster_tableau.png"), cluster_tableau,
+       device = "png",
+       height = 8, width = 10, dpi = 300)
+
+# Extract the values for plotting in Tableau
+k3_data <- ggplot_build(cluster_scatter)$data[[4]]
+write_csv(k3_data, file.path(datapath, "KEN_j2sr_kmeans.csv"))
+
 
 cluster_df <- k3$cluster %>% 
   tibble::enframe("County", "cluster") %>% 
@@ -182,6 +206,9 @@ cluster_map <-
   scale_fill_manual(values = c("#8dd3c7", "#fb8072", "#80b1d3")) +
   theme_minimal() +
   theme(legend.position = "off")
+
+# export to be mapped in tableau with shapefile
+write_csv(cluster_df, file.path(datapath, "KEN_j2sr_kmeans_geo.csv"))
 
 cluster_plot <- ggarrange(cluster_map, cluster_scatter, ncol = 2) %>% 
   #annotate_figure(., fig.lab = "Turkana and Kitui, on average, had the most humanitarian caseloads from 2004 - 2018")
