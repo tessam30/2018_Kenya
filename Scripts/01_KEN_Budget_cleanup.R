@@ -58,9 +58,9 @@ source(file.path(rpath, "AHADI_focus_df.R"))
            poor_2015 = Number_poor,
            poor_2016 = Number_poor * pop_rate,
            poor_2017 = Number_poor * (pop_rate^2)) %>% 
-    select(CID, County, pop_2014:poor_2017) %>% 
+    select(CID, County, pop_2014:poor_2017) %>%  
     gather(key = "tmp", value = "population", -c(CID, County)) %>% 
-    separate(tmp, c("drop", "year"), by = "_") %>%
+    separate(., tmp, c("drop", "year"), sep = "_") %>%
     mutate(population = round(population, 0)) %>% 
     spread(drop, population) %>% 
     mutate(poor_pop_mil = poor / 1e6,
@@ -187,7 +187,7 @@ remove(list = ls(pattern = "^budget_[0-9]"))
     df %>%
       left_join(asal_geo, by = c("CID" = "CID")) %>%
       ggplot(.) +
-      geom_sf(aes(fill = !!xvar), colour = "white", size = 0.5) +
+      geom_sf(aes(fill = !!xvar, geometry = geometry), colour = "white", size = 0.5) +
       facet_wrap(~budget_year, nrow = 1) +
       scale_fill_viridis_c(option = "A", direction = -1, alpha = 0.75) +
       theme_minimal() +
@@ -210,7 +210,7 @@ budg_map(budget_totals_pdf, Exp_dev_pc, leg_text = "Development spending per cap
   pov_all %>% 
     left_join(asal_geo, by = c("CID" = "CID")) %>% 
     ggplot() +
-    geom_sf(aes(fill = Number_poor), colour = "white") +
+    geom_sf(aes(fill = Number_poor, geometry = geometry), colour = "white") +
     scale_fill_viridis_c(option = "A", direction = -1)
   
   pov_all %>% filter(CID != 0) %>% 
@@ -452,9 +452,10 @@ budget_summary %>%
   budget_map <- function(df, xvar)  {
     xvar = enquo(xvar)
     
-    df %>% left_join(., asal_geo, by = c("CID" = "CID")) %>% 
+    df %>% 
+      left_join(., asal_geo, by = c("CID" = "CID")) %>% 
       ggplot() +
-      geom_sf(aes(fill = !!xvar), colour = "white", size = 0.5) +
+      geom_sf(aes(fill = !!xvar, geometry = geometry), colour = "white", size = 0.5) +
       facet_wrap(~budget_year, nrow = 1) +
       theme_minimal() +
       theme(legend.position = "top",
@@ -606,7 +607,7 @@ budget %>%
 # First, wrangle the 2014/15 data as it had to be scraped in a vector
   budg_tot_14 <- read_excel(file.path(budgetpath, "KEN_FY2014_15_budget_raw.xlsx"),
                             col_names = FALSE) %>% 
-    rename(col_1 = "..1") %>% 
+    rename(col_1 = "...1") %>% 
     mutate(flag = ifelse(str_detect(col_1, "[a-z]"), 1, 0))
   
 # Subet counties, keepingin order, then convert remaining data into a matrix, reshape to be a 
@@ -676,7 +677,7 @@ budget_totals_GOK <-
   ) %>%
   ungroup() %>% 
   select(-County) %>%
-  left_join(., b_gc_pdf, by = c("CID" = "CID", "year" = "budget_year")) %>%
+  left_join(., budget_summary, by = c("CID" = "CID", "year" = "budget_year")) %>%
   select(County, Dev_Expenditure, total_exp_dev, `Exp Dev`, diff, everything()) %>%
   mutate(final_check = (Dev_Expenditure - total_exp_dev) %>%
     round(., 2)) %>%
