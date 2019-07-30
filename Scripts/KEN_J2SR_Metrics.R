@@ -30,7 +30,8 @@ omit_vars <- c("CID", "Change14-17", "Any_Shock", "Ag_shocks",
                "DistributionPov", "Poverty_gap",
                "Severity_of_poverity", "Number_poor",
                "Wasting_dhs_2014", "Stunting_dhs_2014",
-               "Employment in Licensensed MSMEs", "youth_literate_male",
+               "Employment in Licensensed MSMEs", 
+               "youth_literate_male",
                "youth_literate_female")
 
 
@@ -169,8 +170,8 @@ k3 <- kmeans(j2sr_scaled, centers = 3, nstart = 25)
 cluster_scatter <- fviz_cluster(k3, data = j2sr_scaled, repel = TRUE) + theme_minimal() +
   scale_colour_manual(values = c("#8dd3c7", "#fb8072", "#80b1d3")) +
   scale_fill_manual(values = c("#8dd3c7", "#fb8072", "#80b1d3")) +
-  theme(legend.position = "top") #+
-  #labs(title = "Based on the J2SR data, counties cluster into three major groups",
+  theme(legend.position = "none") #+
+    #labs(title = "Based on the J2SR data, counties cluster into three major groups",
        #subtitle = "Nairobi City is essentially in a class of its own",
        #caption = "GeoCenter calcuations of  based on K-means clustering algorithm")
 
@@ -199,8 +200,8 @@ cluster_df <- k3$cluster %>%
   mutate(CID = seq(from = 1, to = n(), by = 1))
 
 cluster_map <- 
-  cluster_df %>% 
-  left_join(., asal_geo, by = c("CID")) %>% 
+  asal_geo %>% 
+  left_join(., cluster_df, by = c("CID")) %>% 
   ggplot() +
   geom_sf(aes(fill = factor(cluster)), alpha = 0.75, colour = "white") +
   scale_fill_manual(values = c("#8dd3c7", "#fb8072", "#80b1d3")) +
@@ -213,6 +214,14 @@ write_csv(cluster_df, file.path(datapath, "KEN_j2sr_kmeans_geo.csv"))
 cluster_plot <- ggarrange(cluster_map, cluster_scatter, ncol = 2) %>% 
   #annotate_figure(., fig.lab = "Turkana and Kitui, on average, had the most humanitarian caseloads from 2004 - 2018")
   annotate_figure(., fig.lab = "K-means cluster analysis divides the counties into three major groups based on the J2SR proposed variables")
+
+# Save a copy of the cluster scatter plot for complimenting map in AI
+ggsave(file.path(imagepath, "KEN_J2SR_cluster_graph.pdf"), 
+       plot = cluster_scatter, 
+       device = "pdf",
+       height = 17, width = 16, units = c("in"), dpi = "retina",
+       useDingbats = FALSE, 
+       scale = 0.80)
 
 
   ggsave(file.path(imagepath, "KEN_J2SR_cluster_analysis_R.pdf"),

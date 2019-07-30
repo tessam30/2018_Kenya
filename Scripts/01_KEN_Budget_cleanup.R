@@ -678,11 +678,11 @@ budget_totals_GOK <-
   ungroup() %>% 
   select(-County) %>%
   left_join(., budget_summary, by = c("CID" = "CID", "year" = "budget_year")) %>%
-  select(County, Dev_Expenditure, total_exp_dev, `Exp Dev`, diff, everything()) %>%
+  select(County, Dev_Expenditure, total_exp_dev, everything()) %>%
   mutate(final_check = (Dev_Expenditure - total_exp_dev) %>%
     round(., 2)) %>%
-  select(CID, County, year, final_check, diff, everything()) %>%
-  arrange(final_check, diff) 
+  select(CID, County, year, final_check, everything()) %>%
+  arrange(final_check) 
 
 budget_totals_GOK %>% 
   filter(abs(final_check) > 1) %>% 
