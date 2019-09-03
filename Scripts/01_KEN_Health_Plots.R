@@ -218,43 +218,120 @@ hiv_line(tb_success, x = Year, y = percent, yave = percent, fill = percent, wrap
   labs(x = "", y = "", 
        title = "Mandera and Marsabit have the hightest treatment success rates for drug sensitive tuberculosis",
        caption = "Source: USAID Kenya Health Team") +
-  ggsave(file.path(imagepath, "KEN_VL_suppression_percent.pdf"),
+  ggsave(file.path(imagepath, "KEN_TB_treatment_success_percent.pdf"),
          plot = last_plot(), dpi = "retina", 
          height = 17, width = 16)
 
 
+
+# FH and Maternal Child Health --------------------------------------------
+
+mch_excel_path <- file.path(healthpath, "FH Maternal and Neonatanal Health.xlsx")
+mch_sheet_names <- excel_sheets(file.path(healthpath, "FH Maternal and Neonatanal Health.xlsx"))
+
+mch_sheet_names %>% 
+  map(function(sheet) {
+    assign(x = sheet,
+           value = readxl::read_xlsx(path = mch_excel_path, sheet = sheet),
+           envir = .GlobalEnv)
+  })
+
+ch_immuz <- 
+  `Fully ImmuniChildren Proportion` %>% 
+  gather(Year, percent, Y2014:Y2018) %>% 
+  mutate(Year = str_extract_all(Year, "\\d+") %>% as.numeric(),
+         csort = fct_reorder(County, percent, .desc = TRUE),
+         percent = percent / 100) 
   
-  
+
+# No meaningful average, so using fill
+hiv_line(ch_immuz, x = Year, y = percent, yave = percent, fill = percent, wrap = csort) +
+  scale_fill_viridis_c(direction = -1, option = "C", alpha = 0.75) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1),
+                     limits = c(0, 1.15),
+                     breaks = c(0, .25, .5, .75, 1)) +
+  theme_panel +
+  labs(x = "", y = "", 
+       title = "Kiambu and Nyamira have the highest proportion of children under one year who ar fully immunized",
+       subtitle = "Kwale, Kiambu and Nyamira have proportions that exceed 100%",
+       caption = "Source: USAID Kenya Health Team") +
+  ggsave(file.path(imagepath, "KEN_ch_und1_full_immunization_percent.pdf"),
+         plot = last_plot(), dpi = "retina", 
+         height = 17, width = 16)
+
+# Stunting rates less than 5 per 100,000 people
+stunt <- 
+  `Stunting Rate <5 per 100,000` %>% 
+  gather(Year, stunting, F2014:F2018) %>% 
+  mutate(Year = str_extract_all(Year, "\\d+") %>% as.numeric(),
+         csort = fct_reorder(County, stunting, .desc = TRUE))
+
+hiv_line(stunt, x = Year, y = stunting, yave = stunting, fill = stunting, wrap = csort) +
+  scale_fill_viridis_c(direction = -1, option = "E") +
+  theme_panel +
+  labs(x = "", y = "", 
+       title = "Marsabit's stunting rate per 100,000 for children under 5 has grown in recent years",
+       caption = "Source: USAID Kenya Health Team") +
+  ggsave(file.path(imagepath, "KEN_stunting_per_hundred_thousand.pdf"),
+         plot = last_plot(), dpi = "retina", 
+         height = 17, width = 16)
+
+# Neonatal death
+neo_death <-
+  `Neonatal Death Rate per 1000` %>% 
+  gather(Year, percent, Y2014:Y2018) %>% 
+  mutate(Year = str_extract_all(Year, "\\d+") %>% as.numeric(),
+         csort = fct_reorder(County, percent, .desc = TRUE),
+         percent = percent / 100)
 
 
+hiv_line(neo_death, x = Year, y = percent, yave = percent, fill = percent, wrap = csort) +
+  scale_fill_viridis_c(direction = -1, option = "C", alpha = 0.75) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  theme_panel +
+  labs(x = "", y = "", 
+       title = "Uasin Gishu has the highest neonatal death rate per 1,000 live births",
+       caption = "Source: USAID Kenya Health Team") +
+  ggsave(file.path(imagepath, "KEN_neonatal_death_rates_per_live_births.pdf"),
+         plot = last_plot(), dpi = "retina", 
+         height = 17, width = 16)
+
+# Maternal Mortality
+mat_mort <-
+  `Maternal Mortality per 100,000` %>% 
+  gather(Year, percent, Y2014:Y2018) %>% 
+  mutate(Year = str_extract_all(Year, "\\d+") %>% as.numeric(),
+         csort = fct_reorder(County, percent, .desc = TRUE))
+
+hiv_line(mat_mort, x = Year, y = percent, yave = percent, fill = percent, wrap = csort) +
+  scale_fill_viridis_c(direction = -1, option = "B", alpha = 0.85) +
+  theme_panel +
+  labs(x = "", y = "", 
+       title = "Maternal mortality ratios per 100,000 surged in 2016 and 2017 then declined in many counties",
+       caption = "Source: USAID Kenya Health Team") +
+  ggsave(file.path(imagepath, "KEN_maternal_mortality_ratio_per_hundred_thousand.pdf"),
+         plot = last_plot(), dpi = "retina", 
+         height = 17, width = 16)
+
+# Contracepive prevalence use
+contra_use <-
+  `Contraceptive Prevalence Rate` %>% 
+  gather(Year, percent, Y2014:Y2018) %>% 
+  mutate(Year = str_extract_all(Year, "\\d+") %>% as.numeric(),
+         csort = fct_reorder(County, percent, .desc = TRUE),
+         percent = percent / 100)
+
+hiv_line(contra_use, x = Year, y = percent, yave = percent, fill = percent, wrap = csort) +
+  scale_fill_viridis_c(direction = -1, option = "B", alpha = 0.85) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  theme_panel +
+  labs(x = "", y = "", 
+       title = "Garissa, Wajir and Mandera lag well behind in contraceptive prevalence rates",
+       subtitle = "In 2015 Kajiado's rate exceeded 100%",
+       caption = "Source: USAID Kenya Health Team") +
+  ggsave(file.path(imagepath, "KEN_contraceptive_prevalence_rate.pdf"),
+         plot = last_plot(), dpi = "retina", 
+         height = 17, width = 16)
 
 
-
-
-
-budget_summary %>% 
-  filter(AHADI %in% c(0, 1)) %>% 
-  #filter(ASAL %in% c("Arid - 85-100% Aridity")) %>% 
-  mutate(csort = fct_reorder(County, CID_absorption_dev, .desc = TRUE)) %>% 
-  #mutate(csort = County) %>% 
-  ggplot(aes(x = budget_year, y = CID_absorption_dev)) +
-  geom_area(fill = grey10K, alpha = 0.50) +
-  geom_line(colour = grey50K) +
-  geom_point(aes(fill = CID_absorption_dev), 
-             size = 3.5, shape = 21, colour = "white", stroke = 2) + 
-  facet_wrap(ASAL_CODE ~ csort, labeller = label_wrap_gen(multi_line = FALSE)) +
-  theme_minimal() +
-  scale_fill_viridis_c(direction = -1, option = "D") +
-  theme(legend.position = "none",
-        strip.text = element_text(hjust = 0, size = 9),
-        panel.grid.minor = element_blank(),
-        panel.spacing = unit(1.25, "lines")) +
-  labs(caption = GC_caption, x = "", y = "",
-       title = "Development Absorption Rates By County 2014/15 - 2017/18") +
-  scale_y_continuous(labels = scales::percent_format(),
-                     limits = c(0, 1.03), # Be careful in case absorption rate is > 1
-                     breaks = c(0, 0.25, 0.50, 0.75, 1))
-ggsave(file.path(imagepath, "KEN_Dev_absorption_rate_timeseries.pdf"),
-       plot = last_plot(), dpi = "retina", 
-       height = 17, width = 16)
 
