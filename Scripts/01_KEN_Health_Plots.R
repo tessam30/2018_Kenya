@@ -5,6 +5,33 @@
 
 # Load the different datasets
 
+
+# Setting up plotting functions -------------------------------------------
+
+# Percentage of EIDS
+theme_panel <- theme(legend.position = "none",
+                     strip.text = element_text(hjust = 0, size = 9),
+                     panel.grid.minor = element_blank(),
+                     panel.spacing = unit(1.25, "lines"))
+
+
+# Generic plotting function for line over average plots
+hiv_line <- function(df, x, y, yave, fill, wrap) {
+  df %>% 
+    ggplot() +
+    geom_area(aes(x = {{ x }}, y = {{ yave }}), 
+              fill = grey30K, alpha = 0.50) +
+    geom_line(aes(x = {{ x }}, y = {{ y }})) +
+    geom_point(aes(x = {{ x }}, y = {{ y }}, fill = {{ fill }}),
+               size = 3.5, shape = 21, colour = "white", stroke = 1) +
+    facet_wrap(vars({{ wrap }})) +
+    theme_minimal() 
+}
+
+
+# Sources
+PEPFAR <- c("Source: USAID Kenya PEPFAR")
+
 # Early Infant Diagnosis Positivity Rates ---------------------------------
 
 eid <- read_csv(file.path(healthpath, "EID Positivity 2015-2019  - MTCT Rate.csv"))
@@ -28,33 +55,10 @@ eid <- eid %>%
   mutate(asal_ave_positivity = mean(Positives)) %>% 
   ungroup()
 
-# Percentage of EIDS
-theme_panel <-   theme(legend.position = "none",
-                       strip.text = element_text(hjust = 0, size = 9),
-                       panel.grid.minor = element_blank(),
-                       panel.spacing = unit(1.25, "lines"))
 
 
-# Generic plotting function for line over average plots
-
-hiv_line <- function(df, x, y, yave, fill, wrap) {
-  df %>% 
-    ggplot() +
-    geom_area(aes(x = {{ x }}, y = {{ yave }}), 
-              fill = grey30K, alpha = 0.50) +
-    geom_line(aes(x = {{ x }}, y = {{ y }})) +
-    geom_point(aes(x = {{ x }}, y = {{ y }}, fill = {{ fill }}),
-               size = 3.5, shape = 21, colour = "white", stroke = 1) +
-    facet_wrap(vars({{ wrap }})) +
-    theme_minimal() 
-}
-
-
-# Sources
-PEPFAR <- c("Source: USAID Kenya PEPFAR")
-
+# EID HIV rates and counts plots ------------------------------------------------
 # EID rates
-
 hiv_line(eid, x = Year, y = positivity, yave = tot_positivity, fill = positivity, wrap = csort_pct) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
   scale_fill_viridis_c(direction = -1, option = "A") +
@@ -81,7 +85,7 @@ hiv_line(eid, x = Year, y = Positives, yave = ave_positivity,
          height = 17, width = 16)
 
 
-# HIV Prevalence ----------------------------------------------------------
+# HIV ART counts ----------------------------------------------------------
 
 tx_curr <- read_csv(file.path(healthpath, 
                               "TX CURR FY15-FY19 - Number of adults and Children receiving ART.csv"))
@@ -134,7 +138,9 @@ VL_sup <-
   mutate(csort = fct_reorder(Name, ave_vl_sup, .desc = FALSE),
          Year = as.numeric(Year))
 
-  
+
+
+# Viral load suppression percentage plot ----------------------------------
 # No meaningful average to compare these figures to, so only showing trends
 hiv_line(VL_sup, x = Year, y = percent, yave = percent, fill = percent, wrap = csort) +
   scale_fill_viridis_c(direction = -1, option = "D") +
@@ -177,6 +183,7 @@ tb_not <-
          csort_dstb = fct_reorder(County, DSTB, .desc = TRUE))
 
 
+# TB Resistance
 hiv_line(tb_not, x = Year, y = DRTB, yave = DRTB_ave, fill = DRTB, wrap = csort_drtb) +
   scale_fill_viridis_c(direction = -1, option = "B") +
   theme_panel +
@@ -188,7 +195,7 @@ hiv_line(tb_not, x = Year, y = DRTB, yave = DRTB_ave, fill = DRTB, wrap = csort_
          plot = last_plot(), dpi = "retina", 
          height = 17, width = 16)
   
-
+# TB Sensitivity
 hiv_line(tb_not, x = Year, y = DSTB, yave = DSTB_ave, fill = DSTB, wrap = csort_dstb) +
   scale_fill_viridis_c(direction = -1, option = "B") +
   theme_panel +
@@ -200,7 +207,6 @@ hiv_line(tb_not, x = Year, y = DSTB, yave = DSTB_ave, fill = DSTB, wrap = csort_
          plot = last_plot(), dpi = "retina", 
          height = 17, width = 16)
 
-
 # TB treatment success for DSTB
 tb_success <- 
   `Treatment Success for DSTB` %>% 
@@ -208,6 +214,7 @@ tb_success <-
   mutate(Year = str_extract_all(Year, "\\d+") %>% as.numeric(),
          csort = fct_reorder(County, percent, .desc = TRUE)) 
 
+# TB treatment success percent
 # No meaningful average, so using fill
 hiv_line(tb_success, x = Year, y = percent, yave = percent, fill = percent, wrap = csort) +
   scale_fill_viridis_c(direction = -1, option = "D") +
@@ -243,7 +250,7 @@ ch_immuz <-
          csort = fct_reorder(County, percent, .desc = TRUE),
          percent = percent / 100) 
   
-
+# Full immunization for children under 1 ----------------------------------
 # No meaningful average, so using fill
 hiv_line(ch_immuz, x = Year, y = percent, yave = percent, fill = percent, wrap = csort) +
   scale_fill_viridis_c(direction = -1, option = "C", alpha = 0.75) +
@@ -259,7 +266,10 @@ hiv_line(ch_immuz, x = Year, y = percent, yave = percent, fill = percent, wrap =
          plot = last_plot(), dpi = "retina", 
          height = 17, width = 16)
 
-# Stunting rates less than 5 per 100,000 people
+
+
+
+# Stunting rates per 100,000 for under 5 ----------------------------------
 stunt <- 
   `Stunting Rate <5 per 100,000` %>% 
   gather(Year, stunting, F2014:F2018) %>% 
@@ -276,6 +286,8 @@ hiv_line(stunt, x = Year, y = stunting, yave = stunting, fill = stunting, wrap =
          plot = last_plot(), dpi = "retina", 
          height = 17, width = 16)
 
+
+# Neonatal death rates ----------------------------------------------------
 # Neonatal death
 neo_death <-
   `Neonatal Death Rate per 1000` %>% 
@@ -296,7 +308,8 @@ hiv_line(neo_death, x = Year, y = percent, yave = percent, fill = percent, wrap 
          plot = last_plot(), dpi = "retina", 
          height = 17, width = 16)
 
-# Maternal Mortality
+
+# Maternal mortality ------------------------------------------------------
 mat_mort <-
   `Maternal Mortality per 100,000` %>% 
   gather(Year, percent, Y2014:Y2018) %>% 
@@ -313,6 +326,8 @@ hiv_line(mat_mort, x = Year, y = percent, yave = percent, fill = percent, wrap =
          plot = last_plot(), dpi = "retina", 
          height = 17, width = 16)
 
+
+# Contraceptive prevalence use --------------------------------------------
 # Contracepive prevalence use
 contra_use <-
   `Contraceptive Prevalence Rate` %>% 
@@ -333,5 +348,49 @@ hiv_line(contra_use, x = Year, y = percent, yave = percent, fill = percent, wrap
          plot = last_plot(), dpi = "retina", 
          height = 17, width = 16)
 
+
+# Teen pregnancies --------------------------------------------------------
+# Pregnancies
+preg <- 
+  `Adolescent Pregnancy` %>% 
+  gather(Year, pregnancies, Y2016:Y2018) %>% 
+  mutate(Year = str_extract_all(Year, "\\d+") %>% as.numeric()) %>% 
+  group_by(Year) %>% 
+  mutate(ave_pregnancies = mean(pregnancies)) %>% 
+  ungroup() %>% 
+  mutate(csort = fct_reorder(County, pregnancies, .desc = TRUE))
+
+hiv_line(preg, x = Year, y = pregnancies, yave = ave_pregnancies, fill = pregnancies, wrap = csort) +
+  scale_fill_viridis_c(direction = -1, option = "D", alpha = 0.85) +
+  scale_x_continuous(breaks = c(2016, 2017, 2018)) +
+  theme_panel+
+  labs(x = "", y = "", 
+       title = "Nairobi and Bungoma have the largest number of adolescent pregnancies",
+       subtitle = "Grey area represents country average for each year",
+       caption = "Source: USAID Kenya Health Team") +
+  ggsave(file.path(imagepath, "KEN_adolescent_pregnancies.pdf"),
+         plot = last_plot(), dpi = "retina", 
+         height = 17, width = 16)
+
+
+# DPT3 Vaccination Coverage -----------------------------------------------
+dpt3 <- 
+  `DPT3 Coverage` %>% 
+  gather(Year, percent, Y2014:Y2018) %>% 
+  mutate(Year = str_extract_all(Year, "\\d+") %>% as.numeric(),
+         csort = fct_reorder(County, percent, .desc = TRUE),
+         percent = percent / 100)  
+
+hiv_line(dpt3, x = Year, y = percent, yave = percent, fill = percent, wrap = csort) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  scale_fill_viridis_c(direction = -1, option = "D", alpha = 0.85) +
+  theme_panel +
+  labs(x = "", y = "", 
+       title = "Kajiado and Kiamub and Bungoma have the higest Diphtheria-tetanus-pertussis (DTP3) vaccination coverage",
+       caption = "Source: USAID Kenya Health Team") +
+  ggsave(file.path(imagepath, "KEN_DTP3_coverage.pdf"),
+         plot = last_plot(), dpi = "retina", 
+         height = 17, width = 16)
+ 
 
 
