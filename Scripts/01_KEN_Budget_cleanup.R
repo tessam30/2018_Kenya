@@ -544,19 +544,25 @@ library(waffle) # may be a compact way of showing budget shares across time
     budget %>% 
       filter(`Category Code` != 0) %>% 
       group_by(County, Budget_title) %>% 
-      count() %>% 
-      mutate(count = as.character(n)) %>% 
-      ggplot(aes(x = Budget_title, y = County )) + 
-      geom_tile(aes(fill = count), colour = "white") +
-      scale_fill_brewer(palette = 13, direction = 1) +
-      theme_minimal() +
-      theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-      theme(legend.position = "top") +
-      labs(title = "Health is the most consistent budget category across 2014/15 - 2017/18",
+      mutate(count = n()) %>% 
+   ungroup() %>% 
+   group_by(Budget_title) %>% 
+   mutate(budget_title_count = n()) %>% 
+   ungroup() %>% 
+      mutate(category_reorder = fct_reorder(Budget_title, budget_title_count)) %>% 
+      ggplot() + 
+      geom_tile(aes(y = category_reorder, x = County, fill = factor(count)), colour = "white") +
+      scale_fill_brewer(palette = 4, direction = 1) +
+   theme_xylab() +
+      theme(axis.text.x = element_text(angle = 90, hjust = 1),
+            legend.position = "top",
+            plot.caption = element_text(size = 10, family = "Lato Light"),
+            plot.title = element_text(size = 13, family = "Lato"),
+            legend.title = element_text(family = "Lato Light")) +
+      labs(title = "Treasury, finance or administration and Health are the most consistent budget categories",
            y = "", x = "", caption = "Source: 2014/15, 2015/16, 2016/17 & 2017/18 Budget Data",
-           fill = "Number of times budget category appears") +
-      coord_flip() + 
-      ggsave(file.path(imagepath, "Budget_summary.pdf"), width = 11, height = 5) 
+           fill = "Number of times budget category appears") + 
+      ggsave(file.path(imagepath, "Budget_summary.png"), width = 11, height = 5) 
       
 # Or the purr way - saving all plots as pdfs
 budget %>% 
@@ -684,20 +690,25 @@ budget_totals_GOK <-
   select(CID, County, year, final_check, everything()) %>%
   arrange(final_check) 
 
-budget_totals_GOK %>% 
+(budget_validation <- budget_totals_GOK %>% 
   filter(abs(final_check) > 1) %>% 
   select(County, final_check, year) %>% 
   mutate(group = ifelse(final_check > 0, "Positive", "Negative"), 
          csort = fct_reorder(County, final_check, .desc = TRUE)) %>% 
   ggplot(aes(x = csort, y = final_check, fill = group)) +
-  geom_col() + coord_flip() + theme_minimal() +
+  geom_col()  + coord_flip() + theme_basic() +
   scale_fill_manual(values = c("Positive" = "#8073ac", "Negative" = "#e08214")) +
   labs(x = "", y = "Difference between GeoCenter totals (brown) and GOK Calculations (purple)",
-       caption = "GeoCenter Calculations from Official GOK Budget Documents",
-       title = "GeoCenter calculations differ from budget summary tables") +
-  facet_wrap(~year) +
+       caption = "Source: GeoCenter Calculations from GOK Budget Documents",
+       title = "GeoCenter calculations (brown) differ from office GOK budget summary tables (purple)") +
+  facet_wrap(~(year)) +
   theme(legend.position = "none",
-        panel.spacing = unit(1, "lines"))
+        panel.spacing = unit(1, "lines")))
+
+ggsave(file.path(imagepath, "KEN_budget_totals_verification_differences.pdf"),
+       plot = budget_validation,
+       dpi = "retina",
+       height = 8.5, width = 11)
 
 
 rm(budget_2014, budget_2015, budget_2016, budget_2017, budg_tot_14, mtx, county14_nums, county14_order)
