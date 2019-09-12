@@ -403,20 +403,22 @@ budg_map(budget_totals_pdf, Exp_dev_pc, leg_text = "Development spending per cap
 # budget per capita graph -------------------------------------------------
 
 
-  county_look(budget_summary %>% filter(AHADI %in% c(0, 1)), tot_dev_exp_pc, "#68abb8") + 
+  county_look(budget_summary %>% filter(AHADI %in% c(0, 1) & (ASAL_CODE == 1)), tot_dev_exp_pc, "#80ba5a")+  
     labs(caption = GC_caption, 
-         title = "PER CAPITA DEVELOPMENT EXPENDITURES") +
-    theme(panel.grid.minor.x = element_blank(),
+         title = "Per Capital Development Expenditures for arid counties in Kenya") + 
+    facet_wrap(~c_sort, nrow = 2) +
+      theme(panel.grid.minor.x = element_blank(),
           panel.grid.minor.y = element_blank(),
           axis.line.y = element_line(colour = grey20K,
                                     lineend = "square",
                                     size = 0.75),
           #panel.grid.major.y = element_blank(),
-          strip.text = element_text(hjust = 0, size = 12))
+          strip.text = element_text(hjust = 0, size = 12)) +
+    theme_xgrid(projector = TRUE)
   
-  ggsave(file.path(imagepath, "KEN_PC_Dev_Expend_graph.pdf"),
+  ggsave(file.path(imagepath, "KEN_PC_Dev_Expend_graph_training.pdf"),
          plot = last_plot(),
-         height = 17, width = 16, units = c("in"), dpi = "retina",
+         height = 9, width = 16, units = c("in"), dpi = "retina",
          useDingbats = FALSE)
  
   #d1eeea,#a8dbd9,#85c4c9,#68abb8,#4f90a6,#3b738f,#2a5674 
@@ -459,16 +461,19 @@ budget_summary %>%
       facet_wrap(~budget_year, nrow = 1) +
       theme_minimal() +
       theme(legend.position = "top",
-            legend.key.width = unit(1.25, "cm"))
+            legend.key.width = unit(1.25, "cm"),
+            text = element_text(family = "Lato"),
+            panel.grid = element_blank(),
+            strip.text = element_text(hjust = 0, size = 12))
   }
   
 budget_map(budget_summary, tot_dev_exp_pc) +
-  scale_fill_viridis_c(option = "A", direction = -1, alpha = 0.75) +
+  scale_fill_viridis_c(option = "D", direction = -1) +
                        #label = percent_format(accuracy = 2)) +
   labs(title = "Counties in the north had the highest per capita development budget expenditures",
-          fill = "Development expenditures per capita") 
+          fill = "Development expenditures per capita") +
   ggsave(file.path(imagepath, "KEN_develompent_expenditures_per_capita_maps.pdf"),
-         height = 17, width = 16)
+         height = 9, width = 16)
   
 
 # Budget Summary plots; Toggle AHADI Filter to get all Counties
@@ -485,7 +490,7 @@ budget_map(budget_summary, tot_dev_exp_pc) +
                size = 3.5, shape = 21, colour = "white", stroke = 2) + 
     facet_wrap(ASAL_CODE ~ csort, labeller = label_wrap_gen(multi_line = FALSE)) +
     theme_minimal() +
-    scale_fill_viridis_c(direction = -1, option = "D") +
+    scale_fill_viridis_c(direction = -1, option = "B",) +
     theme(legend.position = "none",
           strip.text = element_text(hjust = 0, size = 9),
           panel.grid.minor = element_blank(),
@@ -495,9 +500,40 @@ budget_map(budget_summary, tot_dev_exp_pc) +
     scale_y_continuous(labels = scales::percent_format(),
                        limits = c(0, 1.03), # Be careful in case absorption rate is > 1
                        breaks = c(0, 0.25, 0.50, 0.75, 1))
+  
   ggsave(file.path(imagepath, "KEN_Dev_absorption_rate_timeseries.pdf"),
          plot = last_plot(), dpi = "retina", 
          height = 17, width = 16)
+  
+
+# Training plot of absorption rates ---------------------------------------
+
+  budget_summary %>% 
+    filter(AHADI %in% c(0, 1) & County %in% c("Wajir", "Mandera", "Isiolo")) %>% 
+    #filter(ASAL %in% c("Arid - 85-100% Aridity")) %>% 
+    mutate(csort = fct_reorder(County, CID_absorption_dev, .desc = TRUE)) %>% 
+    #mutate(csort = County) %>% 
+    ggplot(aes(x = budget_year, y = CID_absorption_dev)) +
+    geom_area(fill = grey10K, alpha = 0.70) +
+    geom_line(colour = grey30K, size = 3) +
+    geom_point(aes(fill = CID_absorption_dev), 
+               size = 8, shape = 21, colour = "white", stroke = 3) + 
+    facet_wrap(~csort) +
+    theme_xygrid(projector = TRUE) +
+    scale_fill_viridis_c(direction = -1, option = "A", end = 0.85) +
+    theme(legend.position = "none",
+          strip.text = element_text(hjust = 0, size = 14),
+          panel.grid.minor = element_blank(),
+          panel.spacing = unit(1.25, "lines")) +
+    labs(caption = GC_caption, x = "", y = "",
+         title = "Wajir county had the most variation in development absorption rates from 2014/15 - 2017/18") +
+    scale_y_continuous(labels = scales::percent_format(),
+                       limits = c(0, 1.03), # Be careful in case absorption rate is > 1
+                       breaks = c(0, 0.25, 0.50, 0.75, 1))  
+  ggsave(file.path(imagepath, "KEN_Dev_absorption_rate_timeseries_training.pdf"),
+         plot = last_plot(), dpi = "retina", 
+         height = 9, width = 16)
+  
  
 #  Check the numbers on the 14 - 17 change map  
 tmp <-   budget_summary %>% 
