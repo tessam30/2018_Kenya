@@ -467,12 +467,15 @@ budget_summary %>%
             strip.text = element_text(hjust = 0, size = 12))
   }
   
-budget_map(budget_summary, tot_dev_exp_pc) +
-  scale_fill_viridis_c(option = "D", direction = -1) +
+map_budget <- budget_map(budget_summary, tot_dev_exp_pc) +
+  #scale_fill_viridis_c(option = "E", direction = -1) + facet_wrap(~budget_year, nrow = 2) 
+  scale_fill_gradientn(colours = RColorBrewer::brewer.pal(9, 'Greys')) +
                        #label = percent_format(accuracy = 2)) +
   labs(title = "Counties in the north had the highest per capita development budget expenditures",
-          fill = "Development expenditures per capita") +
-  ggsave(file.path(imagepath, "KEN_develompent_expenditures_per_capita_maps.pdf"),
+          fill = "Development expenditures per capita") 
+#rayshader::plot_gg(map_budget, multicore = TRUE, height = 5, width = 5)+
+  ggsave(file.path(imagepath, "KEN_develompent_expenditures_per_capita_maps_bw.pdf"),
+         plot = map_budget,
          height = 9, width = 16)
   
 
@@ -509,7 +512,8 @@ budget_map(budget_summary, tot_dev_exp_pc) +
 # Training plot of absorption rates ---------------------------------------
 
   budget_summary %>% 
-    filter(AHADI %in% c(0, 1) & County %in% c("Wajir", "Mandera", "Isiolo")) %>% 
+    #filter(AHADI %in% c(0, 1) & County %in% c("Wajir", "Mandera", "Isiolo")) %>%
+    filter(AHADI %in% c(0, 1) & ASAL_CODE %in% c(1, 2)) %>% 
     #filter(ASAL %in% c("Arid - 85-100% Aridity")) %>% 
     mutate(csort = fct_reorder(County, CID_absorption_dev, .desc = TRUE)) %>% 
     #mutate(csort = County) %>% 
@@ -517,9 +521,10 @@ budget_map(budget_summary, tot_dev_exp_pc) +
     geom_area(fill = grey10K, alpha = 0.70) +
     geom_line(colour = grey30K, size = 3) +
     geom_point(aes(fill = CID_absorption_dev), 
-               size = 8, shape = 21, colour = "white", stroke = 3) + 
+               size = 4, shape = 21, colour = "white", stroke = 3) + 
     facet_wrap(~csort) +
-    theme_xygrid(projector = TRUE) +
+    #theme_xygrid(projector = TRUE) +
+    theme_xlab(projector = TRUE) +
     scale_fill_viridis_c(direction = -1, option = "A", end = 0.85) +
     theme(legend.position = "none",
           strip.text = element_text(hjust = 0, size = 14),
@@ -530,9 +535,10 @@ budget_map(budget_summary, tot_dev_exp_pc) +
     scale_y_continuous(labels = scales::percent_format(),
                        limits = c(0, 1.03), # Be careful in case absorption rate is > 1
                        breaks = c(0, 0.25, 0.50, 0.75, 1))  
-  ggsave(file.path(imagepath, "KEN_Dev_absorption_rate_timeseries_training.pdf"),
+  
+  ggsave(file.path(imagepath, "KEN_Dev_absorption_rate_timeseries_training2.pdf"),
          plot = last_plot(), dpi = "retina", 
-         height = 9, width = 16)
+         height = 6, width = 16)
   
  
 #  Check the numbers on the 14 - 17 change map  
