@@ -112,7 +112,7 @@ bs_plot <- function(df, x) {
 # Heatmap of all budget categories ----------------------------------------
 
 
-budget %>%
+budget_heat <- budget %>%
   filter(`Category Code` != 0) %>%
   select(County, exp_dev_share, budget_year, total_exp_dev, Budget_title) %>%
   mutate(
@@ -125,12 +125,16 @@ budget %>%
     direction = -1, alpha = 1,
     option = "A", label = percent_format(accuracy = 2)
   ) + # format labels in legend
-  theme_minimal() +
+  theme_minimal() + coord_flip() +
   #coord_fixed(ratio = 1.5) + # Fix the size of the squares
-  facet_wrap(~budget_sort, ncol = 2) +
+  facet_wrap(~budget_sort, nrow = 1,
+             labeller = labeller(budget_sort = label_wrap_gen(width = 5))) +
+    theme(axis.title = element_text(size = 4))
+  
+  +
   theme(
     legend.position = "top",
-    axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.05),
+    axis.text.x = element_text(angle = 0, hjust = 1, vjust = 0.05),
     axis.title = element_text(size = 6, hjust = 0), # making the x-axis title smaller
     panel.spacing = unit(0.5, "lines"),
     panel.grid.minor.x = element_blank()
@@ -140,8 +144,18 @@ budget %>%
     y = "", x = "",
     caption = GC_caption
   )  +
-  ggtitle("Development expenditures on transport and infrastructure formed the largest budget share") +
-  ggsave(file.path(imagepath, "KEN_budget_shares_heatmap.pdf"),
+  ggtitle("Development expenditures on transport and infrastructure formed the largest budget share")
+
+
+  rayshader::plot_gg(budget_heat, width = 12, height = 8, scale = 400, multicore = TRUE,
+                   windowsize = c(1200, 960),
+                   fov = 70, zoom = 0.6, theta = 330, phi = 40) 
+  render_movie(filename = "filename_movie.mp4")
+
+render_depth(focus = 0.68, focallength = 200)  
+
+ggsave(file.path(imagepath, "KEN_budget_shares_heatmap.pdf"),
+       plot = budget_heat,
     height = 8.5, width = 11, dpi = "retina", 
     useDingbats = FALSE
   )
