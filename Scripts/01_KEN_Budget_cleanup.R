@@ -2,7 +2,7 @@
 # Author: Tim Essam, Ph.D | USAID GeoCenter
 # Date: 2018_11_26
 # Audience: Kenya Mission
-
+# Standard budget categories recommended by GOK found here: https://www.imf.org/external/pubs/ft/tnm/2009/tnm0906.pdf . 
 
 # Load data and crosswalks ---------------------------------------------------------------
 source(file.path(rpath, "budget_cw.R"))
