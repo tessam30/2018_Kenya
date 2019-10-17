@@ -363,14 +363,15 @@ preg <-
 hiv_line(preg, x = Year, y = pregnancies, yave = ave_pregnancies, fill = pregnancies, wrap = csort) +
   scale_fill_viridis_c(direction = -1, option = "D", alpha = 0.85) +
   scale_x_continuous(breaks = c(2016, 2017, 2018)) +
-  theme_panel+
+  scale_y_continuous(limits = c(0, 30000)) +
+  theme_panel +
   labs(x = "", y = "", 
        title = "Nairobi and Bungoma have the largest number of adolescent pregnancies",
        subtitle = "Grey area represents country average for each year",
        caption = "Source: USAID Kenya Health Team") +
-  ggsave(file.path(imagepath, "KEN_adolescent_pregnancies.pdf"),
+  ggsave(file.path(imagepath, "KEN_adolescent_pregnancies_8_11.pdf"),
          plot = last_plot(), dpi = "retina", 
-         height = 17, width = 16)
+         height = 8.5, width = 11)
 
 
 # DPT3 Vaccination Coverage -----------------------------------------------
