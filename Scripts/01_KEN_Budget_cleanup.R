@@ -2,7 +2,7 @@
 # Author: Tim Essam, Ph.D | USAID GeoCenter
 # Date: 2018_11_26
 # Audience: Kenya Mission
-# Standard budget categories recommended by GOK found here: https://www.imf.org/external/pubs/ft/tnm/2009/tnm0906.pdf . 
+
 
 # Load data and crosswalks ---------------------------------------------------------------
 source(file.path(rpath, "budget_cw.R"))
@@ -10,14 +10,16 @@ source(file.path(rpath, "AHADI_focus_df.R"))
 
 # Reading these in separately to check insheeting carefully. Data have been scraped from PDFs
   #file_name = c("County Budget Database_TE_Edits.xlsx")
-  file_name = c("County Budget Database_TE_Edits_HomaBay_Version.xlsx")
+  file_name = c("County Budget Database_2019_10_16.xlsx")
   excel_sheets(file.path(budgetpath, file_name))
   
   budget_2014_in <- read_excel(file.path(budgetpath, file_name),
-                               sheet = "Budget Nos 14-15")
+                               sheet = "Budget Nos 14-15") %>% 
+    select(-`...18`)
   
   budget_2015_in <- read_excel(file.path(budgetpath, file_name), 
-                               sheet = "Budget Nos 15-16")
+                               sheet = "Budget Nos 15-16") %>% 
+    select(-`...17`)
   
   budget_2016_in <- read_excel(file.path(budgetpath, file_name), 
                                 sheet = "Budget Nos 16-17")
@@ -25,7 +27,12 @@ source(file.path(rpath, "AHADI_focus_df.R"))
   budget_2017_in <- read_excel(file.path(budgetpath, file_name),
                                sheet = "Budget Nos 17-18") 
   
-  budget_list <- list(budget_2014_in, budget_2015_in, budget_2016_in, budget_2017_in)
+  budget_2018_in <- read_excel(file.path(budgetpath, file_name),
+                               sheet = "Budget Nos 18-19") 
+  
+  
+  # Check the column type for each dataset -- some get converted to characters
+  budget_list <- list(budget_2014_in, budget_2015_in, budget_2016_in, budget_2017_in, budget_2018_in)
   map(budget_list, ~str(.))
 
 # Need to fix a few columns that are read-in as characters rather than numbers
@@ -42,6 +49,9 @@ source(file.path(rpath, "AHADI_focus_df.R"))
   
   budget_2017 <- budget_2017_in %>% 
     mutate(budget_year = 2017)
+  
+  budget_2018 <- budget_2018_in %>% 
+    mutate(budget_year = 2018)
 
 # Use $ at the end to ensure that we only captures objects that end in "_in
   rm(list = ls(pattern = "*_in$"))
@@ -54,11 +64,13 @@ source(file.path(rpath, "AHADI_focus_df.R"))
            pop_2015 = Population,
            pop_2016 = Population * pop_rate,
            pop_2017 = Population * (pop_rate^2),
+           pop_2018 = Population * (pop_rate^3),
            poor_2014 = Number_poor / pop_rate,
            poor_2015 = Number_poor,
            poor_2016 = Number_poor * pop_rate,
-           poor_2017 = Number_poor * (pop_rate^2)) %>% 
-    select(CID, County, pop_2014:poor_2017) %>%  
+           poor_2017 = Number_poor * (pop_rate^2),
+           poor_2018 = Number_poor * (pop_rate^3)) %>% 
+    select(CID, County, pop_2014:poor_2018) %>%  
     gather(key = "tmp", value = "population", -c(CID, County)) %>% 
     separate(., tmp, c("drop", "year"), sep = "_") %>%
     mutate(population = round(population, 0)) %>% 
@@ -70,7 +82,7 @@ source(file.path(rpath, "AHADI_focus_df.R"))
     filter(CID != 0)
 
 # Caption of data, for later use in graphics
-GC_caption = c("Source: USAID GeoCenter Calculations from County Government Budget Implementation Review Reports 2014/15, 2015/16, 2016/17, 2017/18")
+GC_caption = c("Source: USAID GeoCenter Calculations from County Government Budget Implementation Review Reports 2014/15, 2015/16, 2016/17, 2017/18, 2018/19")
 
 bar_formatr <- list(
   geom_col(),
@@ -88,7 +100,7 @@ bar_formatr <- list(
 # Create budget database with proper roll-ups and budget shares -----------
 # Raw dataset has the original category codes, w/ hand coded mapping to budget categories
 budget_raw <- 
-  bind_rows(budget_2015, budget_2016, budget_2017, budget_2014) %>%
+  bind_rows(budget_2015, budget_2016, budget_2017, budget_2014, budget_2018) %>%
   left_join(., asal, by = c("CID" = "CID")) %>%  # add in ASAL categories
   left_join(., budget_cw, by = c("Category Code" = "Category Code")) %>%  # Add in budget category crosswalk
   select(CID, # Clean up names and rearrange for ease of viewing
@@ -176,7 +188,7 @@ remove(list = ls(pattern = "^budget_[0-9]"))
   county_look(budget_totals_pdf, `Exp_dev_pc`) +
     ggtitle("Per capita development expenditures") +
     labs(caption = GC_caption, 
-         title = "Marsabit and Isiolo have the highest per capita development expenditures",
+         title = "Marsabit and MAndera have the highest per capita development expenditures",
          subtitle = "estimates in ")
   
 # Map out development expenditures per capita over time  
@@ -204,10 +216,10 @@ remove(list = ls(pattern = "^budget_[0-9]"))
 budg_map(budget_totals_pdf, Absorption_dev, leg_text = "absorption rate")
 budg_map(budget_totals_pdf, Exp_dev_pc, leg_text = "Development spending per capita")
 
-
       
   # Where are the poor?
-  pov_all %>% 
+  pov_all %>%
+    filter(CC_1 != 0) %>% 
     left_join(asal_geo, by = c("CID" = "CID")) %>% 
     ggplot() +
     geom_sf(aes(fill = Number_poor, geometry = geometry), colour = "white") +
@@ -493,7 +505,7 @@ map_budget <- budget_map(budget_summary, tot_dev_exp_pc) +
                size = 3.5, shape = 21, colour = "white", stroke = 2) + 
     facet_wrap(ASAL_CODE ~ csort, labeller = label_wrap_gen(multi_line = FALSE)) +
     theme_minimal() +
-    scale_fill_viridis_c(direction = -1, option = "B",) +
+    scale_fill_viridis_c(direction = -1, option = "D",) +
     theme(legend.position = "none",
           strip.text = element_text(hjust = 0, size = 9),
           panel.grid.minor = element_blank(),
@@ -544,16 +556,16 @@ map_budget <- budget_map(budget_summary, tot_dev_exp_pc) +
 #  Check the numbers on the 14 - 17 change map  
 tmp <-   budget_summary %>% 
     group_by(CID) %>% 
-    mutate(absorp_lag = lag(CID_absorption_dev, n = 3, order_by = budget_year),
+    mutate(absorp_lag = lag(CID_absorption_dev, n = 4, order_by = budget_year),
            absorb_chg = CID_absorption_dev - absorp_lag) %>% 
   ungroup()
 
 absorp_chg_max = unlist(tmp %>% summarise(max_dev = max(abs(absorb_chg), na.rm = TRUE)))
   
-budget_map(tmp %>% filter(budget_year == 2017), absorb_chg) +
+budget_map(tmp %>% filter(budget_year == 2018), absorb_chg) +
   scale_fill_gradientn(colours = RColorBrewer::brewer.pal(11, 'BrBG'),
                        limits = c(-1 * absorp_chg_max, absorp_chg_max), 
-                       labels = scales::percent)
+                       labels = percent_format(accuracy = 1))
 
   
 # Try a 10 X 10 waffle chart to show budget composition by categories
@@ -624,7 +636,7 @@ budget %>%
 
 # Heatmap maybe just as effective for showing development absorption rates across time
   budget %>% 
-    filter(!is.na(Absorption_dev) & Budget_title != "Uncategorized") %>% 
+    filter(!is.na(Absorption_dev)) %>% 
     ggplot(aes(y = Budget_title, x = County)) +
     geom_tile(aes(fill = Absorption_dev), colour = grey60K) +
     facet_rep_wrap(~ budget_year, nrow = 4, repeat.tick.labels = TRUE) + 
@@ -698,20 +710,26 @@ budget %>%
   
   
   
-County_budget_allocation <- "https://raw.githubusercontent.com/kabuchanga/KE-budgetsDB/master/data_final/KEN_county_budget_totals_15-18.csv"
+# County_budget_allocation <- "https://raw.githubusercontent.com/kabuchanga/KE-budgetsDB/master/data_final/KEN_county_budget_totals_15-18.csv"
 
-county_BA <- read_csv(County_budget_allocation) %>%
+County_budget_allocation <- read_excel(file.path(budgetpath, "KEN_county_budget_totals_15-19.xlsx"))  
+  
+county_BA <- 
+  County_budget_allocation  %>%
   mutate_at(vars(contains("Rate")), funs(. / 100)) %>%
   left_join(asal, by = c("CID" = "CID")) %>%
   mutate(year = case_when(
     FYear == "2015-2016" ~ 2015,
     FYear == "2016-2017" ~ 2016,
     FYear == "2017-2018" ~ 2017,
+    FYear == "2018-2019" ~ 2018,
     TRUE ~ NA_real_
   )) %>%
   arrange(CID, year) %>% 
   bind_rows(., budget_14_tot) %>% 
   select(-c(Counties, Category)) 
+
+
 
 budget_totals_GOK <- 
   county_BA %>% 
@@ -753,7 +771,9 @@ ggsave(file.path(imagepath, "KEN_budget_totals_verification_differences.pdf"),
        height = 8.5, width = 11)
 
 
-rm(budget_2014, budget_2015, budget_2016, budget_2017, budg_tot_14, mtx, county14_nums, county14_order)
+
+
+#rm(budget_2014, budget_2015, budget_2016, budget_2017, budg_tot_14, mtx, county14_nums, county14_order)
 #TODO # Plot three calculations for those with discrepancies larger than 5
 
 

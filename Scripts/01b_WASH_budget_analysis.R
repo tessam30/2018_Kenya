@@ -129,9 +129,7 @@ budget_heat <- budget %>%
   #coord_fixed(ratio = 1.5) + # Fix the size of the squares
   facet_wrap(~budget_sort, nrow = 1,
              labeller = labeller(budget_sort = label_wrap_gen(width = 5))) +
-    theme(axis.title = element_text(size = 4))
-  
-  +
+    theme(axis.title = element_text(size = 4))+
   theme(
     legend.position = "top",
     axis.text.x = element_text(angle = 0, hjust = 1, vjust = 0.05),
@@ -343,7 +341,7 @@ c_plot(budget, 43)
 
 # Exporting budget data ---------------------------------------------------
 
-write_csv(budget, path = file.path(budgetpath, "KEN_budget_draft_2019_02_10.csv"))
+write_csv(budget, path = file.path(budgetpath, "KEN_budget_draft_2019_10_16.csv"))
 
 
 
