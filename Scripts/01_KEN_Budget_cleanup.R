@@ -201,7 +201,7 @@ remove(list = ls(pattern = "^budget_[0-9]"))
       ggplot(.) +
       geom_sf(aes(fill = !!xvar, geometry = geometry), colour = "white", size = 0.5) +
       facet_wrap(~budget_year, nrow = 1) +
-      scale_fill_viridis_c(option = "A", direction = -1, alpha = 0.75) +
+      scale_fill_viridis_c(option = "D", direction = -1, alpha = 0.75) +
       theme_minimal() +
       theme(
         legend.position = "top",
@@ -493,6 +493,7 @@ map_budget <- budget_map(budget_summary, tot_dev_exp_pc) +
 
 # Budget Summary plots; Toggle AHADI Filter to get all Counties
   
+abs_ts_graph <- 
   budget_summary %>% 
     filter(AHADI %in% c(0, 1)) %>% 
     #filter(ASAL %in% c("Arid - 85-100% Aridity")) %>% 
@@ -517,13 +518,14 @@ map_budget <- budget_map(budget_summary, tot_dev_exp_pc) +
                        breaks = c(0, 0.25, 0.50, 0.75, 1))
   
   ggsave(file.path(imagepath, "KEN_Dev_absorption_rate_timeseries.pdf"),
-         plot = last_plot(), dpi = "retina", 
+         plot = abs_ts_graph, dpi = "retina", 
          height = 17, width = 16)
   
 
 # Training plot of absorption rates ---------------------------------------
 
-  budget_summary %>% 
+abs_ts_graph <- 
+    budget_summary %>% 
     #filter(AHADI %in% c(0, 1) & County %in% c("Wajir", "Mandera", "Isiolo")) %>%
     filter(AHADI %in% c(0, 1) & ASAL_CODE %in% c(1, 2)) %>% 
     #filter(ASAL %in% c("Arid - 85-100% Aridity")) %>% 
@@ -553,7 +555,7 @@ map_budget <- budget_map(budget_summary, tot_dev_exp_pc) +
          height = 6, width = 16)
   
  
-#  Check the numbers on the 14 - 17 change map  
+#  Check the numbers on the 14 - 18 change map  
 tmp <-   budget_summary %>% 
     group_by(CID) %>% 
     mutate(absorp_lag = lag(CID_absorption_dev, n = 4, order_by = budget_year),
@@ -562,11 +564,23 @@ tmp <-   budget_summary %>%
 
 absorp_chg_max = unlist(tmp %>% summarise(max_dev = max(abs(absorb_chg), na.rm = TRUE)))
   
-budget_map(tmp %>% filter(budget_year == 2018), absorb_chg) +
+abs_change_map <- 
+  budget_map(tmp %>% filter(budget_year == 2018), absorb_chg) +
   scale_fill_gradientn(colours = RColorBrewer::brewer.pal(11, 'BrBG'),
                        limits = c(-1 * absorp_chg_max, absorp_chg_max), 
-                       labels = percent_format(accuracy = 1))
+                       labels = percent_format(accuracy = 1)) +
+  labs(x = "", y = "", 
+       title = "Absolute change in absorption rate 2014-2018",
+       caption = GC_caption) 
+  
+  
+  ggsave(file.path(imagepath, "KEN_absorption_rate_change_2014_2018.pdf"),
+         plot = abs_change_map, dpi = "retina", 
+         height = 17, width = 16)
 
+# Combine the two maps to reproduce graphic made for Mission
+  ggpubr::ggarrange(abs_ts_graph, abs_change_map, nrow = 1)
+  
   
 # Try a 10 X 10 waffle chart to show budget composition by categories
   nrows <- 10
