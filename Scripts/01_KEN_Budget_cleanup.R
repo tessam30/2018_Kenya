@@ -524,7 +524,7 @@ abs_ts_graph <-
 
 # Training plot of absorption rates ---------------------------------------
 
-abs_ts_graph <- 
+abs_ts_graph_training <- 
     budget_summary %>% 
     #filter(AHADI %in% c(0, 1) & County %in% c("Wajir", "Mandera", "Isiolo")) %>%
     filter(AHADI %in% c(0, 1) & ASAL_CODE %in% c(1, 2)) %>% 
@@ -580,6 +580,10 @@ abs_change_map <-
 
 # Combine the two maps to reproduce graphic made for Mission
   ggpubr::ggarrange(abs_ts_graph, abs_change_map, nrow = 1)
+  
+  ggsave(file.path(imagepath, "KEN_absorption_rate_change_with_time_Series_2014_2018.pdf"),
+         plot = last_plot(), dpi = "retina", 
+         height = 17, width = 32)
   
   
 # Try a 10 X 10 waffle chart to show budget composition by categories

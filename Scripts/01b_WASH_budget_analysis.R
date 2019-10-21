@@ -119,7 +119,7 @@ budget_heat <- budget %>%
     county_sort = fct_reorder(County, total_exp_dev, .desc = TRUE),
     budget_sort = fct_reorder(Budget_title, exp_dev_share, .desc = TRUE)
   ) %>%
-  ggplot(aes(x = County, y = budget_year)) +
+  ggplot(aes(x = reorder(County, desc(County)), y = budget_year)) +
   geom_tile(aes(fill = exp_dev_share), color = grey80K) +
   scale_fill_viridis_c(
     direction = -1, alpha = 1,
@@ -129,11 +129,11 @@ budget_heat <- budget %>%
   #coord_fixed(ratio = 1.5) + # Fix the size of the squares
   facet_wrap(~budget_sort, nrow = 1,
              labeller = labeller(budget_sort = label_wrap_gen(width = 5))) +
-    theme(axis.title = element_text(size = 4))+
+    theme(axis.title = element_text(size = 8)) +
   theme(
     legend.position = "top",
     axis.text.x = element_text(angle = 0, hjust = 1, vjust = 0.05),
-    axis.title = element_text(size = 6, hjust = 0), # making the x-axis title smaller
+    axis.title = element_text(size = 8, hjust = 0), # making the x-axis title smaller
     panel.spacing = unit(0.5, "lines"),
     panel.grid.minor.x = element_blank()
   ) + # adding more spaced between panels
@@ -154,7 +154,7 @@ render_depth(focus = 0.68, focallength = 200)
 
 ggsave(file.path(imagepath, "KEN_budget_shares_heatmap.pdf"),
        plot = budget_heat,
-    height = 8.5, width = 11, dpi = "retina", 
+    height = 18, width = 24, dpi = "retina", 
     useDingbats = FALSE
   )
 
