@@ -562,6 +562,9 @@ tmp <-   budget_summary %>%
            absorb_chg = CID_absorption_dev - absorp_lag) %>% 
   ungroup()
 
+write_csv(tmp, file.path(datapath, "KEN_budget_summary_2014_2018.csv"))
+
+
 absorp_chg_max = unlist(tmp %>% summarise(max_dev = max(abs(absorb_chg), na.rm = TRUE)))
   
 abs_change_map <- 
