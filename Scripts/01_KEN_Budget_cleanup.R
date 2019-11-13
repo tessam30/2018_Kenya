@@ -519,7 +519,8 @@ abs_ts_graph <-
   
   ggsave(file.path(imagepath, "KEN_Dev_absorption_rate_timeseries.pdf"),
          plot = abs_ts_graph, dpi = "retina", 
-         height = 17, width = 16)
+         height = 17, width = 16, 
+         useDingbats = FALSE)
   
 
 # Training plot of absorption rates ---------------------------------------
@@ -562,6 +563,18 @@ tmp <-   budget_summary %>%
            absorb_chg = CID_absorption_dev - absorp_lag) %>% 
   ungroup()
 
+gadm <- st_read(file.path(gispath, "gadm36_KEN_1.shp"))
+
+tmp_shp <- 
+  gadm %>% 
+  mutate(CID = as.numeric(as.character(CC_1))) %>% 
+  left_join(., tmp, by = c("CID" = "CID")) %>% 
+  select(CID, County, absorb_chg, budget_year, total_exp_dev, tot_dev_exp_pc)
+
+# This apparently is different from the shapefile used by other team members. Need to redo using the
+# gadm boundarids
+
+st_write(tmp_shp, file.path(gispath, "KEN_budget_summary_2014_2018.shp"), delete_layer = TRUE)
 write_csv(tmp, file.path(datapath, "KEN_budget_summary_2014_2018.csv"))
 
 
