@@ -561,14 +561,15 @@ tmp <-   budget_summary %>%
     group_by(CID) %>% 
     mutate(absorp_lag = lag(CID_absorption_dev, n = 4, order_by = budget_year),
            absorb_chg = CID_absorption_dev - absorp_lag) %>% 
-  ungroup()
+  ungroup() 
 
+gok_geo <- st_read(file.path(gispath, "CountyBoundary2013", "CountyBoundary2013.shp"))
 gadm <- st_read(file.path(gispath, "gadm36_KEN_1.shp"))
 
 tmp_shp <- 
-  gadm %>% 
-  mutate(CID = as.numeric(as.character(CC_1))) %>% 
-  left_join(., tmp, by = c("CID" = "CID")) %>% 
+  gok_geo %>% 
+  select(CID, CountyID) %>% 
+  left_join(., tmp, by = c("CID")) %>% 
   select(CID, County, absorb_chg, budget_year, total_exp_dev, tot_dev_exp_pc)
 
 # This apparently is different from the shapefile used by other team members. Need to redo using the
@@ -576,7 +577,6 @@ tmp_shp <-
 
 st_write(tmp_shp, file.path(gispath, "KEN_budget_summary_2014_2018.shp"), delete_layer = TRUE)
 write_csv(tmp, file.path(datapath, "KEN_budget_summary_2014_2018.csv"))
-
 
 absorp_chg_max = unlist(tmp %>% summarise(max_dev = max(abs(absorb_chg), na.rm = TRUE)))
   
