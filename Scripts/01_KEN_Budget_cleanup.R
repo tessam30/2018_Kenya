@@ -293,11 +293,29 @@ budg_map(budget_totals_pdf, Exp_dev_pc, leg_text = "Development spending per cap
     ungroup() %>% 
     left_join(., pop, by = c("CID" = "CID", "budget_year" = "year")) %>%  # Add in population data for per cap budgets
     mutate(tot_dev_exp_pc = (total_exp_dev/pop_mil)) %>% 
+    group_by(CID, `Category Code`) %>% 
+    mutate(All_years_dev_exp = sum(total_exp_dev),
+           All_years_pop = sum(pop_mil),
+           Overall_exp_dev_per_capita = All_years_dev_exp/All_years_pop) %>% 
     ungroup() %>% 
     group_by(budget_year) %>% 
-    mutate(natl_budget_dev = sum(`Exp Dev`, na.rm = TRUE))
+    mutate(natl_budget_dev = sum(`Exp Dev`, na.rm = TRUE)) %>% 
+    ungroup()
+ 
   
 
+# Export buget per capita dev expenditures overall ------------------------
+
+  # Export Overall Per Capita summary for mapping
+  overall_budget_pc <- 
+    budget %>% 
+    group_by(County, CID) %>% 
+    summarize(overall_exp_dev_pc = mean(Overall_exp_dev_per_capita)) %>% 
+    arrange(overall_exp_dev_pc)
+
+  write_csv(overall_budget_pc, file.path(budgetpath, "KEN_overall_budget_dev_exp_pc.csv"))
+  
+  
 # AHADI program focused on certain counties, any difference? --------------
 # short answer: no, not really.
   
@@ -387,7 +405,7 @@ budg_map(budget_totals_pdf, Exp_dev_pc, leg_text = "Development spending per cap
 # Overall absorption rate from the totals cateogry (# 13)
 # Create a new dataset of key budget categories for mapping
   budget_summary <- 
-    budget %>% 
+    budget %>%
     group_by(CID, budget_year, County, ASAL, ASAL_CODE, AHADI) %>% 
     summarise_at(vars(CID_absorption_rec, 
                       CID_absorption_dev,
@@ -408,12 +426,24 @@ budg_map(budget_totals_pdf, Exp_dev_pc, leg_text = "Development spending per cap
            tot_ASBADev_tot_all_years = sum(ASBADev_tot_year, na.rm = TRUE),
            CID_absorption_dev_all_years = (tot_exp_dev_all_years/tot_ASBADev_tot_all_years)) %>% 
     ungroup() 
-  
- 
-# County budget per capita expenditures graphic   
+
 
 # budget per capita graph -------------------------------------------------
-
+  
+  # County budget per capita expenditures graphic   
+  county_look(budget_summary, tot_dev_exp_pc, barcolor = "#68abb8") +
+    theme(axis.line.y = element_line(colour = grey30K,
+                                     lineend = "square",
+                                     size = 0.75)) +
+    ggsave(file.path(imagepath, "KEN_PC_Dev_Expend_graph.pdf"),
+           plot = last_plot(),
+           height = 17,
+           width = 16,
+           units = c("in"), 
+           dpi = "retina",
+           useDingbats = FALSE)
+    
+    
 
   county_look(budget_summary %>% filter(AHADI %in% c(0, 1) & (ASAL_CODE == 1)), tot_dev_exp_pc, "#80ba5a")+  
     labs(caption = GC_caption, 
@@ -438,14 +468,15 @@ budg_map(budget_totals_pdf, Exp_dev_pc, leg_text = "Development spending per cap
   # One cut of data for per capita expenditures
 budget_summary %>% 
     group_by(CID) %>% 
-    mutate(tot_dev_exp_pc_ave = (sum(tot_dev_exp_pc)/4)) %>% 
+    mutate(tot_dev_exp_pc_ave = (sum(tot_dev_exp_pc)/5)) %>% 
     ungroup() %>% 
     select(CID, budget_year, County, tot_dev_exp_pc, tot_dev_exp_pc_ave) %>% 
     spread(budget_year, tot_dev_exp_pc) %>% 
     rename(tot_dev_exp_pc_2014 = `2014`,
            tot_dev_exp_pc_2015 = `2015`,
            tot_dev_exp_pc_2016 = `2016`,
-           tot_dev_exp_pc_2017 = `2017`) %>% 
+           tot_dev_exp_pc_2017 = `2017`,
+           tot_dev_exp_pc_2018 = `2018`) %>% 
   write_csv(., file.path(budgetpath, "KEN_budget_dev_exp_pc_ave.csv"))
   
   # left_join(asal_geo, by = c("CID")) %>% 
@@ -489,6 +520,14 @@ map_budget <- budget_map(budget_summary, tot_dev_exp_pc) +
   ggsave(file.path(imagepath, "KEN_develompent_expenditures_per_capita_maps_bw.pdf"),
          plot = map_budget,
          height = 9, width = 16)
+  
+ asal_geo %>% 
+  left_join(., overall_budget_pc, by = c("CID" = "CID")) %>% 
+  ggplot() +
+    geom_sf(aes(fill = overall_exp_dev_pc), colour = "white", size = 0.5) +
+  scale_fill_viridis_c(option = "D", direction = -1)
+
+  
   
 
 # Budget Summary plots; Toggle AHADI Filter to get all Counties
