@@ -521,12 +521,23 @@ map_budget <- budget_map(budget_summary, tot_dev_exp_pc) +
          plot = map_budget,
          height = 9, width = 16)
   
+  
+  my_breaks <- c(900, 2000, 4000, 8000)
  asal_geo %>% 
   left_join(., overall_budget_pc, by = c("CID" = "CID")) %>% 
   ggplot() +
-    geom_sf(aes(fill = overall_exp_dev_pc), colour = "white", size = 0.5) +
-  scale_fill_viridis_c(option = "D", direction = -1)
-
+    geom_sf(aes(fill = log(overall_exp_dev_pc)), colour = "white", size = 0.5) +
+   scale_fill_viridis_c(direction = -1)
+ 
+ name = "count", trans = "log",
+                       breaks = my_breaks, labels = my_breaks, direction = -1)
+ 
+ggsave(file.path(imagepath, "pc_exp_overall_map.pdf"),
+       last_plot(),
+       device = "pdf",
+       height = 17,
+       width = 16,
+       units = c("in"))
   
   
 
