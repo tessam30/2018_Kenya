@@ -5,10 +5,15 @@
 
 
 # Load data and crosswalks ---------------------------------------------------------------
-source(file.path(rpath, "budget_cw.R"))
-source(file.path(rpath, "AHADI_focus_df.R"))
+# The following functions contain budget crosswalks and create plots for EDA
+
+source_list <- list("budget_cw.R", "AHADI_focus_df.R", "budget_functions.R")
+map(source_list, ~source(file.path(rpath, .)))
+
 
 # Reading these in separately to check insheeting carefully. Data have been scraped from PDFs
+# and thus not all excel files are the same. Need to check rows/cols for consistency
+
   #file_name = c("County Budget Database_TE_Edits.xlsx")
   file_name = c("County Budget Database_2019_10_16.xlsx")
   excel_sheets(file.path(budgetpath, file_name))
@@ -81,14 +86,7 @@ source(file.path(rpath, "AHADI_focus_df.R"))
     select(-c(County)) %>% 
     filter(CID != 0)
 
-# Caption of data, for later use in graphics
-GC_caption = c("Source: USAID GeoCenter Calculations from County Government Budget Implementation Review Reports 2014/15, 2015/16, 2016/17, 2017/18, 2018/19")
 
-bar_formatr <- list(
-  geom_col(),
-  theme_minimal(), 
-  coord_flip()
-)
 
 
 ##%######################################################%##
@@ -99,6 +97,9 @@ bar_formatr <- list(
 
 # Create budget database with proper roll-ups and budget shares -----------
 # Raw dataset has the original category codes, w/ hand coded mapping to budget categories
+# budget_raw is the derived product from scaping budget pdfs, pasting into Excel,
+# fixing potential errors/misentered data and binning budget categoreies to 13 codes
+  
 budget_raw <- 
   bind_rows(budget_2015, budget_2016, budget_2017, budget_2014, budget_2018) %>%
   left_join(., asal, by = c("CID" = "CID")) %>%  # add in ASAL categories
@@ -131,6 +132,9 @@ remove(list = ls(pattern = "^budget_[0-9]"))
 
 # Subset the raw totals - These will be used later to compare with my own calculations
 # There are quite a few of the totals that are wrong, like Kisumu in 2017 due to a misplaced comma in the pdf
+# the budget_totals_pdf dataset is the GoK official summary. This often differs from a reconstructed version
+# calculated below
+  
   budget_totals_pdf <-  
     budget_raw %>% 
     filter(`Category Code` == 13) %>% 
@@ -156,33 +160,7 @@ remove(list = ls(pattern = "^budget_[0-9]"))
 ##%######################################################%##
 
 # Set ASAL colors an recode it
-  
-  
-# Who planned the most, expended the most? Generalize into a function
-  county_look <- function(df, x, barcolor = grey70K) {
-    xvar <- enquo(x)
-    
-    df %>% 
-      group_by(County) %>% 
-      mutate(tmp = sum(!!xvar, na.rm = TRUE)) %>% 
-      ungroup() %>% 
-      #mutate(c_sort = County) %>% 
-      mutate(c_sort = fct_reorder(County, tmp, .desc = TRUE)) %>% 
-      ggplot(aes(x = budget_year, y = !!xvar)) +
-      geom_col(fill = barcolor) +
-      coord_flip() +
-      theme_minimal() +
-      theme(panel.grid.minor = element_blank(),
-            strip.text = element_text(hjust = 0, size = 12)) +
-     facet_wrap(~ASAL_CODE + c_sort, 
-                 labeller = label_wrap_gen(multi_line = FALSE)) +
-      labs(x = "", y = "") #+
-      #scale_fill_manual(values = c("#cc4c02", 
-      #                             "#fe9929",
-      #                             "#fed98e",
-      #                             "#ffffd4"))
-    }
-  
+# county_look is a summarized bar plot of all the budget data across years
   county_look(budget_totals_pdf, `ASBADev`)
   county_look(budget_totals_pdf, `Exp Dev`) # Kisumu numbers are wrong in 2017; Use manual calculations.
   county_look(budget_totals_pdf, `Exp_dev_pc`) +
@@ -192,29 +170,9 @@ remove(list = ls(pattern = "^budget_[0-9]"))
          subtitle = "estimates in ")
   
 # Map out development expenditures per capita over time  
-# Function to create small multiple maps based on budget_totals_pdf data
-  budg_map <- function(df, xvar, leg_text = "") {
-    xvar <- enquo(xvar) # grab the input text to know what to map
-  
-    df %>%
-      left_join(asal_geo, by = c("CID" = "CID")) %>%
-      ggplot(.) +
-      geom_sf(aes(fill = !!xvar, geometry = geometry), colour = "white", size = 0.5) +
-      facet_wrap(~budget_year, nrow = 1) +
-      scale_fill_viridis_c(option = "D", direction = -1, alpha = 0.75) +
-      theme_minimal() +
-      theme(
-        legend.position = "top",
-        legend.key.width = unit(1.5, "cm")
-      ) + # adjust the width of the legend
-      labs(
-        fill = leg_text,
-        caption = GC_caption
-      )
-  }
-  
 budg_map(budget_totals_pdf, Absorption_dev, leg_text = "absorption rate")
-budg_map(budget_totals_pdf, Exp_dev_pc, leg_text = "Development spending per capita")
+budg_map(budget_totals_pdf, log(Exp_dev_pc), leg_text = "Development spending per capita") +
+  scale_fill_viridis_c(option = "A")
 
       
   # Where are the poor?
@@ -230,8 +188,6 @@ budg_map(budget_totals_pdf, Exp_dev_pc, leg_text = "Development spending per cap
     ggplot(aes(x = County, y = Number_poor)) + geom_col() +
     coord_flip() + theme_minimal()
 
-
-  
   
 ##%######################################################%##
 #                                                          #
@@ -302,7 +258,8 @@ budg_map(budget_totals_pdf, Exp_dev_pc, leg_text = "Development spending per cap
     mutate(natl_budget_dev = sum(`Exp Dev`, na.rm = TRUE)) %>% 
     ungroup()
  
-  
+ 
+  write_csv(budget, file.path(budgetpath, "KEN_full_budget_2014_2018.csv")) 
 
 # Export buget per capita dev expenditures overall ------------------------
 
@@ -314,7 +271,6 @@ budg_map(budget_totals_pdf, Exp_dev_pc, leg_text = "Development spending per cap
     arrange(overall_exp_dev_pc)
 
   write_csv(overall_budget_pc, file.path(budgetpath, "KEN_overall_budget_dev_exp_pc.csv"))
-  
   
 # AHADI program focused on certain counties, any difference? --------------
 # short answer: no, not really.
@@ -348,15 +304,6 @@ budg_map(budget_totals_pdf, Exp_dev_pc, leg_text = "Development spending per cap
 #                                                          #
 ##%######################################################%##
   
-  # Scatter plot function to check outliers
-  budg_scatter <- function(df, xvar, yvar) {
-    xvar <- enquo(xvar)
-    yvar <- enquo(yvar)
-    
-    df %>% 
-      ggplot(aes(!!xvar, !!yvar)) + geom_point() +
-      theme_minimal()
-  }
   
   budg_scatter(budget, CID_absorption_dev, CID_absorption_rec)  + 
     #geom_text(aes(label = str_c(County, " ", budget_year, "\n",Budget_title)),
@@ -412,7 +359,8 @@ budg_map(budget_totals_pdf, Exp_dev_pc, leg_text = "Development spending per cap
                       total_exp_dev,
                       tot_dev_exp_pc,
                       poor,
-                      ASBADev_tot_year),
+                      ASBADev_tot_year,
+                      Overall_exp_dev_per_capita),
                  funs(mean(., na.rm = TRUE))) %>% 
     ungroup() %>% 
     group_by(budget_year) %>% # rank the vars for plotting later
@@ -486,29 +434,10 @@ budget_summary %>%
   
     
   # export for maps
+write_csv(budget_summary, file.path(budgetpath, "KEN_budget_summary.csv"))
+  
+  
 
-  
-  
-    write_csv(budget_summary, file.path(budgetpath, "KEN_budget_summary.csv"))
-  
-  
-# ---- Use this if you need a print produciton quality map    
-# Generic mapping function
-  budget_map <- function(df, xvar)  {
-    xvar = enquo(xvar)
-    
-    df %>% 
-      left_join(., asal_geo, by = c("CID" = "CID")) %>% 
-      ggplot() +
-      geom_sf(aes(fill = !!xvar, geometry = geometry), colour = "white", size = 0.5) +
-      facet_wrap(~budget_year, nrow = 1) +
-      theme_minimal() +
-      theme(legend.position = "top",
-            legend.key.width = unit(1.25, "cm"),
-            text = element_text(family = "Lato"),
-            panel.grid = element_blank(),
-            strip.text = element_text(hjust = 0, size = 12))
-  }
   
 map_budget <- budget_map(budget_summary, tot_dev_exp_pc) +
   #scale_fill_viridis_c(option = "E", direction = -1) + facet_wrap(~budget_year, nrow = 2) 
@@ -529,8 +458,6 @@ map_budget <- budget_map(budget_summary, tot_dev_exp_pc) +
     geom_sf(aes(fill = log(overall_exp_dev_pc)), colour = "white", size = 0.5) +
    scale_fill_viridis_c(direction = -1)
  
- name = "count", trans = "log",
-                       breaks = my_breaks, labels = my_breaks, direction = -1)
  
 ggsave(file.path(imagepath, "pc_exp_overall_map.pdf"),
        last_plot(),

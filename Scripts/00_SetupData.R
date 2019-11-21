@@ -7,10 +7,14 @@
 pacman::p_load("tidyverse", "lubridate", "sf", "extrafont", "readxl", "measurements", "pdftools", "purrr", "styler", "scales", "llamar", "haven", "sjlabelled", "vtable", "sjmisc", "survey", "data.table", "lemon", "widyr", "RColorBrewer", "readxl")
 
 # Create folders for project (if they do not exist)
-dir.create("Data")
-dir.create("Data/Wash")
+# Data cannot be shared on Github so it has to be manually copied over due to IT restrictions
+dir_list <- list("Data", "Tableau", "Scripts", "Logos", "Images", "Documents", "Data", "Budget")
+dir_sublist <- list("Budget", "Elections", "Finance", "GIS", "Health", "IPC", "KIHBS", "MSME", "malnutrition", "Poverty", "Wash", "Youth")
 
+map(dir_list, ~dir.create(.))
+map(dir_sublist, ~dir.create(file.path("Data", .)))
 
+# Setting shortcuts so you can use the file.path command throughout to easily write/read to directories
 datapath <- "Data"
 kihbspath <- "Data/KIHBS"
 dataout <- "Data/KIHBS/Dataout"
@@ -26,18 +30,18 @@ rpath <- "Scripts"
 ipcpath <- "Data/IPC"
 fcspath <- "Data/Household Food Consumption score"
 
-#Source helper functions
+#Source helper functions to be used throughout analysis
 file_list <- list("strip_geom.R", 
                   "KEN_helper_functions.R",
                   "county_list.R")
 
-# Source custom scripts and data needed for project
 file_list %>% 
   map(~source(file.path(rpath, .)))
 rm(file_list)
 
 
 # Create merge base file that contains geography for household roster
+# The hh roster is needed to recover hh level info for merging different datasets
 hh_info <- read_dta(file.path(kihbspath, "HH_information.dta"))
 vtable(hh_info)
 
@@ -57,6 +61,7 @@ county_labels <- enframe(get_labels(hh_base$county)) %>%
 county_labels %>% print(n = 47)
 
 # Read in ASAL county identifiers
+# ASAL geo is used throughout to create maps on the fly and b/c they are recongized by Mission
 asal_geo <- st_read(file.path(datapath, "GIS/ASAL_Counties_2018/ASAL_Counties_2018.shp"))
 asal <- strip_geom(asal_geo, Counties, CID, Category) %>% 
   mutate(Category_num = case_when(
@@ -72,10 +77,12 @@ asal %>% group_by(Category) %>%
 
 
 # Read in proper shapefile
+# counties_geo is the GoK recognized shapefile
 counties_geo <- st_read(file.path(datapath, "GIS/CountyBoundary2013/CountyBoundary2013.shp"))
 str(counties_geo)
 
 # Merge in poverty data for use with derived datasets
+# Poverty data is used to create basic poverty maps and for tableau
 pov <- read_csv(file.path(povpath, "Overall_poverty.csv")) %>% 
   mutate(national_tag = ifelse(CC_1 == 0, 1, 0)) %>% 
   mutate(CID = CC_1) %>% 
