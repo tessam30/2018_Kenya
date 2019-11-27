@@ -159,13 +159,4 @@ acled_long %>%
   theme_minimal()
   
   
-  
-  
-  select(county, tot_count) %>% 
-  group_by(county) %>% 
-  summarise(count = mean(tot_count)) %>%   
-  ggplot(aes(x = county, y = count)) + geom_col() +
-  coord_flip() +
-  theme_minimal()
-  
 

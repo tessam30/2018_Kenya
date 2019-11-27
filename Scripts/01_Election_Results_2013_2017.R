@@ -68,6 +68,7 @@ elec_geo %>%
                        limits = c(-1 * swing_max_ky, swing_max_ky), 
                        labels = scales::percent) +
   theme(legend.position = "top")
+
 ggsave(file.path(imagepath, "Kenyatta swing 2013 to 2017.pdf"),
          plot = last_plot(), 
          device = "pdf",
@@ -90,6 +91,7 @@ ggsave(file.path(imagepath, "Kenyatta swing 2013 to 2017.pdf"),
                          labels = scales::percent) +
     facet_wrap(~YEAR) +
     theme(legend.position = "top")
+  
   ggsave(file.path(imagepath, "Constituency_turnout_Deviation.pdf"),
          plot = last_plot(), 
          device = "pdf",
@@ -108,8 +110,9 @@ ggsave(file.path(imagepath, "Kenyatta swing 2013 to 2017.pdf"),
     scale_fill_gradientn(colours = RColorBrewer::brewer.pal(9, 'YlGnBu'),
                          limits = c(.5, 1), 
                          labels = scales::percent) +
-    theme(legend.position = "top")+
+    theme(legend.position = "top") +
      facet_wrap(~YEAR)
+   
    ggsave(file.path(imagepath, "Constituency_turnout.pdf"),
           plot = last_plot(), 
           device = "pdf",
@@ -140,7 +143,7 @@ ggsave(file.path(imagepath, "Kenyatta swing 2013 to 2017.pdf"),
      ggplot() +
      geom_sf(aes(fill = factor(swing_party)), colour = "white", size = 0.25, alpha = 0.75) +
      scale_fill_manual(values = c("no change" = "#E0E0E0",
-                                  "swing Kenyatta" ="#d53e4f",
+                                  "swing Kenyatta" = "#d53e4f",
                                   "swing Odinga" = "#3288bd")) +
      theme(legend.position = "top") +
      theme_minimal()

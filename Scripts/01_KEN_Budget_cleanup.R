@@ -9,7 +9,7 @@
 
 source_list <- list("budget_cw.R", "AHADI_focus_df.R", "budget_functions.R")
 map(source_list, ~source(file.path(rpath, .)))
-
+library(tidytext)
 
 # Reading these in separately to check insheeting carefully. Data have been scraped from PDFs
 # and thus not all excel files are the same. Need to check rows/cols for consistency
@@ -166,8 +166,8 @@ remove(list = ls(pattern = "^budget_[0-9]"))
   county_look(budget_totals_pdf, `Exp_dev_pc`) +
     ggtitle("Per capita development expenditures") +
     labs(caption = GC_caption, 
-         title = "Marsabit and MAndera have the highest per capita development expenditures",
-         subtitle = "estimates in ")
+         title = "Marsabit and Mandera have the highest per capita development expenditures",
+         subtitle = "estimates in Kenya Shillings")
   
 # Map out development expenditures per capita over time  
 budg_map(budget_totals_pdf, Absorption_dev, leg_text = "absorption rate")
@@ -181,7 +181,7 @@ budg_map(budget_totals_pdf, log(Exp_dev_pc), leg_text = "Development spending pe
     left_join(asal_geo, by = c("CID" = "CID")) %>% 
     ggplot() +
     geom_sf(aes(fill = Number_poor, geometry = geometry), colour = "white") +
-    scale_fill_viridis_c(option = "A", direction = -1)
+    scale_fill_viridis_c(option = "A", direction = -1, labels = comma) 
   
   pov_all %>% filter(CID != 0) %>% 
     mutate(County = fct_reorder(County, Number_poor)) %>% 
@@ -288,14 +288,22 @@ budg_map(budget_totals_pdf, log(Exp_dev_pc), leg_text = "Development spending pe
      map(~t.test(testvar ~ AHADI, data = .))
     
     ahadi_bud %>% 
-      ggplot(aes(x = AHADI, y = testvar)) + geom_boxplot() +
-      facet_wrap(~budget_year) + theme_minimal()
+      ggplot(aes(x = AHADI, y = testvar)) + geom_violin() +
+      facet_wrap(~budget_year) + theme_minimal() + geom_jitter(width = 0.1)
+  
     
     # Add in AHADI info an calculate stats on that 
     budget %>% 
-      mutate(c_order = fct_reorder(County, CID_absorption_dev)) %>% 
-      ggplot(aes(y = CID_absorption_dev, x = c_order, fill = factor(AHADI))) +
-    geom_col() + facet_wrap(~ budget_year) + coord_flip()
+      group_by(budget_year, County, AHADI) %>% 
+      summarise(abs_rate = mean(CID_absorption_dev, na.rm = TRUE)) %>% 
+      ungroup() %>% 
+      mutate(c_order = reorder_within(County, abs_rate, budget_year)) %>% 
+      ggplot(aes(y = abs_rate, x = c_order)) +
+    geom_col(aes(fill = factor(AHADI))) +
+      facet_wrap(~ budget_year, scales = "free_y", nrow = 1) + coord_flip() +
+      scale_x_reordered() +
+      scale_fill_manual(values = c("0" = "#fb8072", "1" = "#80b1d3")) +
+      labs(x = "", y = "", fill = "AHADI")
     
 
 ##%######################################################%##
@@ -314,8 +322,8 @@ budg_map(budget_totals_pdf, log(Exp_dev_pc), leg_text = "Development spending pe
   # Machakos looks wrong, let's plot with numbers to see; Public Service Boards look really odd
   budget %>% filter(County == "Machakos") %>% 
     ggplot(aes(x = budget_year, y = Budget_title, fill = `Exp Rec`)) +
-    geom_tile(colour = "white") + geom_text(aes(label = `Exp Rec`), colour = "white", size = 3) +
-    coord_equal() + scale_fill_viridis_c(option = "D", direction = -1)
+    geom_tile(colour = "white") + geom_text(aes(label = round(`Exp Rec`, 0)), colour = "white", size = 3) +
+    coord_equal() + scale_fill_viridis_c(option = "D", direction = -1, end = .8)
 
   budget %>% 
     ggplot(aes(x = CID_absorption_dev, y = CID_absorption_rec, 
