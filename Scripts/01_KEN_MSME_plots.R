@@ -10,7 +10,7 @@
 library(rlang)
 msme <- readxl::read_excel(file.path(datapath, "MSME", "KEN_MSME_2016.xlsx"))
 
-msme_geo <- msme %>% left_join(., asal_geo, by = c("CID" = "CID"))
+msme_geo <- left_join(asal_geo, msme,  by = c("CID" = "CID"))
 
 msme_geo_long <- 
   msme_geo %>% 

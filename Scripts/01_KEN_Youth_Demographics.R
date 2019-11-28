@@ -19,8 +19,8 @@ youth_cst <-
     select(-AgeDepdRat) %>% 
     gather(age_cat, pop, Age0_5:Age65Plus) %>% 
     mutate(percent = pop / TotalPop, 
-           const = 1) %>%
-    left_join(., cst_shape, by = c("ConsID"))
+           const = 1) 
+youth_cst <- cst_shape %>% right_join(., youth_cst, by = c("ConsID"))
   
   youth_cst %>% 
     mutate(opacity = ifelse(percent > 0.25, 1, .99)) %>% 
@@ -64,8 +64,6 @@ fin_df %>%
   scale_fill_gradientn(colours = llamar::RdPu) +
   scale_y_continuous(labels = scales::percent, limits = c(0, 1)) +
   theme_minimal() 
-
-
 
 
 newggslopegraph(fin_df, Year_chr, Inclusion, Region)

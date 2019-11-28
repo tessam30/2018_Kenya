@@ -13,6 +13,10 @@ dhs <- read_dta(file.path(datapath, "2014_DHS", "KEKR71DT", "KEKR71FL.DTA"))
 
 vtable(hh_ind)
 
+dhs_count <- dhs %>% 
+  select(ageMonths = v012) %>% 
+  group_by(ageMonths) %>% 
+  summarise(count = n())
 
 # Generate an age variable converting everything to months
 hh_und5 <- 
@@ -24,7 +28,7 @@ hh_und5 <-
          csex = b04, 
          cheight = f22,
          cweight = f21,
-         anthro_flag = ifelse(cweight >50 | cheight > 150 | cheight < 25, "True", "False"),
+         anthro_flag = ifelse(cweight > 50 | cheight > 150 | cheight < 25, "True", "False"),
          
          # Need standing == 2 and laying down == 1 for the recumbent variable
          recum_recode = ifelse(f23 == 1, 2, 1))
@@ -40,15 +44,9 @@ hh_und5 %>% filter(age_flag == 0) %>%
   geom_point() +
   geom_point(data = dhs_count, aes(colour = "red"))
   
-  
-  
-  scale_fill_brewer(direction = -1, palette = "Accent")
 
 vtable(dhs)
-dhs_count <- dhs %>% 
-  select(ageMonths = v012) %>% 
-  group_by(ageMonths) %>% 
-  summarise(count = n())
+
 
 
 
@@ -96,7 +94,7 @@ ggplot(hh_und5, aes(x = cheight)) +
   geom_density(alpha = 0.5, 
                fill = ftfOrange,
                colour = ftfOrange,
-               data = ihs_data) +
+               data = hs_data) +
   theme_xygrid()+
   annotate(geom = 'text', y = 0.025, x = 101, label = "Malawi 2011 IHS",
            hjust = 0, size = 4, colour = ftfOrange) +

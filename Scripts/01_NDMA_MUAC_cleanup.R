@@ -149,9 +149,9 @@ muac_malnut %>%
             fill = "#fdfbec", alpha = 0.33) +
   geom_rect(data = muac_malnut[1, ], ymin = 0, ymax = .4,
             xmin = as.Date("2017-01-01"), xmax = as.Date("2018-01-01"),
-            fill = "#", alpha = 0.33) +
-  geom_smooth(colour = "#", span = span, alpha = 0.5, size = 0.25) +
-  geom_line(colour = grey70K) +
+            fill = "#fdfbec", alpha = 0.33) +
+  geom_smooth(colour = "white", span = span, alpha = 0.5, size = 1) +
+  geom_line(colour = "#808285") + 
   facet_wrap(~county_sort) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
   theme_minimal() +
@@ -159,7 +159,7 @@ muac_malnut %>%
   labs(x = "", y = "",
        caption = "Source: GeoCenter Caculations based on National Drought Management Authority MUAC data 2008-2018") +
   ggtitle("DRAFT: Acute malnutrition trends for select counties. Areas in red represent months above 15% threshold.",
-          subtitle = "Percent of under-5 children at risk of malnutrition (MUAC < 135 mm)")+ 
+          subtitle = "Percent of under-5 children at risk of malnutrition (MUAC < 135 mm)") + 
   ggsave(file.path(imagepath, "KEN_acute_malnutrition_trends_PR_Counties_2008_2018.pdf"), 
          height = 8.5, width = 11.5, units = "in")
 
@@ -169,8 +169,8 @@ muac_malnut %>%
   summarise(ave = mean(value, na.rm = TRUE)) %>% 
   left_join(., asal_geo, by = c("CID")) %>% 
   ggplot() +
-  geom_sf(data = asal_geo, fill = "#f0f0f0", colour = "#969696", size = 0.25) +
-  geom_sf(aes(fill = ave), colour = "white", size = 0.5) +
+  geom_sf(data = asal_geo, aes(geometry = geometry), fill = "#f0f0f0", colour = "#969696", size = 0.25) +
+  geom_sf(aes(fill = ave, geometry = geometry), colour = "white", size = 0.5) +
   facet_wrap(~year, nrow = 2) + theme_minimal() +
   scale_fill_viridis_c(option = "B", direction = -1,
                        labels = scales::percent_format(accuracy = 1)) +
@@ -179,7 +179,8 @@ muac_malnut %>%
        subtitle = "County averages based on monthly averages -- need to be recalculated with raw numbers",
        caption = "Source: GeoCenter Caculations based on National Drought Management Authority MUAC data 2008-2018") +
   theme(legend.position = "top",
-        strip.text = element_text(hjust = 0)) +
+        strip.text = element_text(hjust = 0))
++
   ggsave(file.path(imagepath, "KEN_acute_malnutrition_trends_map_2008_2018.pdf"), 
          height = 8.5, width = 11.5, units = "in")
 
@@ -210,7 +211,7 @@ library(transformr)
 
   tmp %>% 
   ggplot(.) +
-  geom_sf(aes(fill = value), colour = "white") +
+  geom_sf(aes(fill = value, geometry = geometry), colour = "white") +
   scale_fill_viridis_c(option = "B", alpha = 0.75, label = percent_format(accuracy = 2),
                        direction = -1) +
     labs(fill = "MUAC rate") +

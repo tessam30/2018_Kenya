@@ -7,9 +7,9 @@
 #Source helper functions
 source("00_SetupData.R")
 
-read_path <- "KEN_IHBS_2016.xlsx"
+read_path <- file.path(datapath, "KIHBS/KEN_IHBS_2016.xlsx")
 datapath <- "Data"
-gispath <- "Data/gadm36_KEN_shp"
+gispath2 <- file.path(datapath, "GIS/gadm36_KEN_shp")
 
 # Start the load routine --------------------------------------------------
 
@@ -144,7 +144,7 @@ rm(list = ls(pattern = "_pov_"))
 # Mapping magic -----------------------------------------------------------
 
 # Might as well go ahead and join it with a shapefile and create couple sample maps
-gis_admin1 <- read_sf(file.path(gispath, "gadm36_KEN_1.shp"))
+gis_admin1 <- read_sf(file.path(gispath2, "gadm36_KEN_1.shp"))
 
 # Poverty plotted by age group for children
 pov_plot(pov_child, percent, "Kenya Child poverty (%) by county", age)
@@ -153,7 +153,7 @@ pov_plot(pov_child, percent, "Kenya Child poverty (%) by county", age)
 pov_plot(pov_food, deviation, "Kenya food poverty (%) by county", food_poverty_type)
 
 # Poverty overall
-pov_plot(pov, percent, "Kenya poverty (%) by county", poverty_type)
+pov_plot(pov, percent, "Kenya poverty (%) by county", poverty_type) 
 pov_plot(pov, Number_poor, "Kenya poverty population (in 000's) by county", poverty_type)
 
 
