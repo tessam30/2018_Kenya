@@ -74,7 +74,7 @@ library(srvyr)
     geom_tile(color = "#ffffff") +
     scale_fill_viridis_c(direction = -1, option = "A") +
     theme(legend.position =  "top") +
-    ggtitle("Shock correlations within counties")+
+    ggtitle("Shock correlations within counties") +
     ylab("") +
     xlab("") +
     facet_wrap(~county_name) + 
@@ -115,7 +115,7 @@ library(srvyr)
   sample_design <-  svydesign(id = ~clid, strata = ~strat,  weights = ~weight, data = shocks)
   summary(sample_design)
   
-  sample_design %>% summarize(elect_conn)
+  sample_design %>% summarize(price_shock)
 
 # -- Can also use the srvyr package which takes pipes
 # -- Create two data frames
@@ -199,19 +199,21 @@ shock_dev_max = unlist(shock_stats_county %>% summarise(max_dev = max(abs(shock_
     right_join(shock_stats_county, by = c("CID" = "county_id")) %>% 
     mutate(max = abs(max(shock_dev)),
            shock = fct_reorder(shock, value_natl, .desc = TRUE), 
-           county_name = fct_reorder(county_name, maxsort)) %>% 
+           county_name = reorder_within(county_name, shock_dev, shock)) %>% 
     ggplot(aes(x = county_name, y = shock_dev, fill = shock_dev, label)) +
-    geom_col() +
+    geom_col(colour = grey90K) +
     coord_flip()  +
+    scale_x_reordered() +
     scale_fill_distiller(type = "div", palette = "PiYG",
                        limits = c(-0.65, 0.65)) +
-    facet_wrap(~shock, nrow = 2) +
+    facet_wrap(~shock, nrow = 2, scales = "free_y") +
     theme(legend.position = "top") +
     ggtitle("Deviations from national average, by shock") +
     scale_y_continuous(labels = scales::percent) +
     theme(legend.position = "none") +
     labs(caption = "Source: Kenya Integrated Household Budget Survey 2016") +
-    xlab("") + ylab("")
+    xlab("") + ylab("") 
+
 
 # Now the levels
   counties_geo %>% 
@@ -230,13 +232,14 @@ shock_dev_max = unlist(shock_stats_county %>% summarise(max_dev = max(abs(shock_
     right_join(shock_stats_county, by = c("CID" = "county_id")) %>% 
     mutate(max = abs(max(shock_dev)),
            shock = fct_reorder(shock, value_natl, .desc = TRUE), 
-           county_name = fct_reorder(county_name, maxsort)) %>% 
+           county_name = reorder_within(county_name, value_county, shock)) %>% 
     ggplot(aes(x = county_name, y = value_county, fill = value_county)) +
     geom_col() +
     geom_hline(aes(yintercept = value_natl), colour = "#D3D3D3") +
     coord_flip() +
+    scale_x_reordered() +
     scale_fill_viridis_c(alpha = 0.66, direction = -1, option = "A") +
-    facet_wrap(~shock, nrow = 2) +
+    facet_wrap(~shock, nrow = 2, scales = "free_y") +
     theme(legend.position = "none") +
     ggtitle("Percent of households with shock by county (gray line equal to national average)") +
     scale_y_continuous(labels = scales::percent) +
