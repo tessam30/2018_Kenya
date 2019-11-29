@@ -6,6 +6,8 @@
 # Read in the shock data 
 
 # Load shock data ---------------------------------------------------------
+library(tidytext)
+library(ggrepel)
 
 shk_df <- read_dta(file.path(kihbspath, "Recent_Shocks.dta"))
 hh_inf <- read_dta(file.path(kihbspath, "HH_Information.dta"))
@@ -86,9 +88,10 @@ shk_df <-
 
 # Plots of shocks prior to processing ---------------------------------------------------------
 # -- Food Prices are the most prominent shock that is reported but not ranked
-  shk_df_cw %>% filter(is.na(s_rank)) %>% 
-    group_by(item_desc) %>% 
-    count() %>% 
+col_flip <- list(geom_col(), coord_flip()) 
+  
+   shk_df_cw %>% filter(is.na(s_rank)) %>% 
+    count(item_desc) %>% 
     rename(unranked_shocks = n) %>% 
     arrange(desc(unranked_shocks)) %>% 
     print(n = Inf)
@@ -103,20 +106,20 @@ shk_df <-
     select(shock, shock_alt, everything()) %>% 
     knitr::kable()
 
-  shk_df_cw %>% group_by(shock, s_rank) %>% 
-    summarise(count = n()) %>% 
-    ggplot(aes(shock, count)) + 
-    facet_wrap(~s_rank) +
-    geom_col() +
-    coord_flip() 
+  shk_df_cw %>% count(shock, s_rank) %>% 
+    mutate(shock = reorder_within(shock, n, s_rank)) %>% 
+    ggplot(aes(shock, n)) + 
+    facet_wrap(~s_rank, scales = "free_y") +
+    col_flip +
+    scale_x_reordered()
 
-  shk_df_cw %>% group_by(shock) %>% 
-    summarise(count = n()) %>% 
-    mutate(shock = fct_reorder(shock, count)) %>% 
-    ggplot(aes(shock, count)) +
+
+  shk_df_cw %>% count(shock) %>% 
+    mutate(shock = fct_reorder(shock, n)) %>% 
+    ggplot(aes(shock, n)) +
     geom_col() +
     coord_flip() +
-    geom_text(aes(label = count, hjust = -0.01)) 
+    geom_text(aes(label = n, hjust = -0.01)) 
 
 # Plot the results w/ a basic graph
   shk_df_cw %>% 
@@ -235,10 +238,10 @@ shk_df <-
   # create major shock categories to ensure consistency with other studies
   mutate(ag_shock = ifelse(ag_bin == 1 | livestock_bin == 1, 1, 0),
          conflict_shock = ifelse(conflict_bin == 1, 1, 0), 
-         financial_shock = ifelse(financial_bin ==1, 1, 0), 
+         financial_shock = ifelse(financial_bin == 1, 1, 0), 
          hazard_shock = ifelse(hazard_bin == 1 | water_short_bin, 1, 0), 
-         health_shock = ifelse(demographic_bin ==1 | health_bin == 1, 1, 0), 
-         price_shock = ifelse(crop_price_bin ==1 | food_price_bin ==1 | input_price_bin == 1, 1, 0),
+         health_shock = ifelse(demographic_bin == 1 | health_bin == 1, 1, 0), 
+         price_shock = ifelse(crop_price_bin == 1 | food_price_bin == 1 | input_price_bin == 1, 1, 0),
          other_shock = ifelse(other_bin == 1, 1, 0)) %>% 
   
   mutate(anyshock = ifelse(rowSums(select(., ag_shock:other_shock)) > 0, 1, 0),
@@ -274,7 +277,7 @@ shocks_severe <-  shocks_alt %>%
   
   # Cleaning up variable names
   rename_at(vars(contains("_total_alt")), ~ gsub("_total_alt", "", .)) %>% 
-  rename_at(vars(contains("_alt")), ~ gsub("_alt", "", .))%>% 
+  rename_at(vars(contains("_alt")), ~ gsub("_alt", "", .)) %>% 
   
   # Ordering data for ease of reading
   select(clid, hhid, ag, conflict, crop_price, demographic, hazard, health, financial, food_price, 
@@ -295,10 +298,10 @@ shocks_severe <-  shocks_alt %>%
   # create major shock categories
   mutate(ag_shock = ifelse(ag_bin == 1 | livestock_bin == 1, 1, 0),
          conflict_shock = ifelse(conflict_bin == 1, 1, 0), 
-         financial_shock = ifelse(financial_bin ==1, 1, 0), 
+         financial_shock = ifelse(financial_bin == 1, 1, 0), 
          hazard_shock = ifelse(hazard_bin == 1 | water_short_bin, 1, 0), 
-         health_shock = ifelse(demographic_bin ==1 | health_bin == 1, 1, 0), 
-         price_shock = ifelse(crop_price_bin ==1 | food_price_bin ==1 | input_price_bin == 1, 1, 0),
+         health_shock = ifelse(demographic_bin == 1 | health_bin == 1, 1, 0), 
+         price_shock = ifelse(crop_price_bin == 1 | food_price_bin == 1 | input_price_bin == 1, 1, 0),
          other_shock = ifelse(other_bin == 1, 1, 0)) %>% 
   
   mutate(anyshock = ifelse(rowSums(select(., ag_shock:other_shock)) > 0, 1, 0),
@@ -312,12 +315,13 @@ table(shocks$ag_bin)
 # Plotting results  -------------------------------------------------------
 # -- Now we can calculate statistics based on county or shock type
 shocks %>% 
-  select(county, county_id, ag_bin:water_short_bin)%>%
+  select(county, county_id, ag_bin:water_short_bin) %>%
   gather(shock, value, -(county:county_id)) %>% 
   group_by(shock, county, county_id) %>% 
   summarise(ave = mean(value)) %>% 
+  ungroup() %>% 
   left_join(county_labels, by = c("county_id" = "county_id")) %>%
-  mutate(county_name = fct_reorder(county_name, ave, .desc = TRUE)) %>% 
+  mutate(county_name = fct_reorder(county_name, ave, .fun = sum, .desc = TRUE)) %>% 
   filter(shock != "health_bin") %>% 
   ggplot(aes(shock, ave, fill = shock)) +
   geom_col() +
@@ -325,15 +329,16 @@ shocks %>%
   #geom_text(aes(label = round(ave, 2), hjust = -0.1)) +
   facet_wrap(~county_name) +
   scale_fill_brewer(palette = "Set3") +
-  ggtitle(label = "Kitui appears to be the most vulnerable county (unweighted shocks)")
+  ggtitle(label = " vulnerable county (unweighted shocks)")
 
 shocks %>% 
   select(county, county_id, ag_shock:anyshock) %>% 
   gather(shock, value, -(county:county_id)) %>%
   group_by(shock, county, county_id) %>% 
   summarise(ave = mean(value, na.rm = TRUE)) %>% 
+  ungroup() %>% 
   left_join(county_labels) %>%
-  mutate(county_name = fct_reorder(county_name, ave, .desc = TRUE)) %>% 
+  mutate(county_name = fct_reorder(county_name, ave,.fun = sum, .desc = TRUE)) %>% 
   ggplot(aes(shock, ave, fill = shock)) +
   geom_col() +
   coord_flip() +
@@ -343,3 +348,75 @@ shocks %>%
   
 # Clean up all the extra datasets generated
 remove(shk_df, shk_df_cw, shocks_alt)
+
+# Run a simple pcs on shocks to see what counties are vulnerable too
+
+library(broom)
+library(knitr)
+library(ggfortify)
+library(tidytext)
+
+shocks_pca <- 
+  shocks  %>% 
+  select(ag_shock:anyshock) %>%  #ag_bin:water_short_bin)  %>% 
+  prcomp(, center = TRUE, scale = TRUE)
+  
+
+tidy(shocks_pca, "samples")
+
+# Only need the first component to look at the shoc
+# What does the average shock "index" look like for each county?
+shocks_pca %>% 
+  tidy(matrix = "samples") %>% 
+  filter(PC <= 2) %>% 
+  right_join(., shocks %>% mutate(row = row_number()), by = c("row")) %>% 
+  group_by(county, PC) %>% 
+  summarise(shock_index = mean(value)) %>% 
+  ungroup() %>% 
+  arrange(shock_index) %>% 
+  mutate(county = haven::as_factor(county) %>% reorder_within(., shock_index, PC)) %>% 
+  ggplot(aes(x = county, y = shock_index)) +
+      geom_col() + coord_flip() +
+  facet_wrap(~PC, scales = "free_y") +
+  scale_x_reordered()
+
+
+shocks_pca %>% 
+  tidy(matrix = "samples") %>% 
+  filter(PC <= 2) %>% 
+  right_join(., shocks %>% mutate(row = row_number()), by = c("row")) %>% 
+  group_by(county, PC) %>% 
+  summarise(shock_index = mean(value)) %>% 
+  ungroup() %>% 
+  spread(PC, shock_index) %>% 
+  mutate(county = haven::as_factor(county)) %>% 
+  ggplot(aes(x = `1`, y = `2`)) + geom_point() +
+  geom_label_repel(aes(label = county)) +
+  xlim(-2,2) + ylim(-2,2)
+
+
+#Or as a map
+
+shocks_pca %>% 
+  tidy(matrix = "samples") %>% 
+  filter(PC <= 2) %>% 
+  right_join(., shocks %>% mutate(row = row_number()), by = c("row")) %>% 
+  group_by(county, PC) %>% 
+  summarise(shock_index = mean(value)) %>% 
+  ungroup() %>% 
+  arrange(shock_index) %>% 
+  mutate(county = as.numeric(county)) %>% 
+  left_join(., asal_geo, by = c("county" = "CID")) %>% 
+  ggplot() +
+  geom_sf(aes(fill = shock_index, geometry = geometry), colour = "white", size = 0.25) +
+  facet_wrap(~PC) +
+  scale_fill_gradientn(colours = rev(RColorBrewer::brewer.pal(11, 'Spectral')),
+                       limits = c(-1 * 2, 2)) +
+  theme(legend.position = "top")
+
+
+
+
+  
+  
+
