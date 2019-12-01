@@ -21,7 +21,7 @@ df_ed[[1]] %>%
     left_join(asal_geo, by = c("CID"))%>% 
     filter(!type %like% "illiterate") %>% 
     ggplot() +
-    geom_sf(aes(fill = value), colour = "white", alpha = 0.85) +
+    geom_sf(aes(fill = value, geometry = geometry), colour = "white", alpha = 0.85) +
     scale_fill_gradientn(colours = RColorBrewer::brewer.pal(9, 'YlGnBu')) +
     facet_wrap(~ type) +
     labs(title = "Ability to read 15-24 year olds")
@@ -29,9 +29,9 @@ df_ed[[1]] %>%
 df_ed[[3]] %>% 
   #select(-c("..5", "Number_individuals")) %>% 
   gather(type, value, -c(CID, County_ed)) %>%   
-  left_join(asal_geo, by = c("CID"))%>% 
+  left_join(asal_geo, by = c("CID")) %>% 
   ggplot() +
-  geom_sf(aes(fill = value), colour = "white", alpha = 0.85) +
+  geom_sf(aes(fill = value, geometry = geometry), colour = "white", alpha = 0.85) +
   scale_fill_gradientn(colours = RColorBrewer::brewer.pal(9, 'YlGnBu')) +
   facet_wrap(~ type) +
   labs(title = "Education")
