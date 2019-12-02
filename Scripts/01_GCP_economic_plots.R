@@ -47,8 +47,8 @@ gcp_long_geo <-
   group_by(sector) %>% 
   mutate(sect_tot = sum(gcp, na.rm = TRUE)) %>% 
   ungroup() %>% 
-  mutate(sect_tot = fct_reorder(sector, sect_tot, .desc = TRUE),
-         overall_share =  /7524710) %>% 
+  mutate(sector = fct_reorder(sector, sect_tot, .desc = TRUE),
+         overall_share =  (sect_tot / 7524710)) 
 
 
 
@@ -56,17 +56,17 @@ gcp_long_geo <-
 
 
 # Function to create map + bar graph --------------------------------------
-gcp_plot <- function(df, x, y, sect_id) {
-  yvar <- enquo(y)
-  xvar <- enquo(x)
+gcp_plot <- function(df, xvar, yvar, sect_id) {
+  # yvar <- enquo(y)
+  # xvar <- enquo(x)
   
   ptitle = gcp_long_geo$sector[gcp_long_geo$sector_id == sect_id]
   
   p1 <- 
     df %>% 
     filter(sector_id == sect_id) %>% 
-    mutate(sortvar = fct_reorder(!!xvar, !!yvar)) %>% 
-    ggplot(aes(x = sortvar, y = !!yvar, fill = !!yvar)) + geom_col() +
+    mutate(sortvar = fct_reorder({{xvar}}, {{yvar}})) %>% 
+    ggplot(aes(x = sortvar, y = {{yvar}}, fill = {{yvar}})) + geom_col() +
     coord_flip() + theme_minimal() +
     scale_y_continuous(
       labels = scales::percent_format(accuracy = 1)) +
@@ -79,7 +79,7 @@ gcp_plot <- function(df, x, y, sect_id) {
     df %>% 
     filter(sector_id == sect_id) %>% 
     ggplot() +
-    geom_sf(aes(fill = !!yvar), colour = "white", size = 0.25) +
+    geom_sf(aes(fill = {{yvar}}, geometry = geometry), colour = "white", size = 0.25) +
     scale_fill_viridis_c(option = "B", direction = -1) +
     theme_minimal() +
     theme(legend.position = "none") 
@@ -101,9 +101,9 @@ map(sector_list, ~ gcp_plot(gcp_long_geo, Counties, share, .))
 
 gcp_long_geo %>% 
   ggplot() +
-  geom_sf(aes(fill = share), colour = "white", size = 0.25) +
+  geom_sf(aes(fill = share, geometry = geometry), colour = "white", size = 0.25) +
   theme_minimal() +
-  facet_wrap(~sect_tot, nrow = 3,
+  facet_wrap(~sector, nrow = 3,
              labeller = label_wrap_gen()) +
   scale_fill_viridis_c(direction = -1, alpha = 0.90, option = "A", label = percent_format(accuracy = 2)) +
   labs(fill = "share of gcp",

@@ -18,7 +18,7 @@ df_ed[[1]] %>%
   
 # Show where illiterate males/females are
   df_ed[[4]] %>% gather(type, value, -c(CID, County_ed)) %>% 
-    left_join(asal_geo, by = c("CID"))%>% 
+    left_join(asal_geo, by = c("CID")) %>% 
     filter(!type %like% "illiterate") %>% 
     ggplot() +
     geom_sf(aes(fill = value, geometry = geometry), colour = "white", alpha = 0.85) +
